@@ -109,6 +109,11 @@ tooltip {
     margin-right: 7.5px;
 }
 
+#custom-workspace-separator {
+    color: #666666;
+    margin-left: 7.5px;
+}
+
 #custom-ctf.no-vpn,
 #custom-ctf.missing-me,
 #custom-ctf.missing-target {
@@ -117,6 +122,31 @@ tooltip {
 
 #custom-ctf.inactive {
     opacity: 0.55;
+}
+
+#custom-pomodoro {
+    min-width: 58px;
+    margin-left: 7.5px;
+    margin-right: 7.5px;
+}
+
+#custom-pomodoro.work-running {
+    color: #ff5f5f;
+}
+
+#custom-pomodoro.short-break-running {
+    color: #5fd75f;
+}
+
+#custom-pomodoro.long-break-running {
+    color: #33ccff;
+}
+
+#custom-pomodoro.work-paused,
+#custom-pomodoro.short-break-paused,
+#custom-pomodoro.long-break-paused {
+    color: @foreground;
+    opacity: 0.65;
 }
 
 #custom-weather.unavailable {
