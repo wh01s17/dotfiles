@@ -51,6 +51,28 @@
     margin-right: 13px;
 }
 
+#custom-services-monitor {
+    margin: 0 13px 0 7.5px;
+}
+
+#custom-services-monitor.active {
+    color: #5fd75f;
+}
+
+#custom-services-monitor.exposed {
+    color: #ffaf5f;
+}
+
+#custom-services-monitor.reverse {
+    color: #ff5f5f;
+}
+
+#custom-services-monitor.inactive {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
 #custom-expand-icon {
     margin-right: 18px;
 }

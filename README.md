@@ -124,7 +124,7 @@ La configuración principal está en [`desktop/.config/waybar/config.jsonc`](des
 | --- | --- |
 | Izquierda | Omarchy, escritorios Hyprland, separador y panel CTF |
 | Centro | Reloj, Pomodoro, clima, actualizaciones, Voxtype, grabación, idle y silencio de notificaciones |
-| Derecha | Bandeja expandible, Bluetooth, red, audio, CPU y batería |
+| Derecha | Bandeja expandible, servicios/reverse shells, Bluetooth, red, audio, CPU y batería |
 
 ### Módulos de la izquierda
 
@@ -153,11 +153,47 @@ La configuración principal está en [`desktop/.config/waybar/config.jsonc`](des
 | Módulo | Qué muestra | Controles |
 | --- | --- | --- |
 | `group/tray-expander` | Flecha y bandeja del sistema dentro de un drawer animado | Posar el puntero sobre el grupo: revelar la bandeja. |
+| `custom/services-monitor` | Puertos de desarrollo, servicios expuestos y listeners/sesiones probables de reverse shell | Clic izquierdo: abrir servicio web. Central: copiar endpoint. Derecho: resumen. |
 | `bluetooth` | Estado del controlador y conexiones | Clic: launcher Bluetooth de Omarchy. |
 | `network` | Wi-Fi, Ethernet o desconectado; tooltip con SSID y frecuencia | Clic: launcher Wi-Fi. |
 | `pulseaudio` | Nivel o estado del audio | Clic izquierdo: selector de audio. Derecho: mute. Scroll: volumen en pasos de 5 %. |
 | `cpu` | Icono de CPU; actualiza cada 5 segundos | Clic izquierdo: abrir o enfocar `btop`. Derecho: abrir Alacritty. |
 | `battery` | Estado de carga y alertas al 20 %/10 % | Clic izquierdo: menú de energía. Derecho: notificación con detalle. |
+
+## Servicios y reverse shells
+
+[`desktop/.config/waybar/scripts/services-monitor.sh`](desktop/.config/waybar/scripts/services-monitor.sh) consulta los sockets TCP cada dos segundos y permanece oculto cuando no encuentra nada relevante.
+
+El módulo distingue estos estados:
+
+| Color | Estado |
+| --- | --- |
+| Verde `#5fd75f` | Servicio de desarrollo escuchando solamente en loopback. |
+| Naranjo `#ffaf5f` | Servicio enlazado a `0.0.0.0`, `::` u otra dirección accesible desde la red. |
+| Rojo `#ff5f5f` | Listener o conexión probable de reverse shell. |
+
+Detecta puertos habituales de Vite, Node, Python, bases de datos y herramientas web. Para reverse shells usa una heurística basada en procesos como `nc`, `ncat`, `socat` o `pwncat`, puertos frecuentes (`4444`, `1337`, `9001`, etc.) y conexiones TCP establecidas pertenecientes directamente a una shell. El tooltip siempre muestra proceso, bind y exposición; la etiqueta “probable” es importante porque no sustituye una inspección manual.
+
+Controles:
+
+- Clic izquierdo: elegir con Walker y abrir un servicio HTTP detectado.
+- Clic central: elegir y copiar una URL o endpoint.
+- Clic derecho: mostrar todos los servicios y sesiones en una notificación.
+
+Uso desde terminal:
+
+```bash
+MONITOR="$HOME/.config/waybar/scripts/services-monitor.sh"
+
+"$MONITOR" print   # salida JSON para Waybar
+"$MONITOR" open    # abrir servicio HTTP
+"$MONITOR" copy    # copiar endpoint
+"$MONITOR" notify  # mostrar resumen
+```
+
+Se pueden reemplazar las listas predeterminadas mediante `SERVICES_DEV_PORTS`, `SERVICES_HTTP_PORTS` y `SERVICES_REVERSE_PORTS` en el entorno de Waybar.
+
+Dependencias: `bash`, `ss`/iproute2, `jq`, `wl-copy`/wl-clipboard, `xdg-open`, `notify-send`/libnotify y Walker mediante `omarchy menu select`.
 
 ## Panel CTF
 
@@ -256,6 +292,7 @@ Los módulos que reaccionan inmediatamente a eventos usan señales de tiempo rea
 | `RTMIN+10` | Silencio de notificaciones |
 | `RTMIN+11` | Panel CTF |
 | `RTMIN+12` | Pomodoro |
+| `RTMIN+13` | Servicios y reverse shells |
 
 Para refrescar manualmente un módulo, por ejemplo CTF:
 
@@ -272,6 +309,7 @@ cd "$HOME/dotfiles"
 jq empty desktop/.config/waybar/config.jsonc
 bash -n desktop/.config/waybar/scripts/ctf-ip.sh
 bash -n desktop/.config/waybar/scripts/pomodoro.sh
+bash -n desktop/.config/waybar/scripts/services-monitor.sh
 stow --simulate --verbose=2 --target="$HOME" desktop terminal
 ```
 
