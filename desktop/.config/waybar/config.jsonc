@@ -5,8 +5,9 @@
   "spacing": 0,
   "height": 26,
   "modules-left": ["custom/omarchy", "hyprland/workspaces", "custom/workspace-separator", "custom/ctf"],
-  "modules-center": ["clock", "custom/pomodoro", "custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"],
+  "modules-center": ["clock", "custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"],
   "modules-right": [
+    "custom/pomodoro",
     "custom/clipboard-history",
     "custom/services-monitor",
     "group/tray-expander",
@@ -67,7 +68,8 @@
     "on-click-right": "alacritty"
   },
   "clock": {
-    "format": "{:L%d/%m/%Y · %H:%M}",
+    "interval": 1,
+    "format": "{:L%d/%m/%Y · %H:%M:%S}",
     "tooltip": false,
     "on-click-right": "omarchy-launch-floating-terminal-with-presentation omarchy-tz-select"
   },

@@ -139,7 +139,7 @@ La configuración principal está en [`desktop/.config/waybar/config.jsonc`](des
 
 | Módulo | Qué muestra | Controles |
 | --- | --- | --- |
-| `clock` | Fecha corta (`DD/MM/YYYY`) y hora visibles permanentemente | Clic derecho: selector de zona horaria de Omarchy. |
+| `clock` | Fecha corta (`DD/MM/YYYY`) y hora con segundos visibles permanentemente | Clic derecho: selector de zona horaria de Omarchy. |
 | `custom/pomodoro` | Fase actual, cuenta regresiva, estado y sesiones completadas | Clic izquierdo: iniciar/pausar. Central: saltar. Derecho: elegir sistema. Scroll: ±1 minuto. |
 | `custom/weather` | Clima de Cartagena o Valparaíso mediante una ubicación explícita; se actualiza cada minuto | Clic izquierdo: alternar ciudad. Central: notificación. Derecho: selector. |
 | `custom/update` | Icono cuando existe una actualización de Omarchy; comprueba cada 6 horas | Clic: abrir la actualización en una terminal flotante. |
