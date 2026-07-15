@@ -77,6 +77,7 @@
     "exec": "$HOME/.config/waybar/scripts/ctf-ip.sh print",
     "return-type": "json",
     "format": "{}",
+    "escape": false,
     "interval": 5,
     "signal": 11,
     "tooltip": true,
