@@ -124,7 +124,7 @@ La configuración principal está en [`desktop/.config/waybar/config.jsonc`](des
 | --- | --- |
 | Izquierda | Omarchy, escritorios Hyprland, separador y panel CTF |
 | Centro | Reloj, Pomodoro, clima, actualizaciones, Voxtype, grabación, idle y silencio de notificaciones |
-| Derecha | Bandeja expandible, historial del portapapeles, servicios/reverse shells, Bluetooth, red, audio, CPU y batería |
+| Derecha | Historial del portapapeles, servicios/reverse shells, bandeja expandible, Bluetooth, red, audio, CPU y batería |
 
 ### Módulos de la izquierda
 
@@ -152,9 +152,9 @@ La configuración principal está en [`desktop/.config/waybar/config.jsonc`](des
 
 | Módulo | Qué muestra | Controles |
 | --- | --- | --- |
-| `group/tray-expander` | Flecha y bandeja del sistema dentro de un drawer animado | Posar el puntero sobre el grupo: revelar la bandeja. |
 | `custom/clipboard-history` | Acceso directo al historial del portapapeles de Walker | Clic izquierdo: abrir el mismo historial que `Super + Ctrl + V`. |
 | `custom/services-monitor` | Puertos de desarrollo, servicios expuestos y listeners/sesiones probables de reverse shell | Clic izquierdo: abrir servicio web. Central: copiar endpoint. Derecho: resumen. |
+| `group/tray-expander` | Flecha y bandeja del sistema dentro de un drawer animado | Posar el puntero sobre el grupo: revelar la bandeja. |
 | `bluetooth` | Estado del controlador y conexiones | Clic: launcher Bluetooth de Omarchy. |
 | `network` | Wi-Fi, Ethernet o desconectado; tooltip con SSID y frecuencia | Clic: launcher Wi-Fi. |
 | `pulseaudio` | Nivel o estado del audio | Clic izquierdo: selector de audio. Derecho: mute. Scroll: volumen en pasos de 5 %. |

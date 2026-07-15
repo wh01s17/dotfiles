@@ -7,9 +7,9 @@
   "modules-left": ["custom/omarchy", "hyprland/workspaces", "custom/workspace-separator", "custom/ctf"],
   "modules-center": ["clock", "custom/pomodoro", "custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"],
   "modules-right": [
-    "group/tray-expander",
     "custom/clipboard-history",
     "custom/services-monitor",
+    "group/tray-expander",
     "bluetooth",
     "network",
     "pulseaudio",
