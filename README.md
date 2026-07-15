@@ -141,7 +141,7 @@ La configuración principal está en [`desktop/.config/waybar/config.jsonc`](des
 | --- | --- | --- |
 | `clock` | Día de la semana y hora; tiene un formato alternativo con fecha y número de semana | Clic derecho: selector de zona horaria de Omarchy. |
 | `custom/pomodoro` | Fase actual, cuenta regresiva, estado y sesiones completadas | Clic izquierdo: iniciar/pausar. Central: saltar. Derecho: elegir sistema. Scroll: ±1 minuto. |
-| `custom/weather` | Estado meteorológico proporcionado por Omarchy; se actualiza cada minuto | Clic: notificación con el detalle del clima. |
+| `custom/weather` | Clima de Cartagena o Valparaíso mediante una ubicación explícita; se actualiza cada minuto | Clic izquierdo: alternar ciudad. Central: notificación. Derecho: selector. |
 | `custom/update` | Icono cuando existe una actualización de Omarchy; comprueba cada 6 horas | Clic: abrir la actualización en una terminal flotante. |
 | `custom/voxtype` | Estado de dictado: oculto, grabando o transcribiendo | Clic izquierdo: elegir modelo. Derecho: configuración. |
 | `custom/screenrecording-indicator` | Indicador de grabación de pantalla | Clic: controlar la grabación mediante Omarchy. |
@@ -160,6 +160,41 @@ La configuración principal está en [`desktop/.config/waybar/config.jsonc`](des
 | `pulseaudio` | Nivel o estado del audio | Clic izquierdo: selector de audio. Derecho: mute. Scroll: volumen en pasos de 5 %. |
 | `cpu` | Icono de CPU; actualiza cada 5 segundos | Clic izquierdo: abrir o enfocar `btop`. Derecho: abrir Alacritty. |
 | `battery` | Estado de carga y alertas al 20 %/10 % | Clic izquierdo: menú de energía. Derecho: notificación con detalle. |
+
+## Clima
+
+[`desktop/.config/waybar/scripts/weather.sh`](desktop/.config/waybar/scripts/weather.sh) usa la geocodificación y el pronóstico de Open-Meteo. La búsqueda se restringe a Chile y guarda coordenadas por ciudad, evitando la ubicación incorrecta que puede entregar la salida a Internet de Starlink.
+
+El selector contiene 21 ciudades, ordenadas de norte a sur:
+
+- Norte: Arica, Iquique, Antofagasta, Calama, Copiapó, La Serena y Coquimbo.
+- Centro: Cartagena —selección inicial—, Valparaíso, Viña del Mar, Santiago, Rancagua, Talca y Chillán.
+- Sur: Concepción, Temuco, Valdivia, Osorno, Puerto Montt, Coyhaique y Punta Arenas.
+
+El tooltip incluye condición, temperatura, sensación térmica, mínima/máxima, humedad, viento, presión, visibilidad, amanecer y atardecer. A continuación muestra el pronóstico de los próximos siete días: día/fecha, icono, condición, mínima–máxima y probabilidad máxima de lluvia. El icono principal diferencia entre día y noche.
+
+Controles:
+
+- Clic izquierdo: alternar directamente entre Cartagena y Valparaíso.
+- Clic central: mostrar el detalle en una notificación.
+- Clic derecho: elegir la ciudad mediante Walker.
+
+La selección queda guardada en `${XDG_STATE_HOME:-$HOME/.local/state}/waybar/weather/city`. Las coordenadas resueltas y el pronóstico se mantienen en cachés independientes por ciudad; si Open-Meteo deja de responder, se muestra el último dato disponible con una advertencia en el tooltip.
+
+Uso desde terminal:
+
+```bash
+WEATHER="$HOME/.config/waybar/scripts/weather.sh"
+
+"$WEATHER" set cartagena
+"$WEATHER" set valparaiso
+"$WEATHER" set santiago
+"$WEATHER" set puerto_montt
+"$WEATHER" toggle
+"$WEATHER" menu
+```
+
+Dependencias: `bash`, `curl`, `jq`, `flock`/util-linux, `notify-send`/libnotify y Walker mediante `omarchy menu select`.
 
 ## Servicios y reverse shells
 
@@ -294,6 +329,7 @@ Los módulos que reaccionan inmediatamente a eventos usan señales de tiempo rea
 | `RTMIN+11` | Panel CTF |
 | `RTMIN+12` | Pomodoro |
 | `RTMIN+13` | Servicios y reverse shells |
+| `RTMIN+14` | Clima |
 
 Para refrescar manualmente un módulo, por ejemplo CTF:
 
@@ -311,6 +347,7 @@ jq empty desktop/.config/waybar/config.jsonc
 bash -n desktop/.config/waybar/scripts/ctf-ip.sh
 bash -n desktop/.config/waybar/scripts/pomodoro.sh
 bash -n desktop/.config/waybar/scripts/services-monitor.sh
+bash -n desktop/.config/waybar/scripts/weather.sh
 stow --simulate --verbose=2 --target="$HOME" desktop terminal
 ```
 

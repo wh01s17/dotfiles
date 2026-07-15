@@ -73,11 +73,14 @@
     "on-click-right": "omarchy-launch-floating-terminal-with-presentation omarchy-tz-select"
   },
   "custom/weather": {
-    "exec": "$OMARCHY_PATH/default/waybar/weather.sh",
+    "exec": "$HOME/.config/waybar/scripts/weather.sh print",
     "return-type": "json",
     "interval": 60,
-    "tooltip": false,
-    "on-click": "notify-send -u low \"$(omarchy-weather-status)\""
+    "signal": 14,
+    "tooltip": true,
+    "on-click": "$HOME/.config/waybar/scripts/weather.sh toggle",
+    "on-click-middle": "$HOME/.config/waybar/scripts/weather.sh notify",
+    "on-click-right": "$HOME/.config/waybar/scripts/weather.sh menu"
   },
   "custom/ctf": {
     "exec": "$HOME/.config/waybar/scripts/ctf-ip.sh print",
