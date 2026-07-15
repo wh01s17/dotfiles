@@ -8,6 +8,7 @@
   "modules-center": ["clock", "custom/pomodoro", "custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"],
   "modules-right": [
     "group/tray-expander",
+    "custom/clipboard-history",
     "custom/services-monitor",
     "bluetooth",
     "network",
@@ -112,6 +113,11 @@
     "on-click": "$HOME/.config/waybar/scripts/services-monitor.sh open",
     "on-click-middle": "$HOME/.config/waybar/scripts/services-monitor.sh copy",
     "on-click-right": "$HOME/.config/waybar/scripts/services-monitor.sh notify"
+  },
+  "custom/clipboard-history": {
+    "format": "󰅍",
+    "tooltip-format": "Historial del portapapeles\n\nSuper + Ctrl + V",
+    "on-click": "omarchy-launch-walker -m clipboard"
   },
   "network": {
     "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],

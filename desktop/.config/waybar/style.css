@@ -51,6 +51,11 @@
     margin-right: 13px;
 }
 
+#custom-clipboard-history {
+    min-width: 12px;
+    margin: 0 7.5px;
+}
+
 #custom-services-monitor {
     margin: 0 13px 0 7.5px;
 }
