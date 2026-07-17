@@ -67,6 +67,14 @@ refresh_waybar() {
   pkill -RTMIN+"$SIGNAL" waybar 2>/dev/null || true
 }
 
+sync_do_not_disturb() {
+  if [[ "$phase" == "work" && "$running" == "true" ]]; then
+    makoctl mode -a do-not-disturb >/dev/null 2>&1 || true
+  else
+    makoctl mode -r do-not-disturb >/dev/null 2>&1 || true
+  fi
+}
+
 write_state() {
   local temporary
 
@@ -152,6 +160,10 @@ notify_phase_finished() {
 }
 
 finish_phase() {
+  if [[ "$phase" == "work" ]]; then
+    makoctl mode -r do-not-disturb >/dev/null 2>&1 || true
+  fi
+
   notify_phase_finished
 
   if [[ "$phase" == "work" ]]; then
@@ -199,6 +211,7 @@ toggle_timer() {
     remaining="$current"
   fi
 
+  sync_do_not_disturb
   write_state
   refresh_waybar
 }
@@ -218,6 +231,7 @@ reset_timer() {
 
   running="false"
   end_at=0
+  sync_do_not_disturb
   write_state
   refresh_waybar
 }
@@ -239,6 +253,7 @@ skip_phase() {
 
   running="false"
   end_at=0
+  sync_do_not_disturb
   write_state
   refresh_waybar
 }
@@ -254,6 +269,7 @@ set_preset() {
   end_at=0
   remaining="$WORK_SECONDS"
   sessions=0
+  sync_do_not_disturb
   write_state
   refresh_waybar
 }
