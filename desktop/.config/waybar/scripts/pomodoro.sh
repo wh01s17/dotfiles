@@ -153,9 +153,9 @@ remaining_now() {
 
 notify_phase_finished() {
   if [[ "$phase" == "work" ]]; then
-    notify-send -a Waybar -u normal "Pomodoro completado" "Hora de descansar" >/dev/null 2>&1 || true
+    notify-send -a Waybar -u normal "🍅 ¡Pomodoro completado!" "✨ Buen trabajo. Es hora de descansar." >/dev/null 2>&1 || true
   else
-    notify-send -a Waybar -u normal "Descanso completado" "Hora de volver al enfoque" >/dev/null 2>&1 || true
+    notify-send -a Waybar -u normal "☕ ¡Descanso completado!" "🎯 Es hora de volver al enfoque." >/dev/null 2>&1 || true
   fi
 }
 
