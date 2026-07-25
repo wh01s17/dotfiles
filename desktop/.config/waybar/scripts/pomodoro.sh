@@ -280,17 +280,17 @@ preset_menu() {
   choice="$(
     omarchy menu select \
       "Sistema Pomodoro" \
-      "Equilibrado · 40/10" \
-      "Clásico · 25/5" \
-      "Enfoque profundo · 50/10" \
-      "Ultradiano · 90/20" || true
+      "Equilibrado · 40/10 · Largo 20 min cada 4 sesiones" \
+      "Clásico · 25/5 · Largo 15 min cada 4 sesiones" \
+      "Enfoque profundo · 50/10 · Largo 20 min cada 4 sesiones" \
+      "Ultradiano · 90/20 · Largo 30 min cada 2 sesiones" || true
   )"
 
   case "$choice" in
-    "Equilibrado · 40/10") set_preset balanced ;;
-    "Clásico · 25/5") set_preset classic ;;
-    "Enfoque profundo · 50/10") set_preset deep ;;
-    "Ultradiano · 90/20") set_preset ultradian ;;
+    "Equilibrado · 40/10 · Largo 20 min cada 4 sesiones") set_preset balanced ;;
+    "Clásico · 25/5 · Largo 15 min cada 4 sesiones") set_preset classic ;;
+    "Enfoque profundo · 50/10 · Largo 20 min cada 4 sesiones") set_preset deep ;;
+    "Ultradiano · 90/20 · Largo 30 min cada 2 sesiones") set_preset ultradian ;;
   esac
 }
 
