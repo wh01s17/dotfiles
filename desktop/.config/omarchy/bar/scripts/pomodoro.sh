@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-STATE_DIR="${POMODORO_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/waybar/pomodoro}"
+STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+STATE_DIR="${POMODORO_STATE_DIR:-$STATE_HOME/omarchy/bar/pomodoro}"
+LEGACY_STATE_DIR="$STATE_HOME/waybar/pomodoro"
 STATE_FILE="$STATE_DIR/state.json"
 LOCK_FILE="$STATE_DIR/lock"
-SIGNAL=12
 
 DEFAULT_PRESET="${POMODORO_PRESET:-balanced}"
 
@@ -59,19 +60,19 @@ remaining="$WORK_SECONDS"
 sessions=0
 
 umask 077
+if [[ ! -e "$STATE_DIR" && -d "$LEGACY_STATE_DIR" ]]; then
+  mkdir -p "$(dirname "$STATE_DIR")"
+  mv "$LEGACY_STATE_DIR" "$STATE_DIR" 2>/dev/null || true
+fi
 mkdir -p "$STATE_DIR"
 exec 9>"$LOCK_FILE"
 flock 9
 
-refresh_waybar() {
-  pkill -RTMIN+"$SIGNAL" waybar 2>/dev/null || true
-}
-
 sync_do_not_disturb() {
   if [[ "$phase" == "work" && "$running" == "true" ]]; then
-    makoctl mode -a do-not-disturb >/dev/null 2>&1 || true
+    omarchy shell -q notifications setDnd true >/dev/null 2>&1 || true
   else
-    makoctl mode -r do-not-disturb >/dev/null 2>&1 || true
+    omarchy shell -q notifications setDnd false >/dev/null 2>&1 || true
   fi
 }
 
@@ -153,15 +154,15 @@ remaining_now() {
 
 notify_phase_finished() {
   if [[ "$phase" == "work" ]]; then
-    notify-send -a Waybar -u normal "🍅 ¡Pomodoro completado!" "✨ Buen trabajo. Es hora de descansar." >/dev/null 2>&1 || true
+    notify-send -a Omarchy -u normal "🍅 ¡Pomodoro completado!" "✨ Buen trabajo. Es hora de descansar." >/dev/null 2>&1 || true
   else
-    notify-send -a Waybar -u normal "☕ ¡Descanso completado!" "🎯 Es hora de volver al enfoque." >/dev/null 2>&1 || true
+    notify-send -a Omarchy -u normal "☕ ¡Descanso completado!" "🎯 Es hora de volver al enfoque." >/dev/null 2>&1 || true
   fi
 }
 
 finish_phase() {
   if [[ "$phase" == "work" ]]; then
-    makoctl mode -r do-not-disturb >/dev/null 2>&1 || true
+    omarchy shell -q notifications setDnd false >/dev/null 2>&1 || true
   fi
 
   notify_phase_finished
@@ -213,7 +214,6 @@ toggle_timer() {
 
   sync_do_not_disturb
   write_state
-  refresh_waybar
 }
 
 reset_timer() {
@@ -233,7 +233,6 @@ reset_timer() {
   end_at=0
   sync_do_not_disturb
   write_state
-  refresh_waybar
 }
 
 skip_phase() {
@@ -255,7 +254,6 @@ skip_phase() {
   end_at=0
   sync_do_not_disturb
   write_state
-  refresh_waybar
 }
 
 set_preset() {
@@ -271,7 +269,6 @@ set_preset() {
   sessions=0
   sync_do_not_disturb
   write_state
-  refresh_waybar
 }
 
 preset_menu() {
@@ -314,7 +311,6 @@ adjust_timer() {
   fi
 
   write_state
-  refresh_waybar
 }
 
 print_status() {

@@ -306,7 +306,7 @@ open_service() {
   collect
   target="$(choose "Abrir servicio local" open_targets || true)"
   [[ -n "$target" ]] || {
-    notify-send -u low "Waybar" "No hay servicios HTTP detectados"
+    notify-send -u low "Omarchy" "No hay servicios HTTP detectados"
     return
   }
   xdg-open "$target" >/dev/null 2>&1 &
@@ -317,7 +317,7 @@ copy_endpoint() {
   collect
   target="$(choose "Copiar endpoint" copy_targets || true)"
   [[ -n "$target" ]] || {
-    notify-send -u low "Waybar" "No hay endpoints detectados"
+    notify-send -u low "Omarchy" "No hay endpoints detectados"
     return
   }
   printf '%s' "$target" | wl-copy

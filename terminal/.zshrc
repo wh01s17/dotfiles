@@ -268,7 +268,8 @@ export PATH="/home/wh01s17/.local/bin:$PATH"
 export PATH=$PATH:/home/wh01s17/.local/share/gem/ruby/3.2.0/bin:/home/wh01s17/Documentos/git-clones/john/run
 export EDITOR=nvim
 
-source "$HOME/.config/waybar/scripts/ctf-aliases.zsh"
+[[ -r "$HOME/.config/omarchy/bar/scripts/ctf-aliases.zsh" ]] && \
+  source "$HOME/.config/omarchy/bar/scripts/ctf-aliases.zsh"
 
 export NVM_DIR="$HOME/.config/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -277,3 +278,4 @@ export NVM_DIR="$HOME/.config/nvm"
 
 export PATH="$(echo "$PATH" | tr ':' '\n' | grep -v "$HOME/.local/share/mise/shims" | paste -sd ':' -)"
 nvm use default >/dev/null
+. /usr/share/nvm/init-nvm.sh

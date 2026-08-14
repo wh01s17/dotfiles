@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-STATE_DIR="${CTF_STATE_DIR:-$HOME/.config/waybar/state/ctf}"
+STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+STATE_DIR="${CTF_STATE_DIR:-$STATE_HOME/omarchy/bar/ctf}"
+LEGACY_STATE_DIR="$HOME/.config/waybar/state/ctf"
 TARGET_FILE="$STATE_DIR/target"
-SIGNAL=11
 
 COLOR_TARGET="#ff5f5f"
 COLOR_VPN="#33ccff"
@@ -11,11 +12,11 @@ COLOR_LAN="#5fd75f"
 COLOR_MISSING="#777777"
 COLOR_SEPARATOR="#666666"
 
+if [[ ! -e "$STATE_DIR" && -d "$LEGACY_STATE_DIR" ]]; then
+  mkdir -p "$(dirname "$STATE_DIR")"
+  mv "$LEGACY_STATE_DIR" "$STATE_DIR" 2>/dev/null || true
+fi
 mkdir -p "$STATE_DIR"
-
-refresh_waybar() {
-  pkill -RTMIN+"$SIGNAL" waybar 2>/dev/null || true
-}
 
 valid_ipv4() {
   local ip="${1:-}"
@@ -69,7 +70,7 @@ format_segment() {
     value="-"
   fi
 
-  printf "<span foreground='%s'>%s %s</span>" "$color" "$icon" "$value"
+  printf "<font color='%s'>%s %s</font>" "$color" "$icon" "$value"
 }
 
 json_status() {
@@ -82,7 +83,7 @@ json_status() {
   target_segment="$(format_segment "$COLOR_TARGET" "󰓾" "$target")"
   vpn_segment="$(format_segment "$COLOR_VPN" "󰖂" "$vpn")"
   lan_segment="$(format_segment "$COLOR_LAN" "󰩠" "$lan")"
-  separator="<span foreground='$COLOR_SEPARATOR'>|</span>"
+  separator="<font color='$COLOR_SEPARATOR'>|</font>"
   text="$target_segment $separator $vpn_segment $separator $lan_segment"
 
   if [[ -n "$target" && -n "$vpn" ]]; then
@@ -124,15 +125,12 @@ case "${1:-print}" in
       exit 2
     fi
     printf '%s\n' "$ip_address" > "$TARGET_FILE"
-    refresh_waybar
     ;;
   myip|refresh)
     printf 'VPN: %s\nWLAN: %s\n' "$(vpn_ip || true)" "$(lan_ip || true)"
-    refresh_waybar
     ;;
   clear)
     rm -f "$TARGET_FILE"
-    refresh_waybar
     ;;
   copy-target)
     target="$(target_ip || true)"

@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "idle": {
+    "screensaver": 150,
+    "lock": 300
+  },
+  "bar": {
+    "position": "top",
+    "transparent": false,
+    "centerAnchor": "omarchy.clock",
+    "layout": {
+      "left": [
+        {
+          "id": "omarchy.menu"
+        },
+        {
+          "id": "omarchy.workspaces"
+        },
+        {
+          "id": "workspace-separator",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "text": "|",
+          "horizontalMargin": 7.5,
+          "classColors": {
+            "default": "#666666"
+          }
+        },
+        {
+          "id": "ctf",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh print",
+          "interval": 5,
+          "onClick": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh copy-target",
+          "onRightClick": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh clear",
+          "classColors": {
+            "inactive": "#777777"
+          }
+        }
+      ],
+      "center": [
+        {
+          "id": "omarchy.clock",
+          "format": "dd/MM/yyyy · HH:mm:ss",
+          "formatAlt": "d MMMM 'W'ww yyyy",
+          "verticalFormat": "HH\n—\nmm"
+        },
+        {
+          "id": "omarchy.weather"
+        },
+        {
+          "id": "omarchy.system-update"
+        },
+        {
+          "id": "omarchy.indicators"
+        }
+      ],
+      "right": [
+        {
+          "id": "omarchy.tray"
+        },
+        {
+          "id": "pomodoro",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh print",
+          "interval": 1,
+          "onClick": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh toggle",
+          "onMiddleClick": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh skip",
+          "onRightClick": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh menu",
+          "onScrollUp": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh add",
+          "onScrollDown": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh subtract",
+          "classColors": {
+            "work-running": "#ff5f5f",
+            "short-break-running": "#5fd75f",
+            "long-break-running": "#33ccff"
+          },
+          "dimClasses": [
+            "work-paused",
+            "short-break-paused",
+            "long-break-paused"
+          ]
+        },
+        {
+          "id": "clipboard-history",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "text": "󰅍",
+          "tooltip": "Historial del portapapeles\n\nSuper + Ctrl + V",
+          "onClick": "omarchy menu clipboard"
+        },
+        {
+          "id": "services-monitor",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh print",
+          "interval": 2,
+          "onClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh open",
+          "onMiddleClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh copy",
+          "onRightClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh notify",
+          "classColors": {
+            "active": "#5fd75f",
+            "exposed": "#ffaf5f",
+            "reverse": "#ff5f5f"
+          }
+        },
+        {
+          "id": "omarchy.bluetooth"
+        },
+        {
+          "id": "omarchy.network"
+        },
+        {
+          "id": "omarchy.audio"
+        },
+        {
+          "id": "cpu-shortcut",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "text": "󰍛",
+          "tooltip": "Actividad del sistema",
+          "onClick": "omarchy launch tui btop",
+          "onRightClick": "alacritty"
+        },
+        {
+          "id": "omarchy.power"
+        }
+      ]
+    }
+  },
+  "plugins": []
+}
