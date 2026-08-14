@@ -140,7 +140,7 @@ Los indicadores nativos agrupan dictado, grabación, recordatorios, luz nocturna
 | --- | --- | --- |
 | Víctima | IP definida con `target` | Rojo |
 | VPN | `tun0`, `tun1`, `tap0`, `tap1`, `wg0`, `wg1` o `ppp0` | Cian |
-| WLAN | `wlan0` | Verde |
+| WLAN | Interfaz de la ruta predeterminada, o `CTF_LAN_IFACES` | Verde |
 | Ausente | Sin dato | Gris |
 
 Controles de la barra:

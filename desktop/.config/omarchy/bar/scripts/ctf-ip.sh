@@ -41,9 +41,29 @@ vpn_ip() {
   done | awk 'NF { print; exit }'
 }
 
+lan_interfaces() {
+  local detected
+
+  if [[ -n "${CTF_LAN_IFACES:-}" ]]; then
+    printf '%s\n' "$CTF_LAN_IFACES"
+    return
+  fi
+
+  detected="$(
+    ip -o -4 route show default 2>/dev/null |
+      awk '{ for (field = 1; field <= NF; field++) if ($field == "dev") { print $(field + 1); break } }' |
+      awk '!seen[$0]++' |
+      paste -sd ' ' -
+  )"
+
+  printf '%s\n' "${detected:-wlan0 wlo1 wlp1s0}"
+}
+
 lan_ip() {
   local iface
-  local ifaces="${CTF_LAN_IFACES:-wlan0}"
+  local ifaces
+
+  ifaces="$(lan_interfaces)"
 
   for iface in $ifaces; do
     ip -o -4 addr show dev "$iface" scope global 2>/dev/null |
@@ -105,7 +125,7 @@ json_status() {
     "${vpn:-not found}" \
     "${lan:-not found}" \
     "${CTF_VPN_IFACES:-tun0 tun1 tap0 tap1 wg0 wg1 ppp0}" \
-    "${CTF_LAN_IFACES:-wlan0}"
+    "$(lan_interfaces)"
 
   jq -cn \
     --arg text "$text" \
