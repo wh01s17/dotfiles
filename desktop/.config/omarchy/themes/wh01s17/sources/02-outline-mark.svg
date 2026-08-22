@@ -11,6 +11,6 @@
   <rect width="3840" height="2160" fill="#0a0e0f"/>
   <use href="#wh01s17-mark" x="1560" y="580" width="720" height="720" fill="#11161a" stroke="#00ff9c" stroke-width="2"/>
   <text class="mono" x="1920" y="1540" text-anchor="middle" font-size="168" font-weight="600" letter-spacing="-5">
-    <tspan fill="#cbd5ce">wh</tspan><tspan fill="#00ff9c">01s17</tspan>
+    <tspan fill="#cbd5ce">wh</tspan><tspan fill="#00ff9c">01</tspan><tspan fill="#cbd5ce">s</tspan><tspan fill="#00ff9c">17</tspan>
   </text>
 </svg>
