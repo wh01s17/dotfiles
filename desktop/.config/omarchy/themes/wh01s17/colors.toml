@@ -1,0 +1,39 @@
+mode = "dark"
+
+# wh01s17.com — phosphor signal over a smoked terminal surface.
+accent = "#00ff9c"
+selection = "#00ff9c"
+selection_background = "#174c3c"
+selection_foreground = "#effff6"
+muted = "#33454f"
+
+background = "#0a0e0f"
+dark_background = "#070a0b"
+darker_background = "#040607"
+lighter_background = "#171e23"
+
+foreground = "#cbd5ce"
+dark_foreground = "#748178"
+light_foreground = "#a6b4ac"
+bright_foreground = "#effff6"
+
+red = "#ff6b66"
+yellow = "#e8b53f"
+orange = "#e88c3f"
+green = "#00ff9c"
+cyan = "#45d9ea"
+blue = "#4aa8ff"
+magenta = "#b98cff"
+brown = "#8b6645"
+
+bright_red = "#ff8a86"
+bright_yellow = "#ffd166"
+bright_green = "#66ffbd"
+bright_cyan = "#7debf5"
+bright_blue = "#7bc2ff"
+bright_magenta = "#d3b5ff"
+
+hyprland_active_border = "rgba(00ff9cee) rgba(45d9eaee) 45deg"
+hyprland_inactive_border = "rgba(243038aa)"
+active_border_color = "#00ff9c"
+active_tab_background = "#11161a"

@@ -1,0 +1,11 @@
+[spacing]
+scale = 1.0
+scale-with-font = true
+control-gap = 8
+control-padding-x = 11
+control-padding-y = 6
+popup-row-height = 30
+row-padding-x = 12
+panel-gap = 14
+panel-padding = 18
+popup-padding = 16
