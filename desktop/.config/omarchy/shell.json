@@ -32,9 +32,14 @@
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "exec": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh print",
           "interval": 5,
+          "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh copy-target",
           "onRightClick": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh clear",
           "classColors": {
+            "active": "#5fd75f",
+            "no-vpn": "#ffaf5f",
+            "missing-me": "#ff5f5f",
+            "missing-target": "#33ccff",
             "inactive": "#777777"
           }
         }
@@ -72,6 +77,7 @@
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "exec": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh print",
           "interval": 1,
+          "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh toggle",
           "onMiddleClick": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh skip",
           "onRightClick": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh menu",
@@ -102,13 +108,15 @@
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "exec": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh print",
           "interval": 2,
+          "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh open",
           "onMiddleClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh copy",
           "onRightClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh notify",
           "classColors": {
             "active": "#5fd75f",
             "exposed": "#ffaf5f",
-            "reverse": "#ff5f5f"
+            "reverse": "#ff5f5f",
+            "inactive": "#777777"
           }
         },
         {

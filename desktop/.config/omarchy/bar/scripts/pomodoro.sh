@@ -314,7 +314,7 @@ adjust_timer() {
 }
 
 print_status() {
-  local now current minutes seconds formatted icon label status class text tooltip
+  local now current minutes seconds formatted icon label status class text tooltip total toggle_icon toggle_label
 
   now="$(date +%s)"
   load_state
@@ -328,23 +328,30 @@ print_status() {
     work)
       icon="󰔟"
       label="Enfoque"
+      total="$WORK_SECONDS"
       ;;
     short_break)
       icon="󰒲"
       label="Descanso corto"
+      total="$SHORT_BREAK_SECONDS"
       ;;
     long_break)
       icon="󰤄"
       label="Descanso largo"
+      total="$LONG_BREAK_SECONDS"
       ;;
   esac
 
   if [[ "$running" == "true" ]]; then
     status="running"
     text="$icon $formatted"
+    toggle_icon="󰏤"
+    toggle_label="Pausar"
   else
     status="paused"
     text="$icon $formatted 󰏤"
+    toggle_icon="󰐊"
+    toggle_label="Iniciar"
   fi
 
   class="${phase//_/-}-$status"
@@ -356,7 +363,47 @@ print_status() {
     --arg text "$text" \
     --arg class "$class" \
     --arg tooltip "$tooltip" \
-    '{text: $text, class: $class, tooltip: $tooltip}'
+    --arg icon "$icon" \
+    --arg phase "$label" \
+    --arg subtitle "$PRESET_LABEL · $label" \
+    --arg headline "$formatted" \
+    --arg preset "$PRESET_LABEL" \
+    --arg sessions "$sessions" \
+    --arg state "$([[ "$running" == "true" ]] && printf 'En curso' || printf 'En pausa')" \
+    --arg toggle_icon "$toggle_icon" \
+    --arg toggle_label "$toggle_label" \
+    --arg toggle_command '$HOME/.config/omarchy/bar/scripts/pomodoro.sh toggle' \
+    --arg skip_command '$HOME/.config/omarchy/bar/scripts/pomodoro.sh skip' \
+    --arg reset_command '$HOME/.config/omarchy/bar/scripts/pomodoro.sh reset' \
+    --arg preset_command '$HOME/.config/omarchy/bar/scripts/pomodoro.sh menu' \
+    --argjson current "$current" \
+    --argjson total "$total" \
+    --argjson running "$running" \
+    '{
+      text: $text,
+      class: $class,
+      tooltip: $tooltip,
+      panel: {
+        icon: $icon,
+        title: "Pomodoro",
+        subtitle: $subtitle,
+        headline: $headline,
+        progress: (if $total > 0 then (1 - ($current / $total)) else 0 end),
+        sectionTitle: "SESIÓN ACTUAL",
+        actionsTitle: "CONTROLES",
+        rows: [
+          {icon: "󰔟", label: "Fase", detail: $state, value: $phase},
+          {icon: "󰑐", label: "Sistema", detail: "Duración de enfoque y descanso", value: $preset},
+          {icon: "󰄬", label: "Completados", detail: "Sesiones terminadas", value: $sessions}
+        ],
+        actions: [
+          {icon: $toggle_icon, label: $toggle_label, command: $toggle_command, active: $running},
+          {icon: "󰒭", label: "Saltar fase", command: $skip_command},
+          {icon: "󰑐", label: "Reiniciar", command: $reset_command},
+          {icon: "󰒓", label: "Elegir sistema", command: $preset_command, close: true}
+        ]
+      }
+    }'
 }
 
 case "${1:-print}" in

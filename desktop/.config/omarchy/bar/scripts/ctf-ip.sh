@@ -94,7 +94,8 @@ format_segment() {
 }
 
 json_status() {
-  local target vpn lan target_segment vpn_segment lan_segment separator text class tooltip
+  local target vpn lan target_segment vpn_segment lan_segment separator text class tooltip subtitle headline
+  local copy_enabled="false"
 
   target="$(target_ip || true)"
   vpn="$(vpn_ip || true)"
@@ -108,16 +109,24 @@ json_status() {
 
   if [[ -n "$target" && -n "$vpn" ]]; then
     class="active"
+    subtitle="Objetivo y túnel VPN preparados"
   elif [[ -n "$target" && -n "$lan" ]]; then
     class="no-vpn"
+    subtitle="Objetivo definido sin túnel VPN"
   elif [[ -n "$target" ]]; then
     class="missing-me"
+    subtitle="Objetivo definido sin red local"
   elif [[ -n "$vpn" || -n "$lan" ]]; then
     class="missing-target"
+    subtitle="Conectividad lista; falta el objetivo"
   else
     text="CTF -"
     class="inactive"
+    subtitle="Sin conectividad ni objetivo"
   fi
+
+  headline="${target:-—}"
+  [[ -n "$target" ]] && copy_enabled="true"
 
   printf -v tooltip \
     'Victim: %s\nVPN: %s\nWLAN: %s\nVPN interfaces: %s\nLAN interfaces: %s' \
@@ -131,7 +140,39 @@ json_status() {
     --arg text "$text" \
     --arg class "$class" \
     --arg tooltip "$tooltip" \
-    '{text: $text, class: $class, tooltip: $tooltip}'
+    --arg subtitle "$subtitle" \
+    --arg headline "$headline" \
+    --arg target "${target:-No definido}" \
+    --arg vpn "${vpn:-Desconectada}" \
+    --arg lan "${lan:-No detectada}" \
+    --arg target_color "$([[ -n "$target" ]] && printf '%s' "$COLOR_TARGET" || printf '%s' "$COLOR_MISSING")" \
+    --arg vpn_color "$([[ -n "$vpn" ]] && printf '%s' "$COLOR_VPN" || printf '%s' "$COLOR_MISSING")" \
+    --arg lan_color "$([[ -n "$lan" ]] && printf '%s' "$COLOR_LAN" || printf '%s' "$COLOR_MISSING")" \
+    --arg copy_command '$HOME/.config/omarchy/bar/scripts/ctf-ip.sh copy-target' \
+    --arg clear_command '$HOME/.config/omarchy/bar/scripts/ctf-ip.sh clear' \
+    --argjson copy_enabled "$copy_enabled" \
+    '{
+      text: $text,
+      class: $class,
+      tooltip: $tooltip,
+      panel: {
+        icon: "󰓾",
+        title: "Panel CTF",
+        subtitle: $subtitle,
+        headline: $headline,
+        sectionTitle: "CONEXIONES",
+        actionsTitle: "OBJETIVO",
+        rows: [
+          {icon: "󰓾", label: "Máquina víctima", detail: "Objetivo activo", value: $target, color: $target_color},
+          {icon: "󰖂", label: "Túnel VPN", detail: "Interfaz de laboratorio", value: $vpn, color: $vpn_color},
+          {icon: "󰩠", label: "Red local", detail: "Dirección de esta máquina", value: $lan, color: $lan_color}
+        ],
+        actions: [
+          {icon: "󰆏", label: "Copiar IP", command: $copy_command, enabled: $copy_enabled},
+          {icon: "󰆴", label: "Limpiar", command: $clear_command, enabled: $copy_enabled}
+        ]
+      }
+    }'
 }
 
 case "${1:-print}" in

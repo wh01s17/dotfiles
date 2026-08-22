@@ -263,8 +263,56 @@ build_tooltip() {
   printf '%s\n' "$tooltip"
 }
 
+panel_rows_json() {
+  local record port host process local_address exposure
+  local shown=0
+  local total=$((${#services[@]} + ${#reverse_listeners[@]} + ${#reverse_sessions[@]}))
+
+  {
+    for record in "${services[@]}"; do
+      ((shown >= 6)) && break
+      IFS='|' read -r port host process <<< "$record"
+      if is_loopback "$host"; then
+        exposure="Solo localhost"
+        printf '󰒍\t%s\t%s:%s\t%s\t#5fd75f\n' "$process" "$host" "$port" "$exposure"
+      else
+        exposure="Expuesto en la red"
+        printf '󰒍\t%s\t%s:%s\t%s\t#ffaf5f\n' "$process" "$host" "$port" "$exposure"
+      fi
+      ((shown += 1))
+    done
+
+    for record in "${reverse_listeners[@]}"; do
+      ((shown >= 6)) && break
+      IFS='|' read -r port host process <<< "$record"
+      printf '󰆍\t%s\t%s:%s\tListener de reverse shell\t#ff5f5f\n' "$process" "$host" "$port"
+      ((shown += 1))
+    done
+
+    for record in "${reverse_sessions[@]}"; do
+      ((shown >= 6)) && break
+      IFS='|' read -r port host process local_address <<< "$record"
+      printf '󰆍\t%s\t%s\tSesión probable desde %s\t#ff5f5f\n' "$process" "$host" "$local_address"
+      ((shown += 1))
+    done
+
+    if ((total == 0)); then
+      printf '󰅖\tSin actividad\t—\tNo hay servicios ni reverse shells\t#777777\n'
+    elif ((total > shown)); then
+      printf '󰇘\tMás elementos\t+%s\tConsulta el tooltip para verlos todos\t#777777\n' "$((total - shown))"
+    fi
+  } | jq -Rsc '
+    split("\n")
+    | map(select(length > 0) | split("\t") | {
+        icon: .[0], label: .[1], value: .[2], detail: .[3], color: .[4]
+      })
+  '
+}
+
 print_status() {
-  local text="" class="inactive" tooltip service_ports reverse_ports
+  local text="" class="inactive" tooltip service_ports reverse_ports panel_rows subtitle
+  local open_enabled="false" copy_enabled="false"
+  local active_count
 
   collect
   service_ports="$(ports_preview services)"
@@ -283,8 +331,52 @@ print_status() {
   fi
 
   tooltip="$(build_tooltip)"
-  jq -cn --arg text "$text" --arg class "$class" --arg tooltip "$tooltip" \
-    '{text: $text, class: $class, tooltip: $tooltip}'
+  panel_rows="$(panel_rows_json)"
+  active_count=$((${#services[@]} + ${#reverse_listeners[@]} + ${#reverse_sessions[@]}))
+  ((${#open_targets[@]} > 0)) && open_enabled="true"
+  ((${#copy_targets[@]} > 0)) && copy_enabled="true"
+
+  if ((${#reverse_listeners[@]} + ${#reverse_sessions[@]} > 0)); then
+    subtitle="Actividad de reverse shell detectada"
+  elif ((${#exposed_services[@]} > 0)); then
+    subtitle="Hay servicios expuestos en la red"
+  elif ((${#services[@]} > 0)); then
+    subtitle="Servicios locales en ejecución"
+  else
+    subtitle="Sin actividad de desarrollo"
+  fi
+
+  jq -cn \
+    --arg text "$text" \
+    --arg class "$class" \
+    --arg tooltip "$tooltip" \
+    --arg subtitle "$subtitle" \
+    --argjson active_count "$active_count" \
+    --argjson rows "$panel_rows" \
+    --argjson open_enabled "$open_enabled" \
+    --argjson copy_enabled "$copy_enabled" \
+    --arg open_command '$HOME/.config/omarchy/bar/scripts/services-monitor.sh open' \
+    --arg copy_command '$HOME/.config/omarchy/bar/scripts/services-monitor.sh copy' \
+    --arg summary_command '$HOME/.config/omarchy/bar/scripts/services-monitor.sh notify' \
+    '{
+      text: $text,
+      class: $class,
+      tooltip: $tooltip,
+      panel: {
+        icon: "󰒍",
+        title: "Servicios locales",
+        subtitle: $subtitle,
+        headline: ($active_count | tostring),
+        sectionTitle: "ACTIVIDAD DETECTADA",
+        actionsTitle: "ACCIONES",
+        rows: $rows,
+        actions: [
+          {icon: "󰏌", label: "Abrir servicio", command: $open_command, enabled: $open_enabled, close: true},
+          {icon: "󰆏", label: "Copiar endpoint", command: $copy_command, enabled: $copy_enabled},
+          {icon: "󰍡", label: "Ver resumen", command: $summary_command}
+        ]
+      }
+    }'
 }
 
 choose() {
