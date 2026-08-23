@@ -13,6 +13,8 @@ dotfiles/
 │       ├── hypr/                   # Configuración Lua de Hyprland
 │       └── omarchy/
 │           ├── shell.json          # Barra, widgets e idle de Omarchy Shell
+│           ├── plugins/
+│           │   └── wh01s17.clock/  # Reloj oficial clonado con refresco por segundo
 │           └── bar/
 │               ├── modules/        # Componente QML para módulos propios
 │               └── scripts/        # CTF, Pomodoro y servicios
@@ -118,6 +120,10 @@ La barra se define en [`shell.json`](desktop/.config/omarchy/shell.json). Usa wi
 | Izquierda | Menú Omarchy, escritorios, separador y panel CTF |
 | Centro | Reloj con segundos, clima oficial de Omarchy, actualizaciones e indicadores de estado |
 | Derecha | Bandeja, Pomodoro, portapapeles, servicios, Bluetooth, red, audio, CPU y energía |
+
+El reloj `wh01s17.clock` es un clon persistente del widget oficial. Conserva
+su calendario y controles, pero usa precisión de segundos para que el formato
+`HH:mm:ss` se actualice continuamente en lugar de mostrar siempre `00`.
 
 Los indicadores nativos agrupan dictado, grabación, recordatorios, luz nocturna, silencio de notificaciones y bloqueo de idle.
 

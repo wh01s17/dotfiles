@@ -46,7 +46,7 @@
       ],
       "center": [
         {
-          "id": "omarchy.clock",
+          "id": "wh01s17.clock",
           "format": "dd/MM/yyyy · HH:mm:ss",
           "formatAlt": "d MMMM 'W'ww yyyy",
           "verticalFormat": "HH\n—\nmm"
