@@ -10,7 +10,8 @@ Stow trata cada directorio de primer nivel como un paquete y crea enlaces simbó
 dotfiles/
 ├── desktop/
 │   └── .config/
-│       ├── hypr/                   # Configuración Lua de Hyprland
+│       ├── hypr/
+│       │   └── profiles/              # Monitores por equipo
 │       └── omarchy/
 │           ├── shell.json          # Barra, widgets e idle de Omarchy Shell
 │           ├── plugins/
@@ -19,7 +20,9 @@ dotfiles/
 │               ├── modules/        # Componente QML para módulos propios
 │               └── scripts/        # CTF, Pomodoro y servicios
 ├── terminal/
-│   ├── .config/kitty/kitty.conf    # Kitty y tema dinámico de Omarchy
+│   ├── .config/kitty/
+│   │   ├── kitty.conf             # Base común y tema dinámico
+│   │   └── profiles/              # Tamaño de fuente por equipo
 │   └── .zshrc
 └── README.md
 ```
@@ -101,13 +104,35 @@ exec zsh
 
 | Archivo | Personalización |
 | --- | --- |
-| [`monitors.lua`](desktop/.config/hypr/monitors.lua) | Escala 1×, panel `eDP-1` y proyector `HDMI-A-1` reflejado |
+| [`monitors.lua`](desktop/.config/hypr/monitors.lua) | Escala 1× y carga del perfil local de monitores |
 | [`input.lua`](desktop/.config/hypr/input.lua) | Teclado US `altgr-intl`, Caps Lock, repetición y salida de tableta |
 | [`bindings.lua`](desktop/.config/hypr/bindings.lua) | Multimedia y controles de WayScriber |
 | [`looknfeel.lua`](desktop/.config/hypr/looknfeel.lua) | Gaps de 2 px, borde de 1 px, radio de 3 px y transición de escritorios |
 | [`autostart.lua`](desktop/.config/hypr/autostart.lua) | Inicio automático de Solaar |
 
 Los controladores NVIDIA ya los detecta Omarchy Quattro, por lo que no se duplican variables específicas de GPU en la configuración personal.
+
+### Perfiles por equipo
+
+Las diferencias de hardware se guardan en perfiles versionados y se eligen
+mediante dos selectores locales ignorados por Git. La selección no depende del
+hostname, por lo que sigue funcionando aunque el equipo cambie de nombre.
+
+| Perfil | Monitores | Kitty |
+| --- | --- | --- |
+| `hp-gray` | Panel del notebook y proyector HDMI reflejado | 11 pt |
+| `omen` | Monitor 4K, monitor 1080p y panel del notebook | 9 pt |
+
+Selecciona el mismo perfil para Hyprland y Kitty desde la raíz del repositorio:
+
+```bash
+printf 'return "hp-gray"\n' > desktop/.config/hypr/machine-profile.lua
+printf 'include profiles/hp-gray.conf\n' > terminal/.config/kitty/machine-profile.conf
+```
+
+En el Omen, reemplaza `hp-gray` por `omen`. Si no existe un selector, Hyprland
+usa resolución preferida y posición automática; Kitty conserva sus valores
+predeterminados.
 
 ## Omarchy Shell
 
@@ -215,7 +240,10 @@ Kitty incluye directamente el tema generado por Quattro:
 ~/.local/state/omarchy/current/theme/kitty.conf
 ```
 
-Esto permite que `omarchy theme set <tema>` cambie sus colores. La fuente, opacidad, tabs y atajos personales permanecen en [`kitty.conf`](terminal/.config/kitty/kitty.conf).
+Esto permite que `omarchy theme set <tema>` cambie sus colores. La familia de
+fuente, opacidad, tabs y atajos personales permanecen en
+[`kitty.conf`](terminal/.config/kitty/kitty.conf); el tamaño se carga desde el
+perfil local seleccionado.
 
 ## Pruebas
 

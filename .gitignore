@@ -1,2 +1,6 @@
 *.bak.*
 *.omarchy-upgrade-to-quattro.*.bak
+
+# Stable per-machine selectors. The named profiles themselves are versioned.
+/desktop/.config/hypr/machine-profile.lua
+/terminal/.config/kitty/machine-profile.conf

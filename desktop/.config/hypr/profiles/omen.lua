@@ -1,0 +1,4 @@
+-- Omen: 4K display, laptop panel to its right, and 1080p display above it.
+hl.monitor({ output = "DP-1", mode = "3840x2160@60", position = "0x0", scale = 1 })
+hl.monitor({ output = "eDP-1", mode = "1920x1080@120", position = "3840x0", scale = 1 })
+hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@60", position = "0x-1080", scale = 1 })
