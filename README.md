@@ -10,6 +10,7 @@ Stow trata cada directorio de primer nivel como un paquete y crea enlaces simbó
 dotfiles/
 ├── desktop/
 │   └── .config/
+│       ├── fastfetch/              # Logo gráfico renderizado por Kitty
 │       ├── hypr/
 │       │   └── profiles/              # Monitores por equipo
 │       └── omarchy/
@@ -31,7 +32,7 @@ Los paquetes Stow son:
 
 | Paquete | Destino | Contenido |
 | --- | --- | --- |
-| `desktop` | `~/.config/` | Hyprland y Omarchy Shell |
+| `desktop` | `~/.config/` | Fastfetch, Hyprland y Omarchy Shell |
 | `terminal` | `$HOME` y `~/.config/` | Zsh y Kitty |
 
 ## Requisitos
@@ -80,6 +81,7 @@ Comprueba los destinos importantes:
 
 ```bash
 readlink -f "$HOME/.config/hypr"
+readlink -f "$HOME/.config/fastfetch/config.jsonc"
 readlink -f "$HOME/.config/omarchy/shell.json"
 readlink -f "$HOME/.config/omarchy/bar"
 readlink -f "$HOME/.config/kitty"
