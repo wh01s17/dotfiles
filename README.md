@@ -538,11 +538,23 @@ rsvg-convert --width 3840 --height 2160 \
 El logo [`gengar.png`](desktop/.config/fastfetch/gengar.png) se dibuja mediante
 el protocolo gráfico directo de Kitty, a 40×20 celdas con proporción
 conservada. La imagen no contiene el wordmark: el lanzador
-[`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) imprime primero
-`wh01s17` como cinco filas de bloques Unicode y colores ANSI truecolor tomados
-del tema (`#00ff9c`, `#45d9ea` y `#cbd5ce`). Sigue siendo texto seleccionable
-del terminal, no una segunda imagen. Si la salida no es un TTY, conserva los
-bloques pero omite las secuencias de color para no contaminar pipes o archivos.
+[`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) compone
+`WH01S17` con una variante condensada del arte de seis filas usado por
+[`branding/screensaver.txt`](desktop/.config/omarchy/branding/screensaver.txt).
+Conserva sus bloques, esquinas y remates, pero reduce cada glifo a cinco
+columnas para no invadir los paneles. `W`, `H` y `S` usan el blanco brillante
+ANSI; todos los números usan el único color `accent` leído del `colors.toml`
+del tema activo. En `wh01s17` es verde fósforo y al cambiar de tema se adapta a
+su color predominante. Sigue siendo texto seleccionable del terminal, no una
+segunda imagen.
+
+El lanzador aumenta temporalmente el margen superior del logo y pinta el
+wordmark dentro de ese espacio mediante posicionamiento ANSI. De ese modo,
+texto y Gengar forman una sola columna izquierda de 28 filas, centrada con los
+paneles de información de la derecha. El rótulo no desplaza todo el informe ni
+deja un bloque vacío a su derecha o debajo. En una redirección o cuando se
+entregan opciones a `fastfetch`, el lanzador omite la composición interactiva y
+delega directamente al binario para no introducir movimientos de cursor.
 
 El alias definido en `.zshrc` mantiene el comando habitual:
 
