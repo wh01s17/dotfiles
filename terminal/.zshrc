@@ -242,6 +242,7 @@ alias cat='bat'
 alias icat="kitten icat"
 alias cd="z"
 alias john="/home/wh01s17/Documentos/git-clones/john/run/john"
+alias fastfetch="$HOME/.config/fastfetch/wh01s17.sh"
 
 source ~/powerlevel10k/powerlevel10k.zsh-theme
 
