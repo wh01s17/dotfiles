@@ -12,17 +12,17 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = omarchy
 local loaded, machine_profile = pcall(require, "hypr.machine-profile")
 
 if loaded then
-  local profiles = {
-    ["hp-gray"] = "hypr.profiles.hp-gray",
-    omen = "hypr.profiles.omen",
-  }
+	local profiles = {
+		["hp-gray"] = "hypr.profiles.hp-gray",
+		omen = "hypr.profiles.omen",
+	}
 
-  local profile_module = profiles[machine_profile]
-  if not profile_module then
-    error("Unknown machine profile: " .. tostring(machine_profile))
-  end
+	local profile_module = profiles[machine_profile]
+	if not profile_module then
+		error("Unknown machine profile: " .. tostring(machine_profile))
+	end
 
-  require(profile_module)
+	require(profile_module)
 elseif not tostring(machine_profile):find("module 'hypr.machine-profile' not found", 1, true) then
-  error(machine_profile)
+	error(machine_profile)
 end
