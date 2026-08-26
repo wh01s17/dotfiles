@@ -20,7 +20,8 @@ dotfiles/
 │           │   └── scripts/            # CTF, Pomodoro y servicios
 │           ├── branding/               # Marca ASCII para el salvapantallas
 │           ├── plugins/
-│           │   └── wh01s17.clock/      # Reloj y calendario propios
+│           │   ├── wh01s17.clock/      # Reloj y calendario propios
+│           │   └── wh01s17.monitor/    # Escala independiente por monitor
 │           └── themes/
 │               └── wh01s17/            # Tema, wallpapers y maestros SVG
 ├── terminal/
@@ -141,7 +142,7 @@ exec zsh
 
 | Archivo | Personalización |
 | --- | --- |
-| [`monitors.lua`](desktop/.config/hypr/monitors.lua) | Escala 1× y carga del perfil local de monitores |
+| [`monitors.lua`](desktop/.config/hypr/monitors.lua) | Escala gestionada por Quattro y carga del perfil local de monitores |
 | [`input.lua`](desktop/.config/hypr/input.lua) | Teclado US `altgr-intl`, Caps Lock, repetición y salida de tableta |
 | [`bindings.lua`](desktop/.config/hypr/bindings.lua) | Multimedia y controles de WayScriber |
 | [`looknfeel.lua`](desktop/.config/hypr/looknfeel.lua) | Gaps, bordes, radio, blur y transición de escritorios |
@@ -177,6 +178,20 @@ predeterminados.
 Los dos selectores están ignorados por Git para que cada equipo conserve su
 elección. Stow sí los enlaza cuando existen, porque trabaja con el árbol del
 sistema de archivos y no con el índice de Git.
+
+El panel **Display** usa el clon local `wh01s17.monitor`. La acción de escala
+delega en el comando original de Quattro, que registra la salida enfocada y su
+nueva escala en `~/.local/state/omarchy/monitor-scaling.log`, y después recarga
+Hyprland. [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) toma
+el último valor de cada conector y los perfiles lo aplican individualmente. De
+este modo `DP-1` puede permanecer a 2× mientras `eDP-1` y `HDMI-A-1` siguen a
+1×. El perfil `omen` también recalcula las posiciones lógicas usando la escala
+del monitor que determina cada desplazamiento.
+
+`GDK_SCALE` se mantiene en 1 para los perfiles mixtos porque es una variable
+global; el escalado por salida queda a cargo de Hyprland. Los valores dinámicos
+viven en el estado local de Omarchy y no ensucian el repositorio al usar el
+panel.
 
 ### Entrada y atajos personales
 
@@ -647,11 +662,13 @@ el uso diario:
 | Ruta | Propósito |
 | --- | --- |
 | [`.gitignore`](.gitignore) | Ignora backups de Omarchy y los dos selectores locales de equipo |
+| [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) | Recupera la última escala registrada por cada salida |
 | `hypr/profiles/*.lua` | Reglas versionadas de monitores para `hp-gray` y `omen` |
 | `kitty/profiles/*.conf` | Tamaños de fuente versionados para los mismos perfiles |
 | [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Wordmark textual 8-bit y delegación al binario real de Fastfetch |
 | [`ctf-aliases.zsh`](desktop/.config/omarchy/bar/scripts/ctf-aliases.zsh) | Puente entre `.zshrc` y `ctf-ip.sh` |
 | [`manifest.json`](desktop/.config/omarchy/plugins/wh01s17.clock/manifest.json) | Declara el reloj como plugin de barra clonado de `omarchy.clock` |
+| `wh01s17.monitor/Panel.qml` | Clon de `omarchy.monitor` que recarga el perfil tras cambiar una escala |
 | `wh01s17.clock/BarWidget.qml` | Etiqueta, precisión por segundo, clics e IPC del reloj |
 | `wh01s17.clock/Model.js` | Fechas, semanas ISO, formatos y progreso anual/vital |
 | `wh01s17.clock/Panel.qml` | Calendario, navegación y controles persistentes |
@@ -664,14 +681,21 @@ Validación estática:
 
 ```bash
 stow --simulate --verbose=2 --target="$HOME" desktop terminal
+luac -p "$HOME/.config/hypr/monitor_scales.lua" \
+  "$HOME/.config/hypr/monitors.lua" \
+  "$HOME/.config/hypr/profiles/"*.lua
 Hyprland --verify-config --config "$HOME/.config/hypr/hyprland.lua"
 jq empty "$HOME/.config/omarchy/shell.json"
+jq empty "$HOME/.config/omarchy/plugins/wh01s17.monitor/manifest.json"
 jq empty "$HOME/.config/fastfetch/config.jsonc"
 qmllint -I /usr/share/omarchy/shell \
   "$HOME/.config/omarchy/bar/modules/StatusModule.qml" \
-  "$HOME/.config/omarchy/plugins/wh01s17.clock/Panel.qml"
+  "$HOME/.config/omarchy/plugins/wh01s17.clock/Panel.qml" \
+  "$HOME/.config/omarchy/plugins/wh01s17.monitor/Panel.qml"
 node --check \
   "$HOME/.config/omarchy/plugins/wh01s17.clock/Model.js"
+node --check \
+  "$HOME/.config/omarchy/plugins/wh01s17.monitor/Model.js"
 bash -n "$HOME/.config/fastfetch/wh01s17.sh"
 for script in "$HOME/.config/omarchy/bar/scripts/"*.sh; do
   bash -n "$script"
