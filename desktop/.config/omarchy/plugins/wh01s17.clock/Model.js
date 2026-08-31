@@ -18,15 +18,23 @@ var WEEKDAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "fr
 // click rather than a lap of the ring. The ISO preset is deliberately left
 // without one: ISO 8601 writes time on a 24-hour clock, so an AM/PM variant
 // would contradict the only thing that format is for.
+//
+// This clone also ticks at seconds precision, so each 24-hour preset carries a
+// seconds twin. Without them a format with 'ss' sits outside the ring, and a
+// single right click walks off it and writes the loss back to shell.json.
 var CLOCK_FORMATS = [
   "dddd HH:mm",
+  "dddd HH:mm:ss",
   "dddd h:mm AP",
   "HH:mm",
+  "HH:mm:ss",
   "h:mm AP",
   "ddd d MMM HH:mm",
+  "ddd d MMM HH:mm:ss",
   "ddd d MMM h:mm AP",
   "d MMMM 'W'ww yyyy",
-  "yyyy-MM-dd HH:mm"
+  "yyyy-MM-dd HH:mm",
+  "yyyy-MM-dd HH:mm:ss"
 ]
 
 // Vertical bars have room for a few stacked lines and nothing else, so the
