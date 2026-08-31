@@ -7,7 +7,7 @@
   "bar": {
     "position": "top",
     "transparent": false,
-    "centerAnchor": "omarchy.clock",
+    "centerAnchor": "wh01s17.clock",
     "layout": {
       "left": [
         {
@@ -70,30 +70,19 @@
       ],
       "center": [
         {
-          "id": "omarchy.keyboard-layout"
+          "id": "omarchy.indicators"
         },
         {
           "id": "wh01s17.clock",
-          "format": "dd/MM/yyyy · HH:mm:ss",
+          "format": "ddd d MMM HH:mm:ss",
           "formatAlt": "d MMMM 'W'ww yyyy",
           "verticalFormat": "HH\n—\nmm"
         },
         {
+          "id": "omarchy.keyboard-layout"
+        },
+        {
           "id": "omarchy.weather"
-        },
-        {
-          "id": "omarchy.system-update"
-        },
-        {
-          "id": "omarchy.indicators"
-        }
-      ],
-      "right": [
-        {
-          "id": "omarchy.tray"
-        },
-        {
-          "id": "omarchy.agents"
         },
         {
           "id": "pomodoro",
@@ -119,12 +108,52 @@
           ]
         },
         {
+          "id": "omarchy.system-update"
+        }
+      ],
+      "right": [
+        {
+          "id": "firewall-status",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/omarchy/bar/scripts/firewall-status.sh print",
+          "interval": 10,
+          "panel": true,
+          "onRightClick": "$HOME/.config/omarchy/bar/scripts/firewall-status.sh notify",
+          "classColors": {
+            "active": "#5fd75f",
+            "permissive": "#ffaf5f",
+            "inactive": "#ff5f5f",
+            "unknown": "#777777"
+          }
+        },
+        {
+          "id": "mounted-devices",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/omarchy/bar/scripts/mounted-devices.sh print",
+          "interval": 5,
+          "panel": true,
+          "onClick": "$HOME/.config/omarchy/bar/scripts/mounted-devices.sh open",
+          "classColors": {
+            "new": "#33ccff",
+            "active": "#5fd75f",
+            "inactive": "#777777"
+          }
+        },
+        {
           "id": "clipboard-history",
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "text": "󰅍",
           "tooltip": "Historial del portapapeles\n\nSuper + Ctrl + V",
           "onClick": "omarchy menu clipboard"
+        },
+        {
+          "id": "omarchy.tray"
+        },
+        {
+          "id": "omarchy.agents"
         },
         {
           "id": "services-monitor",
