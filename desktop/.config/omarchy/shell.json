@@ -27,6 +27,30 @@
           }
         },
         {
+          "id": "git-branch",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/omarchy/bar/scripts/git-branch.sh print",
+          "interval": 5,
+          "panel": true,
+          "onClick": "$HOME/.config/omarchy/bar/scripts/git-branch.sh copy",
+          "classColors": {
+            "clean": "#5fd75f",
+            "dirty": "#ffaf5f",
+            "conflict": "#ff5f5f"
+          }
+        },
+        {
+          "id": "ctf-separator",
+          "type": "qml",
+          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
+          "text": "|",
+          "horizontalMargin": 7.5,
+          "classColors": {
+            "default": "#666666"
+          }
+        },
+        {
           "id": "ctf",
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
