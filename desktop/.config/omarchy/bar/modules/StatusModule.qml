@@ -23,7 +23,7 @@ WidgetButton {
   readonly property color panelForeground: bar ? bar.barForeground : Color.foreground
   readonly property color panelAccent: classColor()
   readonly property bool opened: panelOpen
-  readonly property real openPanelIndicatorWidth: labelWidth
+  readonly property real openPanelIndicatorWidth: richLabel.visible ? richLabel.implicitWidth : 0
   readonly property real openPanelIndicatorHeight: Math.max(Style.space(10), Math.round(Style.bar.iconSlot * 0.55))
 
   function setting(name, fallback) {
@@ -137,6 +137,28 @@ WidgetButton {
   fontSize: Number(setting("fontSize", 12))
   interactive: hasActions || tooltipText !== ""
   pressable: hasActions
+
+  // WidgetButton's own label is locked to Text.PlainText (Omarchy 4.0.2), so
+  // scripts that emit Pango markup (e.g. ctf-ip.sh's <font color='...'>
+  // segments) would otherwise show the raw tags. Hide that label and paint
+  // our own on top with StyledText, which still degrades to plain text for
+  // modules that never emit markup.
+  labelVisible: false
+  fixedWidth: hasVisualContent ? richLabel.implicitWidth + scaledHorizontalMargin * 2 : -1
+
+  Text {
+    id: richLabel
+    visible: root.hasVisualContent
+    anchors.centerIn: parent
+    text: root.text
+    textFormat: Text.StyledText
+    color: root.active && root.useActiveColor ? root.activeColor : root.foreground
+    font.family: root.fontFamily
+    font.pixelSize: root.fontSize
+    renderType: Text.NativeRendering
+    horizontalAlignment: Text.AlignHCenter
+    verticalAlignment: Text.AlignVCenter
+  }
 
   onPressed: function(button) {
     if (button === Qt.RightButton)
