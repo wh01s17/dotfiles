@@ -40,7 +40,11 @@ Panel {
   property int viewYear: today.getFullYear()
   property int viewMonth: today.getMonth()
 
-  readonly property date viewDate: new Date(viewYear, viewMonth, 1)
+  // Noon, not midnight: this only ever feeds a "MMMM yyyy" label, and the
+  // first of a month that springs forward at midnight has no midnight to
+  // land on — Qt resolves that gap backwards into the month before, which
+  // would title the grid with the wrong month.
+  readonly property date viewDate: new Date(viewYear, viewMonth, 1, 12)
   readonly property bool viewingCurrentMonth: viewYear === today.getFullYear() && viewMonth === today.getMonth()
 
   // Pinned to today, not to the month being browsed — stepping through the
