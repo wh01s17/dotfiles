@@ -9,3 +9,10 @@ o.bind("CTRL + ALT + I", "Previous track", "omarchy shell media previous")
 o.bind("SUPER + ALT + A", "WayScriber - Show/hide", "wayscriber --daemon-toggle")
 o.bind("SUPER + ALT + P", "WayScriber - Passthrough", "wayscriber --light-toggle")
 o.bind("SUPER + ALT + D", "WayScriber - Draw/interact", "wayscriber --light-draw-toggle")
+
+-- Resize the focused window from the keyboard, the same job SUPER + right drag
+-- does with the mouse. Repeating so holding an arrow scales smoothly.
+o.bind("SUPER + CTRL + SHIFT + RIGHT", "Widen window", hl.dsp.window.resize({ x = 100, y = 0, relative = true }), { repeating = true })
+o.bind("SUPER + CTRL + SHIFT + LEFT", "Narrow window", hl.dsp.window.resize({ x = -100, y = 0, relative = true }), { repeating = true })
+o.bind("SUPER + CTRL + SHIFT + DOWN", "Heighten window", hl.dsp.window.resize({ x = 0, y = 100, relative = true }), { repeating = true })
+o.bind("SUPER + CTRL + SHIFT + UP", "Shorten window", hl.dsp.window.resize({ x = 0, y = -100, relative = true }), { repeating = true })
