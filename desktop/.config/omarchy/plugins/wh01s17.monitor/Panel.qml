@@ -472,6 +472,23 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: Quickshell.screens.length > 1 ? "󰍺" : "󰍹"
+    tooltipText: {
+      var scale = Screen.devicePixelRatio
+      var scaleText = isFinite(scale) && scale > 0
+        ? " · escala " + (Math.round(scale * 100) / 100)
+        : ""
+      var lines = [String(Screen.name || "?") + " · "
+        + Math.round(Screen.width) + "×" + Math.round(Screen.height) + scaleText]
+      var others = []
+      var screens = Quickshell.screens || []
+      for (var i = 0; i < screens.length; i++) {
+        var s = screens[i]
+        if (!s || String(s.name || "") === String(Screen.name || "")) continue
+        others.push(String(s.name || "?") + " · " + Math.round(s.width) + "×" + Math.round(s.height))
+      }
+      if (others.length > 0) lines.push("Otras · " + others.join(", "))
+      return lines.join("\n")
+    }
     onPressed: function(b) { root.toggle() }
     onWheelMoved: function(delta) {
       if (!root.brightnessAvailable) return
