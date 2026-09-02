@@ -173,13 +173,13 @@
           }
         },
         {
-          "id": "omarchy.bluetooth"
+          "id": "wh01s17.bluetooth"
         },
         {
-          "id": "omarchy.network"
+          "id": "wh01s17.network"
         },
         {
-          "id": "omarchy.audio"
+          "id": "wh01s17.audio"
         },
         {
           "id": "wh01s17.monitor"
@@ -190,11 +190,17 @@
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "text": "󰍛",
           "tooltip": "Actividad del sistema",
+          "exec": "$HOME/.config/omarchy/bar/scripts/system-usage.sh print",
+          "interval": 3,
           "onClick": "omarchy launch tui btop",
-          "onRightClick": "alacritty"
+          "onRightClick": "alacritty",
+          "classColors": {
+            "critical": "#ff5f5f",
+            "busy": "#ffaf5f"
+          }
         },
         {
-          "id": "omarchy.power"
+          "id": "wh01s17.power"
         }
       ]
     }
