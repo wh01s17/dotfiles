@@ -113,6 +113,9 @@
       ],
       "right": [
         {
+          "id": "omarchy.tray"
+        },
+        {
           "id": "firewall-status",
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
@@ -148,9 +151,6 @@
           "text": "󰅍",
           "tooltip": "Historial del portapapeles\n\nSuper + Ctrl + V",
           "onClick": "omarchy menu clipboard"
-        },
-        {
-          "id": "omarchy.tray"
         },
         {
           "id": "omarchy.agents"
