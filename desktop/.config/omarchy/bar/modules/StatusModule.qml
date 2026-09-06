@@ -397,6 +397,18 @@ WidgetButton {
                   font.pixelSize: Style.font.caption
                   elide: Text.ElideRight
                 }
+
+                // Optional third line for the command that sets this row's value.
+                Text {
+                  width: parent.width
+                  visible: text !== ""
+                  text: String(detailRow.modelData.hint || "")
+                  color: detailRow.accentColor
+                  opacity: 0.75
+                  font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                  font.pixelSize: Style.font.caption
+                  elide: Text.ElideRight
+                }
               }
 
               Text {

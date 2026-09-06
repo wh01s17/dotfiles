@@ -163,9 +163,9 @@ json_status() {
         sectionTitle: "CONEXIONES",
         actionsTitle: "OBJETIVO",
         rows: [
-          {icon: "󰓾", label: "Máquina víctima", detail: "Objetivo activo", value: $target, color: $target_color},
-          {icon: "󰖂", label: "Túnel VPN", detail: "Interfaz de laboratorio", value: $vpn, color: $vpn_color},
-          {icon: "󰩠", label: "Red local", detail: "Dirección de esta máquina", value: $lan, color: $lan_color}
+          {icon: "󰓾", label: "Máquina víctima", detail: "Objetivo activo", hint: "target <ip>", value: $target, color: $target_color},
+          {icon: "󰖂", label: "Túnel VPN", detail: "Interfaz de laboratorio", hint: "CTF_VPN_IFACES=tun0", value: $vpn, color: $vpn_color},
+          {icon: "󰩠", label: "Red local", detail: "Dirección de esta máquina", hint: "CTF_LAN_IFACES=wlan0", value: $lan, color: $lan_color}
         ],
         actions: [
           {icon: "󰆏", label: "Copiar IP", command: $copy_command, enabled: $copy_enabled},
