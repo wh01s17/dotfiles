@@ -272,22 +272,28 @@ set_preset() {
 }
 
 preset_menu() {
-  local choice
+  local choice tab
+
+  # The menu renders rows as "<glyph><TAB><label><TAB><subtext>" and elides
+  # anything wider than the card, so keep labels short and push the timings
+  # into the subtext line.
+  tab=$'\t'
 
   choice="$(
     omarchy menu select \
       "Sistema Pomodoro" \
-      "Equilibrado · 40/10 · Largo 20 min cada 4 sesiones" \
-      "Clásico · 25/5 · Largo 15 min cada 4 sesiones" \
-      "Enfoque profundo · 50/10 · Largo 20 min cada 4 sesiones" \
-      "Ultradiano · 90/20 · Largo 30 min cada 2 sesiones" || true
+      "${tab}Equilibrado${tab}40/10 · Largo 20 min cada 4 sesiones" \
+      "${tab}Clásico${tab}25/5 · Largo 15 min cada 4 sesiones" \
+      "${tab}Enfoque profundo${tab}50/10 · Largo 20 min cada 4 sesiones" \
+      "${tab}Ultradiano${tab}90/20 · Largo 30 min cada 2 sesiones" \
+      -- --width 420 || true
   )"
 
-  case "$choice" in
-    "Equilibrado · 40/10 · Largo 20 min cada 4 sesiones") set_preset balanced ;;
-    "Clásico · 25/5 · Largo 15 min cada 4 sesiones") set_preset classic ;;
-    "Enfoque profundo · 50/10 · Largo 20 min cada 4 sesiones") set_preset deep ;;
-    "Ultradiano · 90/20 · Largo 30 min cada 2 sesiones") set_preset ultradian ;;
+  case "${choice%%$tab*}" in
+    "Equilibrado") set_preset balanced ;;
+    "Clásico") set_preset classic ;;
+    "Enfoque profundo") set_preset deep ;;
+    "Ultradiano") set_preset ultradian ;;
   esac
 }
 
