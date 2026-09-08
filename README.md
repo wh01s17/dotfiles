@@ -20,8 +20,13 @@ dotfiles/
 │           │   └── scripts/            # CTF, Pomodoro y servicios
 │           ├── branding/               # Marca ASCII para el salvapantallas
 │           ├── plugins/
+│           │   ├── wh01s17.audio/      # Mezclador, entradas y salidas de audio
+│           │   ├── wh01s17.bluetooth/  # Dispositivos Bluetooth y salida de audio
 │           │   ├── wh01s17.clock/      # Reloj y calendario propios
-│           │   └── wh01s17.monitor/    # Escala independiente por monitor
+│           │   ├── wh01s17.metronome/  # Metrónomo con motor de audio local
+│           │   ├── wh01s17.monitor/    # Escala independiente por monitor
+│           │   ├── wh01s17.network/    # Wi-Fi, DNS, QR y diagnóstico de red
+│           │   └── wh01s17.power/      # Batería, perfiles y estadísticas
 │           └── themes/
 │               └── wh01s17/            # Tema, wallpapers y maestros SVG
 ├── terminal/
@@ -71,6 +76,12 @@ sólo afectan las funciones o rutas de Zsh que los nombran.
 
 Para regenerar los wallpapers SVG se necesita `rsvg-convert` (`librsvg`), y
 para ejecutar `qmllint` durante el desarrollo se necesita Qt Declarative.
+
+El metrónomo necesita `python3` y un reproductor PCM: usa `pw-cat` cuando
+está disponible y `aplay` como alternativa. El módulo de unidades montadas
+usa `udisksctl` para expulsar dispositivos; el acceso rápido de actividad abre
+`btop`. Los indicadores de firewall muestran `ufw`, `nftables` o `iptables`
+cuando alguno está configurado, pero no instalan ni modifican reglas.
 
 Waybar, Walker, Mako, hypridle e hyprlock no son necesarios: Quattro reemplaza esos componentes con Omarchy Shell/Quickshell.
 
@@ -210,6 +221,8 @@ Los atajos adicionales no sustituyen los predeterminados de Omarchy:
 | `Super+Alt+A` | Mostrar u ocultar WayScriber |
 | `Super+Alt+P` | Alternar passthrough de WayScriber |
 | `Super+Alt+D` | Alternar dibujo/interacción de WayScriber |
+| `Super+Ctrl+Shift+←` / `→` | Estrechar / ensanchar la ventana enfocada; admite repetición |
+| `Super+Ctrl+Shift+↑` / `↓` | Bajar / subir la altura de la ventana enfocada; admite repetición |
 
 ### Blur y transparencia
 
@@ -311,15 +324,68 @@ La barra se define en [`shell.json`](desktop/.config/omarchy/shell.json). Usa wi
 
 | Zona | Módulos |
 | --- | --- |
-| Izquierda | Menú Omarchy, escritorios, separador y panel CTF |
-| Centro | Reloj con segundos, distribución de teclado, clima, actualizaciones e indicadores de estado |
-| Derecha | Bandeja, agentes, Pomodoro, portapapeles, servicios, Bluetooth, red, audio, monitores, CPU y energía |
+| Izquierda | Menú Omarchy, escritorios, rama del repositorio activo y panel CTF |
+| Centro | Indicadores, reloj con segundos, distribución de teclado, clima, Pomodoro y actualizaciones |
+| Derecha | Bandeja, metrónomo, firewall, unidades montadas, portapapeles, agentes, servicios, Bluetooth, red, audio, monitores, CPU y energía |
 
 El reloj `wh01s17.clock` es un clon persistente del widget oficial. Conserva
 su calendario y controles, pero usa precisión de segundos para que el formato
 `HH:mm:ss` se actualice continuamente en lugar de mostrar siempre `00`.
 
 Los indicadores nativos agrupan dictado, grabación, recordatorios, luz nocturna, silencio de notificaciones y bloqueo de idle.
+
+### Módulos propios y clones
+
+Los clones conservan la integración de Omarchy con sus paneles originales,
+pero permiten añadir comportamiento sin editar los archivos de la
+distribución. Todos se declaran en `shell.json` y sus metadatos viven en el
+`manifest.json` de cada directorio.
+
+| Módulo | Base o función | Adición destacada |
+| --- | --- | --- |
+| `wh01s17.clock` | `omarchy.clock` | Segundos, semana ISO y progreso anual/vital persistente |
+| `wh01s17.audio` | `omarchy.audio` | Salidas, entradas y mezclador por aplicación navegables |
+| `wh01s17.bluetooth` | `omarchy.bluetooth` | Conexión, olvido de dispositivos y selección de salida Bluetooth |
+| `wh01s17.network` | `omarchy.network` | Wi-Fi, DNS, bandas, QR, prueba de velocidad y métricas de enlace |
+| `wh01s17.monitor` | `omarchy.monitor` | Escala persistente por salida y tooltip con resolución/escala |
+| `wh01s17.power` | `omarchy.power` | Batería, perfiles de energía y estadísticas del sistema |
+| `wh01s17.metronome` | Propio | Click track con dial de tempo, tap tempo, subdivisiones y acento |
+
+### Metrónomo
+
+[`wh01s17.metronome`](desktop/.config/omarchy/plugins/wh01s17.metronome/) usa
+un proceso Python único para sintetizar el click en PCM y sincroniza el pulso
+visual cuando el sonido llega a la salida. Así evita que los temporizadores de
+QML acumulen deriva bajo carga. Su entrada en `shell.json` persiste BPM,
+compás, subdivisión, volumen y acento entre sesiones.
+
+En el icono de la barra: clic izquierdo abre el panel; clic derecho inicia o
+detiene; clic central mide el tempo por golpes; la rueda ajusta ±1 BPM. En el
+panel se puede arrastrar o usar la rueda sobre el dial, aplicar incrementos de
+1/5/10 BPM, escoger de 1 a 16 pulsos por compás, activar el acento, elegir
+negras, corcheas, tresillos, swing o semicorcheas y ajustar el nivel. También
+acepta IPC bajo `wh01s17.metronome`: `play`, `pause`, `togglePlay`, `tap` y
+`setBpm <valor>`.
+
+### Git, firewall, unidades y actividad
+
+La parte izquierda muestra la rama del repositorio del directorio activo. El
+hook [`git-branch-hook.zsh`](desktop/.config/omarchy/bar/scripts/git-branch-hook.zsh)
+actualiza ese directorio al cambiar con `cd`; el panel informa la rama, cambios
+sin commit y desfase con el remoto, y permite copiar la rama con un clic.
+
+Los indicadores de la derecha son módulos de estado y no realizan cambios
+automáticos:
+
+| Indicador | Información | Acciones |
+| --- | --- | --- |
+| Firewall | Backend, servicio, política de entrada y reglas permitidas | Clic derecho: notificación con el detalle |
+| Unidades montadas | Medios extraíbles e imágenes loop montadas | Clic: abrir; panel: abrir o expulsar mediante `udisksctl` |
+| Actividad | CPU, RAM, swap y lectura/escritura de disco | Clic: abre btop; clic derecho: abre Alacritty |
+
+Los scripts guardan sus muestras o el último dispositivo visto en
+`${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/bar/`; se puede redirigir cada
+uno con `GIT_BRANCH_STATE_DIR`, `MOUNTS_STATE_DIR` o `SYSTEM_USAGE_STATE_DIR`.
 
 ### Idle, salvapantallas y bloqueo
 
@@ -339,6 +405,12 @@ El arte ASCII mostrado por el salvapantallas vive en
 [`branding/screensaver.txt`](desktop/.config/omarchy/branding/screensaver.txt).
 Los cambios de `shell.json` se recargan al guardar; si no se reflejan, ejecuta
 `omarchy restart shell`.
+
+El lock nativo `omarchy.lock` está deshabilitado y lo reemplaza
+`io.github.sirjul1337.lock-explorer` con diseño `neon`. La entrada
+`cloneSourceRestores` en `shell.json` hace que Omarchy restaure su fuente
+clonada al reconstruir los plugins; no se versiona una copia del plugin de
+terceros en este repositorio.
 
 ### Reloj y calendario
 
@@ -421,6 +493,10 @@ Configuración opcional por entorno:
 El script valida direcciones IPv4 antes de guardarlas y migra, si existe, el
 estado antiguo de `~/.config/waybar/state/ctf`.
 
+El panel también muestra junto a cada valor la orden de configuración rápida:
+`target <ip>` para la víctima, `CTF_VPN_IFACES=tun0` para el túnel y
+`CTF_LAN_IFACES=wlan0` para la interfaz local.
+
 ## Pomodoro
 
 [`pomodoro.sh`](desktop/.config/omarchy/bar/scripts/pomodoro.sh) conserva cuatro sistemas:
@@ -493,8 +569,9 @@ debe interpretarse como aviso, no como prueba concluyente.
 - Portapapeles: clic en `󰅍` abre `omarchy menu clipboard`; el tooltip recuerda
   el atajo `Super+Ctrl+V`.
 - CPU: clic en `󰍛` abre btop y clic derecho abre Alacritty.
-- Los widgets nativos de agentes, red, audio, monitores, Bluetooth, energía y
-  actualizaciones conservan los paneles y acciones de Omarchy.
+- Agentes y actualizaciones siguen siendo widgets nativos. Red, audio,
+  monitores, Bluetooth y energía usan los clones `wh01s17.*` descritos arriba;
+  mantienen los paneles y acciones de Omarchy y añaden los controles propios.
 
 ## Tema `wh01s17`
 
@@ -661,13 +738,16 @@ el uso diario:
 
 | Ruta | Propósito |
 | --- | --- |
-| [`.gitignore`](.gitignore) | Ignora backups de Omarchy y los dos selectores locales de equipo |
+| [`.gitignore`](.gitignore) | Ignora backups de Omarchy, bytecode/cachés de Python y los dos selectores locales de equipo |
 | [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) | Recupera la última escala registrada por cada salida |
 | `hypr/profiles/*.lua` | Reglas versionadas de monitores para `hp-gray` y `omen` |
 | `kitty/profiles/*.conf` | Tamaños de fuente versionados para los mismos perfiles |
 | [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Wordmark textual 8-bit y delegación al binario real de Fastfetch |
 | [`ctf-aliases.zsh`](desktop/.config/omarchy/bar/scripts/ctf-aliases.zsh) | Puente entre `.zshrc` y `ctf-ip.sh` |
 | [`manifest.json`](desktop/.config/omarchy/plugins/wh01s17.clock/manifest.json) | Declara el reloj como plugin de barra clonado de `omarchy.clock` |
+| `wh01s17.{audio,bluetooth,network,power}/` | Clones de los paneles oficiales con sus modelos y controles ampliados |
+| [`wh01s17.metronome/`](desktop/.config/omarchy/plugins/wh01s17.metronome/) | Widget, núcleo compartido, dial, modelo y motor PCM del metrónomo |
+| `bar/scripts/{firewall-status,git-branch,mounted-devices,system-usage}.sh` | Indicadores de seguridad, repositorio, medios extraíbles y actividad |
 | `wh01s17.monitor/Panel.qml` | Clon de `omarchy.monitor` que recarga el perfil tras cambiar una escala |
 | `wh01s17.clock/BarWidget.qml` | Etiqueta, precisión por segundo, clics e IPC del reloj |
 | `wh01s17.clock/Model.js` | Fechas, semanas ISO, formatos y progreso anual/vital |
@@ -687,15 +767,26 @@ luac -p "$HOME/.config/hypr/monitor_scales.lua" \
 Hyprland --verify-config --config "$HOME/.config/hypr/hyprland.lua"
 jq empty "$HOME/.config/omarchy/shell.json"
 jq empty "$HOME/.config/omarchy/plugins/wh01s17.monitor/manifest.json"
+jq empty "$HOME/.config/omarchy/plugins/wh01s17.metronome/manifest.json"
 jq empty "$HOME/.config/fastfetch/config.jsonc"
 qmllint -I /usr/share/omarchy/shell \
   "$HOME/.config/omarchy/bar/modules/StatusModule.qml" \
   "$HOME/.config/omarchy/plugins/wh01s17.clock/Panel.qml" \
-  "$HOME/.config/omarchy/plugins/wh01s17.monitor/Panel.qml"
-node --check \
-  "$HOME/.config/omarchy/plugins/wh01s17.clock/Model.js"
-node --check \
-  "$HOME/.config/omarchy/plugins/wh01s17.monitor/Model.js"
+  "$HOME/.config/omarchy/plugins/wh01s17.monitor/Panel.qml" \
+  "$HOME/.config/omarchy/plugins/wh01s17.metronome/BarWidget.qml" \
+  "$HOME/.config/omarchy/plugins/wh01s17.metronome/MetronomeCore.qml"
+for model in \
+  "$HOME/.config/omarchy/plugins/wh01s17.clock/Model.js" \
+  "$HOME/.config/omarchy/plugins/wh01s17.monitor/Model.js" \
+  "$HOME/.config/omarchy/plugins/wh01s17.metronome/Model.js"; do
+  if head -n 1 "$model" | grep -qx '\.pragma library'; then
+    tail -n +2 "$model" | node --check
+  else
+    node --check "$model"
+  fi
+done
+python3 -m py_compile \
+  "$HOME/.config/omarchy/plugins/wh01s17.metronome/metronome-engine.py"
 bash -n "$HOME/.config/fastfetch/wh01s17.sh"
 for script in "$HOME/.config/omarchy/bar/scripts/"*.sh; do
   bash -n "$script"
