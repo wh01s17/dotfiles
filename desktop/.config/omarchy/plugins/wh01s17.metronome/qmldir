@@ -1,0 +1,6 @@
+# Directory listing so MetronomeCore can be a singleton. The bar instantiates
+# one widget per monitor; without a shared singleton each of those would spawn
+# its own engine and the machine would beat three times over.
+singleton MetronomeCore 1.0 MetronomeCore.qml
+TempoDial 1.0 TempoDial.qml
+Wordmark 1.0 Wordmark.qml

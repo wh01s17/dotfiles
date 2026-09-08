@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "wh01s17.metronome",
+  "name": "Metronome",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Sample-accurate click track with a tempo dial, tap tempo, subdivisions, and accented downbeats",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Metronome",
+    "description": "Tempo dial, tap tempo, subdivisions, and accented downbeats",
+    "category": "Audio",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "bpm": 100,
+      "beats": 4,
+      "subdivision": "1/4",
+      "volume": 0.7,
+      "accent": true
+    },
+    "schema": [
+      { "key": "bpm", "type": "int", "label": "Tempo (BPM)" },
+      { "key": "beats", "type": "int", "label": "Beats per bar" },
+      { "key": "subdivision", "type": "string", "label": "Subdivision" },
+      { "key": "volume", "type": "real", "label": "Level" },
+      { "key": "accent", "type": "bool", "label": "Accent the downbeat" }
+    ]
+  }
+}
