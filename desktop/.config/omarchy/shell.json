@@ -7,7 +7,7 @@
   "bar": {
     "position": "top",
     "transparent": false,
-    "centerAnchor": "",
+    "centerAnchor": "wh01s17.clock",
     "layout": {
       "left": [
         {
@@ -31,7 +31,7 @@
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "exec": "$HOME/.config/omarchy/bar/scripts/git-branch.sh print",
-          "interval": 5,
+          "interval": 30,
           "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/git-branch.sh copy",
           "classColors": {
@@ -55,7 +55,7 @@
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "exec": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh print",
-          "interval": 5,
+          "interval": 20,
           "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh copy-target",
           "onRightClick": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh clear",
@@ -143,7 +143,7 @@
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "exec": "$HOME/.config/omarchy/bar/scripts/mounted-devices.sh print",
-          "interval": 5,
+          "interval": 20,
           "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/mounted-devices.sh open",
           "classColors": {
@@ -168,7 +168,7 @@
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
           "exec": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh print",
-          "interval": 2,
+          "interval": 15,
           "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh open",
           "onMiddleClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh copy",

@@ -177,7 +177,7 @@ WidgetButton {
 
   Process {
     id: statusProcess
-    command: ["bash", "-lc", String(root.setting("exec", ""))]
+    command: ["bash", "-c", String(root.setting("exec", ""))]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.update(text)
@@ -186,7 +186,7 @@ WidgetButton {
 
   Process {
     id: actionProcess
-    command: ["bash", "-lc", root.pendingAction]
+    command: ["bash", "-c", root.pendingAction]
     onExited: {
       root.pendingAction = ""
       refreshDelay.restart()

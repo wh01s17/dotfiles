@@ -27,24 +27,25 @@ in_list() {
   return 1
 }
 
+# These run once per socket line. They set REPLY rather than printing so the
+# callers can skip $( ), which forks a subshell every single time.
 endpoint_port() {
-  printf '%s\n' "${1##*:}"
+  REPLY="${1##*:}"
 }
 
 endpoint_host() {
   local host="${1%:*}"
   host="${host#[}"
-  host="${host%]}"
-  printf '%s\n' "$host"
+  REPLY="${host%]}"
 }
 
 process_name() {
   local details="${1:-}"
 
   if [[ "$details" =~ \"([^\"]+)\" ]]; then
-    printf '%s\n' "${BASH_REMATCH[1]}"
+    REPLY="${BASH_REMATCH[1]}"
   else
-    printf '%s\n' "unknown"
+    REPLY="unknown"
   fi
 }
 
@@ -77,11 +78,11 @@ browser_host() {
   local host="$1"
 
   if is_wildcard "$host"; then
-    printf '%s\n' "127.0.0.1"
+    REPLY="127.0.0.1"
   elif [[ "$host" == *:* ]]; then
-    printf '[%s]\n' "$host"
+    REPLY="[$host]"
   else
-    printf '%s\n' "$host"
+    REPLY="$host"
   fi
 }
 
@@ -120,10 +121,10 @@ collect_listeners() {
 
   while read -r state recvq sendq local_address peer details; do
     [[ -n "${local_address:-}" ]] || continue
-    port="$(endpoint_port "$local_address")"
+    endpoint_port "$local_address"; port="$REPLY"
     [[ "$port" =~ ^[0-9]+$ ]] || continue
-    host="$(endpoint_host "$local_address")"
-    process="$(process_name "${details:-}")"
+    endpoint_host "$local_address"; host="$REPLY"
+    process_name "${details:-}"; process="$REPLY"
     key="$host:$port"
     record="$port|$host|$process"
 
@@ -148,7 +149,7 @@ collect_listeners() {
       fi
 
       if in_list "$port" "$HTTP_PORTS"; then
-        url="http://$(browser_host "$host"):$port"
+        browser_host "$host"; url="http://$REPLY:$port"
         add_open_target "$url"
         add_copy_target "$url"
       else
@@ -163,9 +164,9 @@ collect_connections() {
 
   while read -r recvq sendq local_address peer details; do
     [[ -n "${peer:-}" ]] || continue
-    local_port="$(endpoint_port "$local_address")"
-    peer_port="$(endpoint_port "$peer")"
-    process="$(process_name "${details:-}")"
+    endpoint_port "$local_address"; local_port="$REPLY"
+    endpoint_port "$peer"; peer_port="$REPLY"
+    process_name "${details:-}"; process="$REPLY"
 
     if ! is_reverse_process "$process" && ! in_list "$local_port" "$REVERSE_PORTS" && ! in_list "$peer_port" "$REVERSE_PORTS"; then
       if ! is_shell_process "$process" || in_list "$peer_port" "53 80 443"; then

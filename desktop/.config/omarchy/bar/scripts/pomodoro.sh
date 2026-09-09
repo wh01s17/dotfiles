@@ -197,7 +197,7 @@ normalize_state() {
 toggle_timer() {
   local now current
 
-  now="$(date +%s)"
+  now="$EPOCHSECONDS"
   load_state
   normalize_state "$now"
   current="$(remaining_now "$now")"
@@ -219,7 +219,7 @@ toggle_timer() {
 reset_timer() {
   local now
 
-  now="$(date +%s)"
+  now="$EPOCHSECONDS"
   load_state
   normalize_state "$now"
 
@@ -238,7 +238,7 @@ reset_timer() {
 skip_phase() {
   local now
 
-  now="$(date +%s)"
+  now="$EPOCHSECONDS"
   load_state
   normalize_state "$now"
 
@@ -301,7 +301,7 @@ adjust_timer() {
   local delta="$1"
   local now current
 
-  now="$(date +%s)"
+  now="$EPOCHSECONDS"
   load_state
   normalize_state "$now"
   current="$(remaining_now "$now")"
@@ -322,7 +322,7 @@ adjust_timer() {
 print_status() {
   local now current minutes seconds formatted icon label status class text tooltip total toggle_icon toggle_label
 
-  now="$(date +%s)"
+  now="$EPOCHSECONDS"
   load_state
   normalize_state "$now"
   current="$(remaining_now "$now")"

@@ -451,7 +451,17 @@ márgenes, tamaño de fuente, `classColors`, `dimClasses` y comandos para los
 tres botones o la rueda. Cuando `panel` es `true`, el clic izquierdo abre un
 panel con cabecera, progreso, filas y acciones provenientes del JSON; el clic
 central y el derecho conservan sus comandos directos. Todos los comandos son
-configuración de confianza y se ejecutan mediante `bash -lc`.
+configuración de confianza y se ejecutan mediante `bash -c`.
+
+Se usa `bash -c` y no `bash -lc` a propósito: un shell de login sourcea
+`/etc/profile` y `~/.profile` en cada invocación, lo que costaba unos 7 ms por
+llamada sin aportar nada, ya que el `PATH` que hereda Quickshell ya resuelve
+todos los comandos que la barra necesita.
+
+Omarchy instancia la barra completa una vez por monitor, así que cada
+`interval` se multiplica por el número de pantallas. Conviene elegir el
+intervalo más alto que el módulo tolere, y que los scripts con estado
+compartido serialicen sus escrituras (ver `system-usage.sh`).
 
 ## Panel CTF
 
