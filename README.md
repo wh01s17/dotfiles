@@ -578,7 +578,13 @@ debe interpretarse como aviso, no como prueba concluyente.
 
 - Portapapeles: clic en `󰅍` abre `omarchy menu clipboard`; el tooltip recuerda
   el atajo `Super+Ctrl+V`.
-- CPU: clic en `󰍛` abre btop y clic derecho abre Alacritty.
+- CPU: clic en `󰍛` abre btop y clic derecho abre Alacritty. Como la barra
+  corre una copia por monitor, [`system-usage.sh`](desktop/.config/omarchy/bar/scripts/system-usage.sh)
+  toma un `flock` y comparte el resultado en
+  `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/bar/system-usage`: la primera
+  copia calcula el delta de CPU y disco, y las demás reutilizan esa respuesta
+  durante `SYSTEM_USAGE_MIN_REFRESH_US` (1,5 s por omisión). Sin eso las copias
+  se pisaban el archivo de muestras y dos de cada tres informaban 0 %.
 - Agentes y actualizaciones siguen siendo widgets nativos. Red, audio,
   monitores, Bluetooth y energía usan los clones `wh01s17.*` descritos arriba;
   mantienen los paneles y acciones de Omarchy y añaden los controles propios.

@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Keep the decimal separator a dot regardless of the user's locale, so
+# EPOCHREALTIME can be sliced into integer microseconds below.
+export LC_NUMERIC=C
+
 STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 STATE_DIR="${SYSTEM_USAGE_STATE_DIR:-$STATE_HOME/omarchy/bar/system-usage}"
 STATE_FILE="$STATE_DIR/samples"
+CACHE_FILE="$STATE_DIR/last.json"
+LOCK_FILE="$STATE_DIR/lock"
 ICON="󰍛"
+
+# The bar runs one copy of this script per monitor, and they all fire at
+# roughly the same instant. Without a shared cache the second and third
+# copies see a previous sample only milliseconds old, fall under the
+# elapsed-time guard, and report 0% CPU with 0 B/s disk -- so the widget
+# flickered between real numbers and zeroes depending on which monitor
+# wrote last. Whoever gets the lock first computes; the others reuse that
+# answer, which also cuts the work to a third.
+MIN_REFRESH_US="${SYSTEM_USAGE_MIN_REFRESH_US:-1500000}"
 
 mkdir -p "$STATE_DIR"
 
@@ -42,26 +57,43 @@ human_bytes() {
 }
 
 json_status() {
-  local now cpu_total cpu_idle disk_read disk_write
+  local now_us cpu_total cpu_idle disk_read disk_write
   local prev_now prev_total prev_idle prev_read prev_write
   local cpu_percent read_rate write_rate elapsed
   local mem_total mem_available mem_used mem_percent
   local swap_total swap_free swap_used
   local class tooltip
 
-  now="$(date +%s.%N)"
-  read -r cpu_total cpu_idle < <(cpu_totals)
-  read -r disk_read disk_write < <(disk_sectors)
+  # Serialise the read-modify-write so the per-monitor copies cannot
+  # interleave and corrupt each other's deltas.
+  exec 9>"$LOCK_FILE"
+  flock 9
+
+  now_us="${EPOCHREALTIME/./}"
 
   prev_now=""; prev_total=0; prev_idle=0; prev_read=0; prev_write=0
   if [[ -r "$STATE_FILE" ]]; then
     read -r prev_now prev_total prev_idle prev_read prev_write < "$STATE_FILE" || true
   fi
-  printf '%s %s %s %s %s\n' "$now" "$cpu_total" "$cpu_idle" "$disk_read" "$disk_write" > "$STATE_FILE"
+  # Pre-cache versions stored seconds with a fractional part. Such a value is
+  # not an integer, so discard it rather than letting (( )) choke on it.
+  [[ "$prev_now" =~ ^[0-9]+$ ]] || prev_now=""
+
+  # A sibling monitor already sampled a moment ago: reuse its answer rather
+  # than computing a delta over a near-zero interval.
+  if [[ -n "$prev_now" && -r "$CACHE_FILE" ]] && (( now_us - prev_now < MIN_REFRESH_US )); then
+    command cat "$CACHE_FILE"
+    return
+  fi
+
+  read -r cpu_total cpu_idle < <(cpu_totals)
+  read -r disk_read disk_write < <(disk_sectors)
+
+  printf '%s %s %s %s %s\n' "$now_us" "$cpu_total" "$cpu_idle" "$disk_read" "$disk_write" > "$STATE_FILE"
 
   cpu_percent=0; read_rate=0; write_rate=0
   if [[ -n "$prev_now" ]]; then
-    elapsed="$(awk -v a="$now" -v b="$prev_now" 'BEGIN { d = a - b; print (d > 0.05 && d < 600) ? d : 0 }')"
+    elapsed="$(awk -v a="$now_us" -v b="$prev_now" 'BEGIN { d = (a - b) / 1000000; print (d > 0.05 && d < 600) ? d : 0 }')"
     if [[ "$elapsed" != "0" ]]; then
       cpu_percent="$(awk -v t="$cpu_total" -v pt="$prev_total" -v i="$cpu_idle" -v pi="$prev_idle" \
         'BEGIN { dt = t - pt; if (dt <= 0) { print 0; exit } p = 100 * (1 - (i - pi) / dt); print (p < 0) ? 0 : (p > 100 ? 100 : int(p + 0.5)) }')"
@@ -101,7 +133,9 @@ json_status() {
     --arg text "$ICON" \
     --arg class "$class" \
     --arg tooltip "$tooltip" \
-    '{text: $text, class: $class, tooltip: $tooltip}'
+    '{text: $text, class: $class, tooltip: $tooltip}' > "$CACHE_FILE.$$"
+  mv -f "$CACHE_FILE.$$" "$CACHE_FILE"
+  command cat "$CACHE_FILE"
 }
 
 case "${1:-print}" in
