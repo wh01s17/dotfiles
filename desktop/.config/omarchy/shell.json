@@ -70,7 +70,7 @@
       ],
       "center": [
         {
-          "id": "omarchy.indicators"
+          "id": "wh01s17.indicators"
         },
         {
           "id": "wh01s17.clock",
@@ -211,7 +211,8 @@
           "id": "wh01s17.power"
         }
       ]
-    }
+    },
+    "id": "wh01s17.bar"
   },
   "plugins": [
     {
