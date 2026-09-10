@@ -79,6 +79,101 @@ function availableScales(scales, width, height) {
     .map(function(candidate) { return candidate.value })
 }
 
+// ---- Display modes (resolution + refresh) ----
+// Hyprland reports availableModes as "1920x1080@59.94Hz" strings. Parse them
+// into structured options so the panel can render a combobox and hand the
+// exact mode string back to `hyprctl`.
+function parseMode(text) {
+  var match = String(text || "").trim().match(/^(\d+)x(\d+)@([0-9.]+)/i)
+  if (!match) return null
+
+  var width = parseInt(match[1], 10)
+  var height = parseInt(match[2], 10)
+  var refresh = parseFloat(match[3])
+  if (!isFinite(width) || !isFinite(height) || !isFinite(refresh)) return null
+  if (width <= 0 || height <= 0 || refresh <= 0) return null
+
+  return {
+    value: width + "x" + height + "@" + refresh,
+    label: width + "\u00d7" + height + " \u00b7 " + Math.round(refresh) + " Hz",
+    width: width,
+    height: height,
+    refresh: refresh
+  }
+}
+
+// One entry per visually distinct mode: several driver modes can round to the
+// same "1920x1080 · 60 Hz" label, and offering them twice helps nobody.
+function modeOptions(availableModes, width, height, refresh) {
+  var raw = Array.isArray(availableModes) ? availableModes.slice() : []
+  var active = parseMode(width + "x" + height + "@" + refresh)
+  if (active) raw.push(active.value)
+
+  var seen = {}
+  var options = []
+  for (var i = 0; i < raw.length; i++) {
+    var mode = parseMode(raw[i])
+    if (!mode) continue
+
+    var key = mode.width + "x" + mode.height + "@" + Math.round(mode.refresh)
+    if (seen[key]) continue
+    seen[key] = true
+    options.push(mode)
+  }
+
+  return options.sort(function(a, b) {
+    return (b.width * b.height - a.width * a.height) || (b.refresh - a.refresh)
+  })
+}
+
+// Match the live mode against the offered options. Refresh rates drift between
+// what the driver advertises and what Hyprland reports, so pick the closest
+// rate among options of the same resolution.
+function currentModeValue(options, width, height, refresh) {
+  var w = Number(width)
+  var h = Number(height)
+  var r = Number(refresh)
+  if (!Array.isArray(options) || !isFinite(w) || !isFinite(h)) return ""
+
+  var best = ""
+  var bestDistance = Infinity
+  for (var i = 0; i < options.length; i++) {
+    var option = options[i]
+    if (option.width !== w || option.height !== h) continue
+
+    var distance = isFinite(r) ? Math.abs(option.refresh - r) : 0
+    if (distance < bestDistance) {
+      best = option.value
+      bestDistance = distance
+    }
+  }
+  return best
+}
+
+// name -> { options, current } for every connected output.
+function parseMonitorModes(raw) {
+  var monitors = []
+  try {
+    monitors = raw ? JSON.parse(String(raw)) : []
+  } catch (e) {
+    monitors = []
+  }
+  if (!Array.isArray(monitors)) monitors = []
+
+  var byName = {}
+  for (var i = 0; i < monitors.length; i++) {
+    var monitor = monitors[i]
+    if (!monitor || !monitor.name) continue
+
+    var options = modeOptions(monitor.availableModes, monitor.width, monitor.height, monitor.refreshRate)
+    byName[String(monitor.name)] = {
+      options: options,
+      current: currentModeValue(options, monitor.width, monitor.height, monitor.refreshRate)
+    }
+  }
+  return byName
+}
+
 function brightnessName(percent) {
   var p = Math.round(percent)
   if (p >= 95) return "Sun blast"
@@ -118,6 +213,10 @@ if (typeof module !== "undefined") {
     cleanScale: cleanScale,
     matchingScaleIndex: matchingScaleIndex,
     availableScales: availableScales,
+    parseMode: parseMode,
+    modeOptions: modeOptions,
+    currentModeValue: currentModeValue,
+    parseMonitorModes: parseMonitorModes,
     brightnessName: brightnessName,
     parseDisplays: parseDisplays
   }
