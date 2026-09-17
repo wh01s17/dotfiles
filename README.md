@@ -33,6 +33,7 @@ dotfiles/
 │   ├── .config/kitty/
 │   │   ├── kitty.conf             # Base común y tema dinámico
 │   │   └── profiles/              # Tamaño de fuente por equipo
+│   ├── .p10k.zsh                  # Prompt Powerlevel10k con la paleta del tema
 │   └── .zshrc
 └── README.md
 ```
@@ -42,7 +43,7 @@ Los paquetes Stow son:
 | Paquete | Destino | Contenido |
 | --- | --- | --- |
 | `desktop` | `~/.config/` | Fastfetch, Hyprland y Omarchy Shell |
-| `terminal` | `$HOME` y `~/.config/` | Zsh y Kitty |
+| `terminal` | `$HOME` y `~/.config/` | Zsh, Powerlevel10k y Kitty |
 
 ## Requisitos
 
@@ -133,6 +134,7 @@ readlink -f "$HOME/.config/omarchy/branding/screensaver.txt"
 readlink -f "$HOME/.config/omarchy/themes/wh01s17"
 readlink -f "$HOME/.config/kitty"
 readlink -f "$HOME/.zshrc"
+readlink -f "$HOME/.p10k.zsh"
 ```
 
 ### 4. Aplicar y validar
@@ -691,7 +693,8 @@ configuración personal en
 - MesloLGS Nerd Font Mono y sus variantes;
 - opacidad interna de fondo `0.85`;
 - padding horizontal y vertical de 10 px;
-- tabs con separadores Powerline y títulos truncados;
+- tabs con separadores Powerline, títulos truncados y colores de la paleta del
+  tema (`color2` para la activa, `color8`/`color7` para las inactivas);
 - `Ctrl`+flechas para redimensionar paneles;
 - secuencias CSI-u distintas para `Shift+Enter` y `Alt+Shift+Enter`;
 - Zsh como shell, control remoto y socket por proceso para la integración de
@@ -714,6 +717,12 @@ omarchy restart terminal
 Zoxide y NVM; carga los plugins `git`, `zsh-syntax-highlighting`,
 `zsh-autosuggestions` y `zsh-sudo`; define `nvim` como editor y agrega rutas
 locales de Perl, Ruby, LM Studio, OpenCode y John the Ripper.
+
+[`terminal/.p10k.zsh`](terminal/.p10k.zsh) configura el prompt de
+Powerlevel10k (estilo *lean*, dos líneas, *transient prompt*). Sus colores usan
+sólo los índices 0–15 de la paleta del terminal, que Kitty toma del tema activo
+de Omarchy; así el prompt cambia de color junto con el tema. Evita los índices
+16–255 al editarlo, porque son colores fijos.
 
 Funciones propias:
 
