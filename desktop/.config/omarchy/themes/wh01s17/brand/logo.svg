@@ -13,8 +13,8 @@
     </filter>
   </defs>
   <rect width="512" height="512" fill="url(#bg)" rx="96"/>
-  <rect width="468" height="468" x="22" y="22" fill="none" stroke="#00ff9c" stroke-opacity=".2" stroke-width="6" rx="76"/>
-  <g fill="#00ff9c" filter="url(#glow)">
+  <rect width="468" height="468" x="22" y="22" fill="none" stroke="#84c959" stroke-opacity=".2" stroke-width="6" rx="76"/>
+  <g fill="#84c959" filter="url(#glow)">
     <path d="M88 104h80v240H88zm128 0h80v240h-80zm128 0h80v240h-80zM152 344h80v64h-80zm128 0h80v64h-80z"/>
   </g>
 </svg>

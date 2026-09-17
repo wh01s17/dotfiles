@@ -8,5 +8,5 @@ border           = "#243038"
 border-active    = "hyprland.active-border"
 border-error     = "#ff6b66"
 border-alpha     = 0.95
-selection        = "#00ff9c"
+selection        = "#84c959"
 selection-alpha  = 0.45

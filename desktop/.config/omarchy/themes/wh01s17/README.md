@@ -9,7 +9,7 @@ An Omarchy theme derived from the visual system of [wh01s17.com](https://www.wh0
 - Raised surface: `#171e23`
 - Border: `#243038`
 - Foreground: `#cbd5ce`
-- Signal: `#00ff9c`
+- Signal: `#84c959`
 - Diagnostic cyan: `#45d9ea`
 - Warning amber: `#e8b53f`
 - Fault red: `#ff6b66`

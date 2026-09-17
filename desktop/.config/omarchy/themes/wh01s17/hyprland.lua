@@ -1,5 +1,5 @@
 local active_border_color = {
-  colors = { "rgba(00ff9cee)", "rgba(45d9eaee)" },
+  colors = { "rgba(84c959ee)", "rgba(45d9eaee)" },
   angle = 45,
 }
 local inactive_border_color = "rgba(243038aa)"
@@ -26,7 +26,7 @@ hl.config({
       enabled = true,
       range = 8,
       render_power = 3,
-      color = "rgba(00ff9c26)",
+      color = "rgba(84c95926)",
       color_inactive = "rgba(04060766)",
     },
   },

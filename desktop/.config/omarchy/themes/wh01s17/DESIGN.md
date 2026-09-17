@@ -9,7 +9,7 @@ The wallpaper system is intentionally private and minimal: deep negative space w
 - Exact `wh01s17` spelling rendered with JetBrains Mono Nerd Font.
 - Flat colors only: no CRT scanlines, noise, glow, gradients, faux-terminal windows, or 3D imagery.
 - No slogans, profession labels, terminal prompts, geographic data, or operating-system metadata.
-- Primary palette: `#0a0e0f`, `#11161a`, `#cbd5ce`, and `#00ff9c`.
+- Primary palette: `#0a0e0f`, `#11161a`, `#cbd5ce`, and `#84c959`.
 - The mark and wordmark form one vertically and horizontally centered composition.
 - Large quiet regions remain available for application windows and desktop widgets.
 
