@@ -100,7 +100,16 @@ Panel {
   // "header" is a virtual section for the hero Bluetooth on/off toggle; it
   // sits above the device sections so the adapter can be toggled by keyboard
   // even when it is off and no device rows exist.
-  readonly property bool headerHasCursor: cursorActive && focusSection === "header"
+  // Header actions, walked with h/l: the rescan button (while the adapter is
+  // on) and the power switch.
+  property int headerIndex: 0
+  // Held from a manual rescan until BlueZ reports discovery back up.
+  property bool rescanning: false
+  readonly property bool canRescan: !!adapter && adapter.enabled
+  readonly property int rescanHeaderIndex: canRescan ? 0 : -1
+  readonly property int toggleHeaderIndex: canRescan ? 1 : 0
+  readonly property bool rescanHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === rescanHeaderIndex
+  readonly property bool headerHasCursor: cursorActive && focusSection === "header" && headerIndex === toggleHeaderIndex
   readonly property string toggleHint: root.adapter && root.adapter.enabled ? "Turn Bluetooth off" : "Turn Bluetooth on"
 
   readonly property color hoverFill: bar
@@ -326,12 +335,13 @@ Panel {
   function moveCursor(delta) {
     var sections = visibleSections
     if (focusSection === "header") {
+      headerIndex = toggleHeaderIndex
       if (delta > 0 && sections && sections.length > 0) {
         focusSection = sections[0]; selectedIndex = 0; actionFocused = false
       }
       return
     }
-    if (!sections || sections.length === 0) { focusSection = "header"; actionFocused = false; return }
+    if (!sections || sections.length === 0) { focusSection = "header"; headerIndex = toggleHeaderIndex; actionFocused = false; return }
     var sIdx = sections.indexOf(focusSection)
     if (sIdx < 0) { focusSection = sections[0]; selectedIndex = 0; actionFocused = false; return }
 
@@ -352,19 +362,25 @@ Panel {
         selectedIndex = sectionCount(focusSection) - 1
         actionFocused = false
       } else {
-        focusSection = "header"; actionFocused = false
+        focusSection = "header"; headerIndex = toggleHeaderIndex; actionFocused = false
       }
     }
   }
 
-  function setHeaderCursor() {
+  function setHeaderCursor(index) {
     cursorActive = true
     focusSection = "header"
+    headerIndex = index
     actionFocused = false
   }
 
   function moveCursorH(delta) {
     if (!cursorActive) { cursorActive = true; return }
+    if (focusSection === "header") {
+      if (delta < 0 && rescanHeaderIndex >= 0) headerIndex = rescanHeaderIndex
+      else if (delta > 0) headerIndex = toggleHeaderIndex
+      return
+    }
     if (focusSection !== "known" && focusSection !== "connected") return
     var dev = deviceAt(focusSection, selectedIndex)
     if (!dev || !dev.address) return
@@ -374,7 +390,8 @@ Panel {
 
   function activateCursor() {
     if (focusSection === "header") {
-      toggleBluetooth()
+      if (headerIndex === rescanHeaderIndex) rescan()
+      else toggleBluetooth()
       return
     }
     if (actionFocused) {
@@ -405,7 +422,23 @@ Panel {
     forgetDevice(dev)
   }
 
+  // Stopping discovery is enough: once BlueZ confirms it down, discoveryRetry
+  // starts a fresh session on its own.
+  function rescan() {
+    if (!canRescan || rescanning) return
+    if (!adapter.discovering) return
+    rescanning = true
+    owesDiscoveryStop = true
+    adapter.discovering = false
+  }
+
+  onCanRescanChanged: {
+    if (!canRescan) rescanning = false
+    if (focusSection === "header") headerIndex = toggleHeaderIndex
+  }
+
   onOpenedChanged: {
+    if (!opened) rescanning = false
     if (opened) {
       // Adopt a discovery session that is already running — a popout handoff
       // from another monitor, or one leaked by an instance that could not
@@ -414,7 +447,7 @@ Panel {
       if (connectedDevices.length > 0) { focusSection = "connected"; selectedIndex = 0 }
       else if (knownDevices.length > 0) { focusSection = "known"; selectedIndex = 0 }
       else if (discoveredDevices.length > 0) { focusSection = "discovered"; selectedIndex = 0 }
-      else { focusSection = "header" }
+      else { focusSection = "header"; headerIndex = toggleHeaderIndex }
       actionFocused = false
       cursorActive = false
     }
@@ -561,6 +594,7 @@ Panel {
     target: root.adapter
     function onDiscoveringChanged() {
       if (!root.adapter.discovering) root.owesDiscoveryStop = false
+      else root.rescanning = false
     }
   }
 
@@ -575,6 +609,14 @@ Panel {
       if (items[i] && items[i] !== root) { items[i].owesDiscoveryStop = true; return }
     }
     if (adapter !== null && adapter.discovering) adapter.discovering = false
+  }
+
+  // A stop BlueZ never confirms would otherwise leave the button spinning.
+  Timer {
+    id: rescanTimeout
+    interval: 5000
+    running: root.rescanning
+    onTriggered: root.rescanning = false
   }
 
   Timer {
@@ -693,6 +735,7 @@ Panel {
       onDeleteRequested: if (root.cursorActive) root.deleteSelected()
       onTextKey: function(t) {
         if (t === "b" || t === "B") root.toggleBluetooth()
+        else if (t === "r" || t === "R") root.rescan()
       }
 
       Column {
@@ -703,7 +746,7 @@ Panel {
         // ---------- Hero: Bluetooth icon · status ----------
         Item {
           width: parent.width
-          implicitHeight: Math.max(heroIcon.implicitHeight, heroLabels.implicitHeight, powerSwitch.implicitHeight)
+          implicitHeight: Math.max(heroIcon.implicitHeight, heroLabels.implicitHeight, heroActions.implicitHeight)
 
           // Status only — the switch owns toggling, mouse and keyboard alike.
           Text {
@@ -718,23 +761,45 @@ Panel {
             opacity: root.adapter && root.adapter.enabled ? 1.0 : 0.5
           }
 
-          // Compact on/off switch on the trailing edge of the hero, and the
-          // header's only cursor target.
-          ToggleSwitch {
-            id: powerSwitch
-            visible: !!root.adapter
-            checked: !!root.adapter && root.adapter.enabled
-            hasCursor: root.headerHasCursor
-            foreground: root.bar.foreground
+          // Rescan and the compact on/off switch on the trailing edge of the hero.
+          Row {
+            id: heroActions
+            spacing: Style.space(8)
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            onHovered: function(on) { if (on) root.setHeaderCursor() }
-            onToggled: root.toggleBluetooth()
 
-            PanelToolTip {
-              visible: powerSwitch.containsMouse
-              text: root.toggleHint
+            Button {
+              id: rescanAction
+              visible: root.canRescan
+              iconText: "󰑐"
+              iconSpinning: root.rescanning
+              tooltipText: root.rescanning ? "Scanning…" : "Rescan devices"
+              foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
+              iconSize: Style.font.subtitle * 1.5
+              horizontalPadding: Style.space(5)
+              verticalPadding: Style.space(2)
+              hasCursor: root.rescanHeaderHasCursor
+              anchors.verticalCenter: parent.verticalCenter
+              onHovered: function(on) { if (on) root.setHeaderCursor(root.rescanHeaderIndex) }
+              onClicked: root.rescan()
+            }
+
+            ToggleSwitch {
+              id: powerSwitch
+              visible: !!root.adapter
+              checked: !!root.adapter && root.adapter.enabled
+              hasCursor: root.headerHasCursor
+              foreground: root.bar.foreground
+              anchors.verticalCenter: parent.verticalCenter
+              onHovered: function(on) { if (on) root.setHeaderCursor(root.toggleHeaderIndex) }
+              onToggled: root.toggleBluetooth()
+
+              PanelToolTip {
+                visible: powerSwitch.containsMouse
+                text: root.toggleHint
+                fontFamily: root.bar.fontFamily
+              }
             }
           }
 
@@ -743,7 +808,7 @@ Panel {
             anchors.left: heroIcon.right
             anchors.leftMargin: Style.space(14)
             anchors.right: parent.right
-            anchors.rightMargin: powerSwitch.visible ? powerSwitch.width + Style.space(12) : 0
+            anchors.rightMargin: heroActions.width > 0 ? heroActions.width + Style.space(12) : 0
             anchors.verticalCenter: parent.verticalCenter
             spacing: Style.space(2)
 

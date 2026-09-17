@@ -347,8 +347,8 @@ distribución. Todos se declaran en `shell.json` y sus metadatos viven en el
 | --- | --- | --- |
 | `wh01s17.clock` | `omarchy.clock` | Segundos, semana ISO y progreso anual/vital persistente |
 | `wh01s17.audio` | `omarchy.audio` | Salidas, entradas y mezclador por aplicación navegables |
-| `wh01s17.bluetooth` | `omarchy.bluetooth` | Conexión, olvido de dispositivos y selección de salida Bluetooth |
-| `wh01s17.network` | `omarchy.network` | Wi-Fi, DNS, bandas, QR, prueba de velocidad y métricas de enlace |
+| `wh01s17.bluetooth` | `omarchy.bluetooth` | Conexión, olvido de dispositivos, reescaneo manual (botón o `r`) y selección de salida Bluetooth |
+| `wh01s17.network` | `omarchy.network` | Wi-Fi, reescaneo manual de redes, DNS, bandas, QR, prueba de velocidad y métricas de enlace |
 | `wh01s17.monitor` | `omarchy.monitor` | Escala persistente por salida y tooltip con resolución/escala |
 | `wh01s17.power` | `omarchy.power` | Batería, perfiles de energía y estadísticas del sistema |
 | `wh01s17.metronome` | Propio | Click track con dial de tempo, tap tempo, subdivisiones y acento |

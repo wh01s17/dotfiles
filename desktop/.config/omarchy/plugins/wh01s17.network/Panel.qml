@@ -72,6 +72,9 @@ Panel {
   readonly property var connectedWifiNetwork: findConnectedWifiNetwork()
   property var wifiNetworks: []
   property bool scanning: false
+  // Held from a manual rescan until scanDone lands; `scanning` clears as soon
+  // as the cached list is synced, too quickly to show on the button.
+  property bool rescanning: false
   property bool wifiStationAvailable: false
   property string dnsProvider: ""
   property string pendingDnsProvider: ""
@@ -130,12 +133,16 @@ Panel {
   // radio to switch. On a wired box it would otherwise sit there reading
   // "off" beside a perfectly live Ethernet connection.
   readonly property bool canToggleWifi: networkManagerAvailable && wifiStationAvailable
+  // Rescanning only means something while the radio is on to listen.
+  readonly property bool canRescanWifi: canToggleWifi && Networking.wifiEnabled
   readonly property int qrHeaderIndex: canShareWifi ? 0 : -1
   readonly property int speedHeaderIndex: canRunSpeedTest ? (canShareWifi ? 1 : 0) : -1
-  readonly property int toggleHeaderIndex: canToggleWifi ? (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) : -1
-  readonly property int headerActionCount: (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) + (canToggleWifi ? 1 : 0)
+  readonly property int rescanHeaderIndex: canRescanWifi ? (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) : -1
+  readonly property int toggleHeaderIndex: canToggleWifi ? (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) + (canRescanWifi ? 1 : 0) : -1
+  readonly property int headerActionCount: (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) + (canRescanWifi ? 1 : 0) + (canToggleWifi ? 1 : 0)
   readonly property bool qrHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === qrHeaderIndex
   readonly property bool speedHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === speedHeaderIndex
+  readonly property bool rescanHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === rescanHeaderIndex
   readonly property bool toggleHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === toggleHeaderIndex
   readonly property string toggleHint: Networking.wifiEnabled ? "Turn Wi-Fi off" : "Turn Wi-Fi on"
   readonly property var dnsProviders: ["DHCP", "Cloudflare", "Google", "Custom"]
@@ -225,6 +232,7 @@ Panel {
   function activateHeader() {
     if (headerIndex === qrHeaderIndex) summonWifiQr()
     else if (headerIndex === speedHeaderIndex) summonSpeedTest()
+    else if (headerIndex === rescanHeaderIndex) rescanWifi()
     else if (headerIndex === toggleHeaderIndex) toggleNetwork()
   }
 
@@ -332,6 +340,8 @@ Panel {
       // the 100ms window reuses the running timer and re-enables the scanner
       // almost immediately, undoing the deferral #6605 restored.
       scanRestart.stop()
+      scanDone.stop()
+      rescanning = false
       // Reset throughput tracking so the next open doesn't compute a fake
       // rate from a sample taken minutes ago.
       prevSampleTime = 0
@@ -466,6 +476,14 @@ Panel {
       if (info.ssid) payload.ssid = info.ssid
     }
     bar.shell.summon("omarchy.wifiqr", JSON.stringify(payload))
+  }
+
+  // Drops the scanner and brings it back up, so NetworkManager starts a fresh
+  // pass instead of the list waiting on the periodic one.
+  function rescanWifi() {
+    if (!canRescanWifi || rescanning) return
+    rescanning = true
+    refresh(true)
   }
 
   function refresh(scanWifi) {
@@ -824,6 +842,8 @@ Panel {
       if (root.opened && root.wifiDevice) {
         root.setScannerEnabled(true)
         scanDone.start()
+      } else {
+        root.rescanning = false
       }
     }
   }
@@ -832,7 +852,10 @@ Panel {
     id: scanDone
     interval: 1500
     repeat: false
-    onTriggered: root.syncWifiNetworks()
+    onTriggered: {
+      root.syncWifiNetworks()
+      root.rescanning = false
+    }
   }
 
   Process {
@@ -1147,6 +1170,23 @@ Panel {
             Layout.alignment: Qt.AlignVCenter
             onHovered: function(on) { if (on) root.setHeaderCursor(root.speedHeaderIndex) }
             onClicked: root.summonSpeedTest()
+          }
+
+          Button {
+            id: rescanAction
+            visible: root.canRescanWifi
+            iconText: "󰑐"
+            iconSpinning: root.rescanning
+            tooltipText: root.rescanning ? "Scanning…" : "Rescan networks"
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            iconSize: Style.font.subtitle * 1.5
+            horizontalPadding: Style.space(5)
+            verticalPadding: Style.space(2)
+            hasCursor: root.rescanHeaderHasCursor
+            Layout.alignment: Qt.AlignVCenter
+            onHovered: function(on) { if (on) root.setHeaderCursor(root.rescanHeaderIndex) }
+            onClicked: root.rescanWifi()
           }
 
           ToggleSwitch {
