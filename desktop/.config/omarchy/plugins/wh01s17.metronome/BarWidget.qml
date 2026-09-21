@@ -5,7 +5,7 @@ import qs.Commons
 import qs.Ui
 import "Model.js" as Model
 
-// Metronome for the bar. The mark in the bar beats along with the click, so
+// Metronome for the bar. The icon in the bar swings along with the click, so
 // the widget is its own downbeat when the panel is closed.
 //
 // State, settings, and the engine process live in MetronomeCore — the bar
@@ -64,12 +64,15 @@ Panel {
   Component {
     id: markComponent
 
-    Wordmark {
+    MetronomeIcon {
       anchors.centerIn: parent
       height: Math.round(parent.height * 0.86)
       stroke: root.core.running ? root.accentColor : root.foreground
       fillColor: root.accentColor
       fillStrength: root.core.beatPulse
+      running: root.core.running
+      beatCount: root.core.beatCount
+      bpm: root.core.bpm
       opacity: root.core.running ? 1.0 : 0.85
 
       Behavior on opacity { NumberAnimation { duration: 150 } }

@@ -30,6 +30,8 @@ Item {
   property int currentBeat: 0
   property int currentPulse: 0
   property real beatPulse: 0
+  // Counts beats while running; the bar icon swings its pendulum on parity.
+  property int beatCount: 0
   property var tapTimes: []
 
   // The widget instance that can reach shell.json. Whichever surface loads
@@ -161,7 +163,10 @@ Item {
     if (event.e !== "beat") return
     core.currentBeat = event.beat
     core.currentPulse = event.pulse
-    if (event.downbeat) pulseAnimation.restart()
+    if (event.downbeat) {
+      core.beatCount++
+      pulseAnimation.restart()
+    }
   }
 
   // --------------------------------------------------------------- engine
