@@ -98,9 +98,23 @@ json_status() {
       ;;
   esac
 
+  local toggle_icon="" toggle_label="" toggle_enabled=false
+  case "$class" in
+    active|permissive) toggle_icon="󰏤"; toggle_label="Pausar firewall"; toggle_enabled=true ;;
+    inactive) toggle_icon="󰐊"; toggle_label="Reanudar firewall"; toggle_enabled=true ;;
+    *) toggle_icon="󰐊"; toggle_label="Pausar / reanudar"; toggle_enabled=false ;;
+  esac
+
   actions_json="$(jq -cn \
+    --arg toggle_cmd '$HOME/.config/omarchy/bar/scripts/firewall-status.sh toggle' \
+    --arg toggle_icon "$toggle_icon" \
+    --arg toggle_label "$toggle_label" \
+    --argjson toggle_enabled "$toggle_enabled" \
     --arg notify_cmd '$HOME/.config/omarchy/bar/scripts/firewall-status.sh notify' \
-    '[{icon: "󰍡", label: "Ver detalle", command: $notify_cmd}]')"
+    '[
+      {icon: $toggle_icon, label: $toggle_label, command: $toggle_cmd, enabled: $toggle_enabled, close: true},
+      {icon: "󰍡", label: "Ver detalle", command: $notify_cmd}
+    ]')"
 
   jq -cn \
     --arg text "$ICON $label" \
@@ -134,11 +148,40 @@ notify_status() {
   notify-send -u low "Firewall" "$subtitle"
 }
 
+# Pausa o reanuda el firewall según su estado actual. Se lanza desde el panel
+# (sin terminal), por eso usa pkexec y el agente polkit del shell.
+toggle_firewall() {
+  local backend class
+  backend="$(detect_backend)"
+  class="$(json_status | jq -r '.class')"
+
+  case "$backend:$class" in
+    ufw:active|ufw:permissive) pkexec ufw disable ;;
+    ufw:inactive) pkexec ufw --force enable ;;
+    nftables:active|iptables:active) pkexec systemctl stop "${backend}.service" ;;
+    nftables:inactive|iptables:inactive) pkexec systemctl start "${backend}.service" ;;
+    *)
+      notify-send -u normal "Firewall" "No hay un firewall que se pueda pausar"
+      return 1
+      ;;
+  esac || {
+    notify-send -u normal "Firewall" "No se pudo cambiar el estado (autenticación cancelada o error)"
+    return 1
+  }
+
+  if [[ "$class" == "inactive" ]]; then
+    notify-send -u low "Firewall" "Firewall reanudado"
+  else
+    notify-send -u normal "Firewall" "Firewall en pausa: el tráfico entrante no se está filtrando"
+  fi
+}
+
 case "${1:-print}" in
   print) json_status ;;
   notify) notify_status ;;
+  toggle) toggle_firewall ;;
   *)
-    echo "Usage: $0 {print|notify}" >&2
+    echo "Usage: $0 {print|notify|toggle}" >&2
     exit 2
     ;;
 esac
