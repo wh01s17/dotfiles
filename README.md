@@ -198,8 +198,10 @@ nueva escala en `~/.local/state/omarchy/monitor-scaling.log`, y después recarga
 Hyprland. [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) toma
 el último valor de cada conector y los perfiles lo aplican individualmente. De
 este modo `DP-1` puede permanecer a 2× mientras `eDP-1` y `HDMI-A-1` siguen a
-1×. El perfil `omen` también recalcula las posiciones lógicas usando la escala
-del monitor que determina cada desplazamiento.
+1×. En `hp-gray`, donde HDMI refleja la pantalla interna, ambas salidas usan
+la escala guardada para `eDP-1`; así la recarga no devuelve el proyector a 1×.
+El perfil `omen` también recalcula las posiciones lógicas usando la escala del
+monitor que determina cada desplazamiento.
 
 `GDK_SCALE` se mantiene en 1 para los perfiles mixtos porque es una variable
 global; el escalado por salida queda a cargo de Hyprland. Los valores dinámicos
