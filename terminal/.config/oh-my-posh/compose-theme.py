@@ -46,6 +46,23 @@ def append_template(original: str, addition: str) -> str:
     return original.rstrip() + addition + ending
 
 
+def separate_git_indicators(template: str) -> str:
+    """Space adjacent working-tree indicators without changing separated layouts."""
+    changed = "{{ if .Working.Changed }}"
+    if changed not in template:
+        return template
+    before, after = template.split(changed, 1)
+    if before and after and not before[-1].isspace() and not after[0].isspace():
+        template = before + changed + " " + after
+
+    working = "{{ .Working.String }}"
+    if working in template:
+        before, after = template.split(working, 1)
+        if before and not before[-1].isspace():
+            template = before + " " + working + after
+    return template
+
+
 def read_omarchy_palette(path: Path) -> tuple[dict[str, str], str]:
     """Read Kitty's current colors; ANSI names keep following future Omarchy themes."""
     colors = {}
@@ -327,7 +344,7 @@ def compose(base: dict, rules: dict, extends: str, pure_local: bool) -> dict:
 
         template = git.get("template")
         if isinstance(template, str) and template:
-            enriched = template
+            enriched = separate_git_indicators(template)
             for fragment in rules["git"]["fragments"]:
                 if not any(field in enriched for field in fragment["unless_any"]):
                     enriched = append_template(enriched, fragment["template"])
