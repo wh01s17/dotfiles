@@ -1,0 +1,297 @@
+{
+  "version": 1,
+  "transient_prompt": {
+    "template": "❯ "
+  },
+  "streaming_ms": 100,
+  "runtime_version_cache": "1m",
+  "right_overflow": "hide",
+  "path": {
+    "max_width": 80,
+    "readonly_suffix": "{{ if not .Writable }} {{ end }}"
+  },
+  "git": {
+    "branch_template": "{{ if gt (len .Branch) 32 }}{{ trunc 12 .Branch }}…{{ trunc -12 .Branch }}{{ else }}{{ .Branch }}{{ end }}",
+    "untracked_mode": "all",
+    "fragments": [
+      {
+        "unless_any": [".Upstream", ".UpstreamIcon"],
+        "template": "{{ if and .Upstream (ne (base .Upstream) .Ref) }}:{{ .Upstream }}{{ end }}"
+      },
+      {
+        "unless_any": [".Commit.Subject"],
+        "template": "{{ if and .Commit (regexMatch \"(?i)(^|[^a-z0-9])wip([^a-z0-9]|$)\" .Commit.Subject) }} wip{{ end }}"
+      },
+      {
+        "unless_any": [".BranchStatus", ".Ahead", ".Behind"],
+        "template": "{{ if gt .Behind 0 }} ⇣{{ .Behind }}{{ end }}{{ if gt .Ahead 0 }} ⇡{{ .Ahead }}{{ end }}"
+      },
+      {
+        "unless_any": [".PushBehind", ".PushAhead"],
+        "template": "{{ if gt .PushBehind 0 }} ⇠{{ .PushBehind }}{{ end }}{{ if gt .PushAhead 0 }} ⇢{{ .PushAhead }}{{ end }}"
+      },
+      {
+        "unless_any": [".StashCount"],
+        "template": "{{ if gt .StashCount 0 }} *{{ .StashCount }}{{ end }}"
+      },
+      {
+        "unless_any": [".Working.String", ".Working.Added", ".Working.Modified", ".Working.Deleted"],
+        "template": "{{ if .Working.Changed }} !{{ .Working.String }}{{ end }}"
+      },
+      {
+        "unless_any": [".Staging.String", ".Staging.Added", ".Staging.Modified", ".Staging.Deleted"],
+        "template": "{{ if .Staging.Changed }} +{{ .Staging.String }}{{ end }}"
+      },
+      {
+        "unless_any": [".Working.String", ".Working.Untracked"],
+        "template": "{{ if gt .Working.Untracked 0 }} ?{{ .Working.Untracked }}{{ end }}"
+      },
+      {
+        "unless_any": [".Working.String", ".Working.Deleted"],
+        "template": "{{ if gt .Working.Deleted 0 }} -{{ .Working.Deleted }}{{ end }}"
+      },
+      {
+        "unless_any": [".Working.String", ".Staging.String", ".Working.Unmerged", ".Staging.Unmerged"],
+        "template": "{{ $conflicts := max .Working.Unmerged .Staging.Unmerged }}{{ if gt $conflicts 0 }} ~{{ $conflicts }}{{ end }}"
+      },
+      {
+        "unless_any": [".Merge"],
+        "template": "{{ if .Merge }} merge{{ end }}"
+      },
+      {
+        "unless_any": [".Rebase"],
+        "template": "{{ if .Rebase }} rebase{{ end }}"
+      },
+      {
+        "unless_any": [".CherryPick"],
+        "template": "{{ if .CherryPick }} cherry-pick{{ end }}"
+      },
+      {
+        "unless_any": [".Revert"],
+        "template": "{{ if .Revert }} revert{{ end }}"
+      }
+    ]
+  },
+  "executiontime_threshold_ms": 3000,
+  "status_suffix": "{{ if .Error }} {{ .Code }}{{ if gt .Code 128 }} ({{ reason .Code }}){{ end }}{{ end }}",
+  "missing_segments": [
+    {
+      "feature": "status",
+      "segment": {
+        "type": "status",
+        "alias": "FunctionalStatus",
+        "style": "plain",
+        "template": "{{ if .Error }}✘ {{ .Code }}{{ if gt .Code 128 }} ({{ reason .Code }}){{ end }} {{ end }}"
+      }
+    },
+    {
+      "feature": "executiontime",
+      "segment": {
+        "type": "executiontime",
+        "alias": "FunctionalExecutionTime",
+        "style": "plain",
+        "options": {
+          "threshold": 3000,
+          "style": "round"
+        },
+        "template": "took {{ .FormattedMs }} "
+      }
+    },
+    {
+      "feature": "jobs",
+      "marker": ".Jobs",
+      "segment": {
+        "type": "text",
+        "alias": "FunctionalJobs",
+        "style": "plain",
+        "template": "{{ if gt .Jobs 0 }}✦ {{ end }}"
+      }
+    },
+    {
+      "feature": "direnv",
+      "marker": ".Env.DIRENV_DIR",
+      "segment": {
+        "type": "text",
+        "alias": "FunctionalDirenv",
+        "style": "plain",
+        "template": "{{ if .Env.DIRENV_DIR }}direnv {{ end }}"
+      }
+    },
+    {
+      "feature": "python",
+      "segment": {
+        "type": "python",
+        "alias": "FunctionalPython",
+        "style": "plain",
+        "options": {
+          "display_mode": "context",
+          "display_default": false
+        },
+        "timeout": 250,
+        "template": "{{ if .Venv }}{{ .Venv }} {{ else if and .Full (not .Error) }}py {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "node",
+      "segment": {
+        "type": "node",
+        "alias": "FunctionalNode",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}node {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "go",
+      "segment": {
+        "type": "go",
+        "alias": "FunctionalGo",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}go {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "rust",
+      "segment": {
+        "type": "rust",
+        "alias": "FunctionalRust",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}rust {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "java",
+      "segment": {
+        "type": "java",
+        "alias": "FunctionalJava",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}java {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "php",
+      "segment": {
+        "type": "php",
+        "alias": "FunctionalPhp",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}php {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "ruby",
+      "segment": {
+        "type": "ruby",
+        "alias": "FunctionalRuby",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}ruby {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "flutter",
+      "segment": {
+        "type": "flutter",
+        "alias": "FunctionalFlutter",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}flutter {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "lua",
+      "segment": {
+        "type": "lua",
+        "alias": "FunctionalLua",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}lua {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "perl",
+      "segment": {
+        "type": "perl",
+        "alias": "FunctionalPerl",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}perl {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "haskell",
+      "segment": {
+        "type": "haskell",
+        "alias": "FunctionalHaskell",
+        "style": "plain",
+        "options": {"display_mode": "context"},
+        "timeout": 250,
+        "template": "{{ if and .Full (not .Error) }}ghc {{ .Full }} {{ end }}"
+      }
+    },
+    {
+      "feature": "terraform",
+      "segment": {
+        "type": "terraform",
+        "alias": "FunctionalTerraform",
+        "style": "plain",
+        "timeout": 250,
+        "template": "{{ if ne .WorkspaceName \"default\" }}tf {{ .WorkspaceName }} {{ end }}"
+      }
+    },
+    {
+      "feature": "nix-shell",
+      "segment": {
+        "type": "nix-shell",
+        "alias": "FunctionalNixShell",
+        "style": "plain",
+        "template": "nix {{ .Type }} "
+      }
+    },
+    {
+      "feature": "context",
+      "skip_when_types": ["session", "root", "connection"],
+      "segment": {
+        "type": "text",
+        "alias": "FunctionalContext",
+        "style": "plain",
+        "template": "{{ if or .Root .Env.SSH_CONNECTION }}with {{ .UserName }}@{{ .HostName }} {{ end }}"
+      }
+    },
+    {
+      "feature": "taskwarrior",
+      "requires_command": "task",
+      "segment": {
+        "type": "taskwarrior",
+        "alias": "FunctionalTasks",
+        "style": "plain",
+        "timeout": 150,
+        "cache": {"duration": "30s", "strategy": "session"},
+        "options": {"commands": {"pending": "+PENDING count"}},
+        "template": "{{ $pending := int .Commands.Pending }}{{ if gt $pending 0 }}tasks {{ $pending }} {{ end }}"
+      }
+    },
+    {
+      "feature": "time",
+      "segment": {
+        "type": "time",
+        "alias": "FunctionalTime",
+        "style": "plain",
+        "options": {"time_format": "15:04:05"},
+        "template": "at {{ .CurrentDate | date .Format }}"
+      }
+    }
+  ]
+}

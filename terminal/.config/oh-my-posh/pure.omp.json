@@ -1,0 +1,250 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "blue",
+          "foreground_templates": [
+            "{{ if not .Writable }}yellow{{ end }}"
+          ],
+          "options": {
+            "style": "powerlevel",
+            "max_width": 80,
+            "home_icon": "~"
+          },
+          "template": "{{ if not .Writable }} {{ end }}{{ .Path }} "
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "default",
+          "options": {
+            "branch_icon": "",
+            "tag_icon": "#",
+            "commit_icon": "@",
+            "branch_identical_icon": "",
+            "branch_ahead_icon": "",
+            "branch_behind_icon": "",
+            "branch_gone_icon": "",
+            "branch_template": "{{ if gt (len .Branch) 32 }}{{ trunc 12 .Branch }}…{{ trunc -12 .Branch }}{{ else }}{{ .Branch }}{{ end }}",
+            "untracked_modes": {
+              "*": "all"
+            }
+          },
+          "template": "on {{ .HEAD }}{{ if and .Upstream (ne (base .Upstream) .Ref) }}:<cyan>{{ .Upstream }}</>{{ end }}{{ if and .Commit (regexMatch \"(?i)(^|[^a-z0-9])wip([^a-z0-9]|$)\" .Commit.Subject) }} <lightMagenta>wip</>{{ end }}{{ if gt .Behind 0 }} <cyan>⇣{{ .Behind }}</>{{ end }}{{ if gt .Ahead 0 }}<cyan>⇡{{ .Ahead }}</>{{ end }}{{ if gt .PushBehind 0 }} <cyan>⇠{{ .PushBehind }}</>{{ end }}{{ if gt .PushAhead 0 }}<cyan>⇢{{ .PushAhead }}</>{{ end }}{{ if gt .StashCount 0 }} <cyan>*{{ .StashCount }}</>{{ end }}{{ if .Merge }} <red>merge</>{{ end }}{{ if .Rebase }} <red>rebase</>{{ end }}{{ if .CherryPick }} <red>cherry-pick</>{{ end }}{{ if .Revert }} <red>revert</>{{ end }}{{ $conflicts := max .Working.Unmerged .Staging.Unmerged }}{{ if gt $conflicts 0 }} <red>~{{ $conflicts }}</>{{ end }}{{ $staged := add .Staging.Added .Staging.Modified .Staging.Deleted }}{{ if gt $staged 0 }} <lightMagenta>+{{ $staged }}</>{{ end }}{{ $unstaged := add .Working.Added .Working.Modified .Working.Deleted }}{{ if gt $unstaged 0 }} <lightMagenta>!{{ $unstaged }}</>{{ end }}{{ if gt .Working.Untracked 0 }} <lightMagenta>?{{ .Working.Untracked }}</>{{ end }}",
+          "exclude_folders": [
+            "~"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "rprompt",
+      "alignment": "right",
+      "segments": [
+        {
+          "type": "status",
+          "style": "plain",
+          "foreground": "red",
+          "template": "{{ if and .Error (contains \"|\" .String) }}✘ {{ .String }} {{ else if gt .Code 128 }}✘ {{ reason .Code }} {{ end }}"
+        },
+        {
+          "type": "executiontime",
+          "style": "plain",
+          "foreground": "green",
+          "options": {
+            "threshold": 3000,
+            "style": "round"
+          },
+          "template": "took {{ .FormattedMs }} "
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "green",
+          "template": "{{ if gt .Jobs 0 }}✦ {{ end }}"
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "yellow",
+          "template": "{{ if .Env.DIRENV_DIR }}direnv {{ end }}"
+        },
+        {
+          "type": "python",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "environment",
+            "display_default": false,
+            "cache_duration": "1m"
+          },
+          "template": "{{ if .Venv }}{{ .Venv }} {{ end }}"
+        },
+        {
+          "type": "node",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}node {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "go",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}go {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "ruby",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}ruby {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "flutter",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}flutter {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "lua",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}lua {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "java",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}java {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "perl",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}perl {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "php",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}php {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "haskell",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "display_mode": "context",
+            "cache_duration": "1m"
+          },
+          "template": "{{ if and .Full (not .Error) }}ghc {{ .Full }} {{ end }}"
+        },
+        {
+          "type": "nix-shell",
+          "style": "plain",
+          "foreground": "cyan",
+          "template": "nix {{ .Type }} "
+        },
+        {
+          "type": "terraform",
+          "style": "plain",
+          "foreground": "cyan",
+          "template": "{{ if ne .WorkspaceName \"default\" }}{{ .WorkspaceName }} {{ end }}"
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "red",
+          "template": "{{ if or .Root .Env.SSH_CONNECTION }}with {{ .UserName }}@{{ .HostName }} {{ end }}"
+        },
+        {
+          "type": "taskwarrior",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "commands": {
+              "pending": "+PENDING count"
+            }
+          },
+          "template": "{{ $pending := int .Commands.Pending }}{{ if gt $pending 0 }}tasks {{ $pending }} {{ end }}"
+        },
+        {
+          "type": "time",
+          "style": "plain",
+          "foreground": "cyan",
+          "options": {
+            "time_format": "15:04:05"
+          },
+          "template": "at {{ .CurrentDate | date .Format }}"
+        }
+      ],
+      "overflow": "hide"
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "status",
+          "style": "plain",
+          "foreground": "magenta",
+          "foreground_templates": [
+            "{{ if gt .Code 0 }}red{{ end }}"
+          ],
+          "options": {
+            "always_enabled": true
+          },
+          "template": "❯ "
+        }
+      ]
+    }
+  ],
+  "console_title_template": "{{if .Root}}(Admin){{end}} {{.PWD}}",
+  "transient_prompt": {
+    "foreground": "magenta",
+    "foreground_templates": [
+      "{{ if gt .Code 0 }}red{{ end }}"
+    ],
+    "template": "❯ "
+  },
+  "version": 4
+}

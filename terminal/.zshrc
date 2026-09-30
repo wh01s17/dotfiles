@@ -1,27 +1,11 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="robbyrussell"
-
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in $ZSH/themes/
-# If set to an empty array, this variable will have no effect.
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+# Oh My Zsh loads plugins; Oh My Posh provides the prompt.
+ZSH_THEME=""
 
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
@@ -383,12 +367,6 @@ alias cd="z"
 alias john="/home/wh01s17/Documentos/git-clones/john/run/john"
 alias fastfetch="$HOME/.config/fastfetch/wh01s17.sh"
 
-source ~/powerlevel10k/powerlevel10k.zsh-theme
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-
 # export JOHN=/home/wh01s17/Documentos/git-clones/john/run/john
 
 PATH="/home/wh01s17/perl5/bin${PATH:+:${PATH}}"; export PATH;
@@ -422,3 +400,16 @@ export NVM_DIR="$HOME/.config/nvm"
 export PATH="$(echo "$PATH" | tr ':' '\n' | grep -v "$HOME/.local/share/mise/shims" | paste -sd ':' -)"
 nvm use default >/dev/null
 . /usr/share/nvm/init-nvm.sh
+
+omp-theme() {
+  zsh "$HOME/.config/oh-my-posh/theme-picker.zsh" "$@"
+}
+
+eval "$(oh-my-posh init zsh --config "$HOME/.config/oh-my-posh/active.omp.json" --strict)"
+
+# Keep one empty line between completed commands and the next prompt.
+_omp_sparse_precmd() {
+  print
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _omp_sparse_precmd

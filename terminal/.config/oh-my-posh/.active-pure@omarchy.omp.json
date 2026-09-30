@@ -1,0 +1,286 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "transient_prompt": {
+    "template": "❯ "
+  },
+  "upgrade": {
+    "source": "cdn",
+    "interval": "168h",
+    "auto": false,
+    "notice": false
+  },
+  "console_title_template": "{{if .Root}}(Admin){{end}} {{.PWD}}",
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "template": "{{ .UserName }} ",
+          "foreground": "green",
+          "type": "session",
+          "style": "plain"
+        },
+        {
+          "options": {
+            "max_width": 80,
+            "style": "powerlevel"
+          },
+          "template": "{{ .Path }}{{ if not .Writable }} {{ end }} ",
+          "foreground": "lightBlue",
+          "type": "path",
+          "style": "plain",
+          "index": 2
+        }
+      ],
+      "index": 1
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "options": {
+            "branch_ahead_icon": "<lightCyan>⇡ </>",
+            "branch_behind_icon": "<lightCyan>⇣ </>",
+            "branch_icon": "",
+            "branch_template": "{{ if gt (len .Branch) 32 }}{{ trunc 12 .Branch }}…{{ trunc -12 .Branch }}{{ else }}{{ .Branch }}{{ end }}",
+            "github_icon": "",
+            "untracked_modes": {
+              "*": "all"
+            }
+          },
+          "template": "{{ .UpstreamIcon }}{{ .HEAD }}{{if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }}<lightGreen>*</>{{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}  {{ .Staging.String }}{{ end }}{{ if gt .StashCount 0 }}  {{ .StashCount }}{{ end }}{{ if and .Commit (regexMatch \"(?i)(^|[^a-z0-9])wip([^a-z0-9]|$)\" .Commit.Subject) }} wip{{ end }}{{ if gt .PushBehind 0 }} ⇠{{ .PushBehind }}{{ end }}{{ if gt .PushAhead 0 }} ⇢{{ .PushAhead }}{{ end }}{{ if .Merge }} merge{{ end }}{{ if .Rebase }} rebase{{ end }}{{ if .CherryPick }} cherry-pick{{ end }}{{ if .Revert }} revert{{ end }} ",
+          "foreground": "darkGray",
+          "type": "git",
+          "style": "plain",
+          "exclude_folders": [
+            "~"
+          ],
+          "index": 1
+        }
+      ],
+      "index": 2
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "options": {
+            "style": "austin",
+            "threshold": 3000
+          },
+          "template": " {{ .FormattedMs }} ",
+          "foreground": "lightGreen",
+          "type": "executiontime",
+          "style": "plain",
+          "index": 1
+        }
+      ],
+      "index": 3
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "options": {
+            "always_enabled": true
+          },
+          "template": "❯{{ if .Error }} {{ .Code }}{{ if gt .Code 128 }} ({{ reason .Code }}){{ end }}{{ end }} ",
+          "foreground": "lightMagenta",
+          "type": "status",
+          "style": "plain",
+          "foreground_templates": [
+            "{{ if gt .Code 0 }}green{{ end }}"
+          ],
+          "index": 1
+        }
+      ],
+      "newline": true,
+      "index": 4
+    },
+    {
+      "type": "rprompt",
+      "alignment": "right",
+      "overflow": "hide",
+      "segments": [
+        {
+          "alias": "FunctionalJobs",
+          "template": "{{ if gt .Jobs 0 }}✦ {{ end }}",
+          "foreground": "green",
+          "type": "text",
+          "style": "plain"
+        },
+        {
+          "alias": "FunctionalDirenv",
+          "template": "{{ if .Env.DIRENV_DIR }}direnv {{ end }}",
+          "foreground": "green",
+          "type": "text",
+          "style": "plain"
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_default": false,
+            "display_mode": "context"
+          },
+          "alias": "FunctionalPython",
+          "template": "{{ if .Venv }}{{ .Venv }} {{ else if and .Full (not .Error) }}py {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "python",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalNode",
+          "template": "{{ if and .Full (not .Error) }}node {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "node",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalGo",
+          "template": "{{ if and .Full (not .Error) }}go {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "go",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalRust",
+          "template": "{{ if and .Full (not .Error) }}rust {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "rust",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalJava",
+          "template": "{{ if and .Full (not .Error) }}java {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "java",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalPhp",
+          "template": "{{ if and .Full (not .Error) }}php {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "php",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalRuby",
+          "template": "{{ if and .Full (not .Error) }}ruby {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "ruby",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalFlutter",
+          "template": "{{ if and .Full (not .Error) }}flutter {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "flutter",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalLua",
+          "template": "{{ if and .Full (not .Error) }}lua {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "lua",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalPerl",
+          "template": "{{ if and .Full (not .Error) }}perl {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "perl",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "options": {
+            "cache_duration": "1m",
+            "display_mode": "context"
+          },
+          "alias": "FunctionalHaskell",
+          "template": "{{ if and .Full (not .Error) }}ghc {{ .Full }} {{ end }}",
+          "foreground": "green",
+          "type": "haskell",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "alias": "FunctionalTerraform",
+          "template": "{{ if ne .WorkspaceName \"default\" }}tf {{ .WorkspaceName }} {{ end }}",
+          "foreground": "green",
+          "type": "terraform",
+          "style": "plain",
+          "timeout": 250
+        },
+        {
+          "alias": "FunctionalNixShell",
+          "template": "nix {{ .Type }} ",
+          "foreground": "green",
+          "type": "nix-shell",
+          "style": "plain"
+        },
+        {
+          "options": {
+            "time_format": "15:04:05"
+          },
+          "alias": "FunctionalTime",
+          "template": "at {{ .CurrentDate | date .Format }}",
+          "foreground": "green",
+          "type": "time",
+          "style": "plain"
+        }
+      ]
+    }
+  ],
+  "version": 4,
+  "streaming": 100
+}
