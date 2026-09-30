@@ -43,9 +43,10 @@ def fit(line: str, limit: int) -> tuple[str, int]:
     return "".join(pieces) + RESET, width
 
 
-def preview(config: str, pwd: str) -> list[str]:
+def preview(config: str, pwd: str, width: int) -> list[str]:
     rendered = subprocess.run(
-        ["oh-my-posh", "print", "preview", "--config", config, "--pwd", pwd],
+        ["oh-my-posh", "print", "preview", "--config", config, "--pwd", pwd,
+         "--terminal-width", str(width)],
         check=True, capture_output=True, text=True,
     )
     return rendered.stdout.splitlines()
@@ -59,8 +60,8 @@ def main() -> None:
     parser.add_argument("--columns", type=int, default=120)
     args = parser.parse_args()
     half = max(12, (args.columns - 3) // 2)
-    left = preview(args.original, args.pwd)
-    right = preview(args.omarchy, args.pwd)
+    left = preview(args.original, args.pwd, half)
+    right = preview(args.omarchy, args.pwd, half)
     print(f"{'OFICIAL':<{half}} │ OMARCHY")
     print(f"{'─' * half}─┼─{'─' * half}")
     for original, themed in itertools.zip_longest(left, right, fillvalue=""):

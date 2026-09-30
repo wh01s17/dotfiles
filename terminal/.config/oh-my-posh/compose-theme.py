@@ -225,6 +225,37 @@ def stabilize_added_segments(exported: dict, overrides: dict) -> dict:
     return exported
 
 
+def move_right_above_input(config: dict) -> bool:
+    """Place right-side content on the context line of a two-line prompt."""
+    blocks = config["blocks"]
+    input_lines = [
+        index for index, block in enumerate(blocks)
+        if index and block.get("type") == "prompt"
+        and block.get("alignment", "left") == "left" and block.get("newline")
+    ]
+    right_indices = [
+        index for index, block in enumerate(blocks)
+        if block.get("type") == "rprompt" or block.get("alignment") == "right"
+    ]
+    if len(input_lines) != 1 or not right_indices:
+        return False
+
+    input_start = input_lines[0]
+    right = [blocks[index] for index in right_indices]
+    for block in right:
+        block["type"] = "prompt"
+        block["alignment"] = "right"
+        block.pop("newline", None)
+        block["overflow"] = "hide"
+    remaining = [block for index, block in enumerate(blocks) if index not in right_indices]
+    insertion = sum(index < input_start for index in range(len(blocks)) if index not in right_indices)
+    config["blocks"] = remaining[:insertion] + right + remaining[insertion:]
+    config["blocks"][0].pop("newline", None)
+    config.pop("streaming", None)
+    config.setdefault("var", {})["omp_right_above_input"] = True
+    return True
+
+
 def compose(base: dict, rules: dict, extends: str, pure_local: bool) -> dict:
     blocks = base.get("blocks")
     if not isinstance(blocks, list) or not blocks:
@@ -474,6 +505,19 @@ def main() -> None:
         )
         effective = recolor(stabilize_added_segments(json.loads(exported.stdout), effective), omarchy_colors, omarchy_accent)
         effective.pop("extends", None)
+    if sum(
+        index > 0 and block.get("type") == "prompt"
+        and block.get("alignment", "left") == "left" and bool(block.get("newline"))
+        for index, block in enumerate(base["blocks"])
+    ) == 1:
+        if "extends" in effective:
+            args.output.write_text(json.dumps(effective, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            exported = subprocess.run(
+                ["oh-my-posh", "config", "export", "--config", str(args.output)],
+                check=True, capture_output=True, text=True,
+            )
+            effective = json.loads(exported.stdout)
+        move_right_above_input(effective)
     args.output.write_text(json.dumps(effective, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 

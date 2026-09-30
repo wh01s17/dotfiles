@@ -405,11 +405,27 @@ omp-theme() {
   zsh "$HOME/.config/oh-my-posh/theme-picker.zsh" "$@"
 }
 
+_omp_active_config="$HOME/.config/oh-my-posh/active.omp.json"
+if (( $+commands[jq] )) && jq -e '.var.omp_right_above_input == true' "$_omp_active_config" >/dev/null 2>&1; then
+  [[ -v POSH_DISABLE_STREAMING ]] || export POSH_DISABLE_STREAMING=omp-right-above-input
+elif [[ ${POSH_DISABLE_STREAMING-} == omp-right-above-input ]]; then
+  unset POSH_DISABLE_STREAMING
+fi
+unset _omp_active_config
+
 eval "$(oh-my-posh init zsh --config "$HOME/.config/oh-my-posh/active.omp.json" --strict)"
 
-# Keep one empty line between completed commands and the next prompt.
+# Separate completed commands from the next prompt, but not shell startup.
+typeset -gi _omp_command_ran=0
+_omp_sparse_preexec() {
+  _omp_command_ran=1
+}
 _omp_sparse_precmd() {
-  print
+  if (( _omp_command_ran )); then
+    print
+    _omp_command_ran=0
+  fi
 }
 autoload -Uz add-zsh-hook
+add-zsh-hook preexec _omp_sparse_preexec
 add-zsh-hook precmd _omp_sparse_precmd

@@ -729,11 +729,11 @@ locales de Perl, Ruby, LM Studio, OpenCode y John the Ripper.
 
 [`terminal/.config/oh-my-posh/pure.omp.json`](terminal/.config/oh-my-posh/pure.omp.json)
 guarda una copia local del tema Pure. Usa los colores ANSI de Kitty, cuya paleta
-cambia con el tema activo de Omarchy, y deja una línea vacía antes del prompt
-actual. Muestra la ruta y el estado Git en la primera línea, y el símbolo de
-entrada en la segunda. El lado derecho muestra la hora y, cuando corresponde,
-fallos de tuberías o señales, comandos de más de tres segundos, trabajos en
-segundo plano, entornos de Python, versiones de lenguajes en proyectos,
+cambia con el tema activo de Omarchy. Muestra la ruta y el estado Git en la
+primera línea, y el símbolo de entrada en la segunda. El lado derecho muestra
+la hora y, cuando corresponde, fallos de tuberías o señales, comandos de más
+de tres segundos, trabajos en segundo plano, entornos de Python, versiones de
+lenguajes en proyectos,
 Terraform, Nix y tareas pendientes. Se oculta si no cabe junto al lado
 izquierdo. El prompt anterior se reduce a `❯` después de ejecutar un comando.
 Los colores siguen la paleta activa de Omarchy; no se recupera la paleta del
@@ -768,17 +768,20 @@ upstream, ahead/behind, stash, estados de archivos y operaciones activas,
 estado de salida y señal, duración desde 3 segundos, trabajos en segundo
 plano, direnv, entornos y versiones de lenguajes, Terraform, Nix y hora. Las
 herramientas aparecen sólo en su contexto; Taskwarrior se incluye sólo si
-`task` está instalado. Se usa renderizado en streaming cuando el tema no trae
-ya un modo de renderizado propio. Las versiones de los runtimes tienen una
-caché de un minuto para reducir el coste del prompt derecho sin retrasar la
-detección del proyecto. Se preserva el número de líneas y la
-posición de los bloques del tema original; las funciones ausentes se agregan
-al lado derecho y se ocultan cuando no caben. Algunos segmentos ya presentes
+`task` está instalado. Se usa renderizado en streaming cuando es compatible
+con la disposición del tema. En temas de dos líneas, todo bloque derecho se
+dibuja junto a la línea contextual, encima de la línea donde se escriben los
+comandos; se desactiva streaming para que Oh My Posh lo renderice allí. Los
+temas de una línea conservan su disposición original. Las versiones de los
+runtimes tienen una caché de un minuto para reducir el coste del prompt derecho
+sin retrasar la detección del proyecto. Los bloques derechos se ocultan cuando
+no caben junto al contexto. Algunos segmentos ya presentes
 pueden presentar estos datos con su propio formato. Oh My Posh no expone un
 indicador de `git bisect` equivalente al anterior, y ciertos temas sin un
 segmento apropiado requieren el bloque derecho sencillo.
-Un hook `precmd` de `.zshrc` deja una línea vacía antes de cada prompt sin
-cambiar el diseño de los temas.
+Los hooks `preexec` y `precmd` de `.zshrc` separan el prompt después de cada
+comando ejecutado, sin agregar espacio al abrir la terminal ni cambiar el
+diseño de los temas.
 
 `pure-local` conserva su diseño y los colores ANSI que siguen la paleta activa
 de Kitty/Omarchy. Los temas oficiales conservan sus colores propios, incluidos
