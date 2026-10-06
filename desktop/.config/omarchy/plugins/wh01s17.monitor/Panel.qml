@@ -71,6 +71,13 @@ Panel {
   readonly property string activeLayout: pendingLayout !== "" ? pendingLayout : savedLayout
   readonly property bool layoutAvailable: internalMonitor !== "" && displays.length > 1
 
+  // Extend arrangement editor, opened by right-clicking Extend. Rects are in
+  // Hyprland's logical space ({ name, x, y, w, h }); monitorGeometry is the
+  // live layout from `hyprctl monitors all -j`.
+  property var monitorGeometry: []
+  property bool arrangeOpen: false
+  property var arrangeRects: []
+
   // Carry sub-notch touchpad deltas between wheel events.
   property real wheelAccumulator: 0
 
@@ -270,6 +277,10 @@ Panel {
     function toggle() { root.toggle() }
     function show() { root.open() }
     function hide() { root.close() }
+    function arrange() {
+      root.open()
+      root.openArrangement()
+    }
   }
 
   function refresh() {
@@ -386,6 +397,14 @@ Panel {
   // toggle is set. Omarchy's own mirror toggle is cleared so it can't fight
   // the chosen layout.
   function setLayout(layout) {
+    if (String(layout || "") === root.activeLayout) return
+    runLayout(layout, "keep", "")
+  }
+
+  // arrangementAction: "keep" leaves monitor-arrangement.conf alone, "write"
+  // replaces it with `arrangement`, "clear" drops it so the profile's own
+  // placement returns.
+  function runLayout(layout, arrangementAction, arrangement) {
     var value = String(layout || "")
     var internal = String(root.internalMonitor || "")
     var valid = false
@@ -393,7 +412,6 @@ Panel {
       if (layoutOptions[i].value === value) valid = true
     }
     if (!valid || !/^[A-Za-z0-9._-]+$/.test(internal)) return
-    if (value === root.activeLayout) return
 
     root.pendingLayout = value
     actionProc.command = ["bash", "-c",
@@ -401,6 +419,9 @@ Panel {
       'file="$dir/monitor-layout.conf"; ' +
       'omarchy-hyprland-monitor-internal-mirror off >/dev/null; ' +
       'mkdir -p "$dir" && printf "layout=%s\\ninternal=%s\\n" "$1" "$2" >"$file.tmp" && mv "$file.tmp" "$file" || exit 1; ' +
+      'arr="$dir/monitor-arrangement.conf"; ' +
+      'if [ "$3" = write ]; then printf "%s\\n" "$4" >"$arr.tmp" && mv "$arr.tmp" "$arr" || exit 1; ' +
+      'elif [ "$3" = clear ]; then rm -f "$arr"; fi; ' +
       // An output leaving mirror mode on a reload stays hidden from clients
       // (no bar, no wallpaper, unknown to grim). Switching it off first makes
       // the reload bring it back as a fresh output.
@@ -410,8 +431,44 @@ Panel {
       '[ -n "$unmirrored" ] && sleep 1; fi; ' +
       'if [ "$1" = external ]; then hyprctl reload >/dev/null && omarchy-hyprland-monitor-internal off; ' +
       'else omarchy-hyprland-monitor-internal on; hyprctl reload >/dev/null; fi',
-      "bash", value, internal]
+      "bash", value, internal, arrangementAction, arrangement]
     if (!actionProc.running) actionProc.running = true
+  }
+
+  function openArrangement() {
+    root.arrangeRects = Model.initialArrangement(root.monitorGeometry, root.internalMonitor)
+    root.arrangeOpen = root.arrangeRects.length > 1
+    if (root.arrangeOpen) Qt.callLater(function() { root.ensureCursorVisible(arrangeEditor) })
+  }
+
+  // Snap a dropped display against its neighbours, like Windows does.
+  function moveArranged(index, x, y) {
+    var rects = root.arrangeRects.map(function(r) {
+      return { name: r.name, x: r.x, y: r.y, w: r.w, h: r.h }
+    })
+    if (index < 0 || index >= rects.length) return
+    var spot = Model.snapPosition(rects, index, x, y)
+    rects[index].x = spot.x
+    rects[index].y = spot.y
+    root.arrangeRects = rects
+  }
+
+  function applyArrangement() {
+    var lines = Model.arrangementLines(root.arrangeRects, root.internalMonitor)
+    // Lines land in a file monitor_layout.lua parses; only plain connector
+    // names and integers may pass.
+    for (var i = 0; i < lines.length; i++) {
+      if (!/^(root=[A-Za-z0-9._-]+|[A-Za-z0-9._-]+=[A-Za-z0-9._-]+,(right|left|above|below),-?[0-9]+)$/.test(lines[i])) return
+    }
+    root.arrangeOpen = false
+    root.pendingLayout = "extend"
+    runLayout("extend", "write", lines.join("\n"))
+  }
+
+  function resetArrangement() {
+    root.arrangeOpen = false
+    root.pendingLayout = "extend"
+    runLayout("extend", "clear", "")
   }
 
   implicitWidth: button.implicitWidth
@@ -433,6 +490,7 @@ Panel {
         selectedIndex = 0
       }
       cursorActive = false
+      arrangeOpen = false
     }
   }
 
@@ -480,6 +538,7 @@ Panel {
       waitForEnd: true
       onStreamFinished: {
         root.monitorModes = Model.parseMonitorModes(text)
+        root.monitorGeometry = Model.parseGeometry(text)
         // Whatever the reload settled on is authoritative now; drop the
         // optimistic label even if the mode didn't take.
         root.pendingMode = ""
@@ -572,7 +631,8 @@ Panel {
     open: root.opened
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight, Style.space(560))
+    // The arrangement editor needs room for its canvas and buttons.
+    contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight, Style.space(root.arrangeOpen ? 840 : 560))
 
     PanelKeyCatcher {
       id: keyCatcher
@@ -936,6 +996,86 @@ Panel {
                 }
               }
             }
+
+            // Windows-style arrangement: drag the numbered displays, drop
+            // snaps them flush against a neighbour, Apply saves and extends.
+            Column {
+              id: arrangeEditor
+              width: parent.width
+              spacing: Style.space(8)
+              visible: root.arrangeOpen
+
+              Rectangle {
+                id: arrangeCanvas
+                width: parent.width
+                height: Style.space(170)
+                color: Qt.rgba(root.bar.foreground.r, root.bar.foreground.g, root.bar.foreground.b, 0.05)
+                clip: true
+
+                readonly property real pad: Style.space(14)
+                readonly property var bounds: {
+                  var rects = root.arrangeRects
+                  if (!rects || rects.length === 0) return { x: 0, y: 0, w: 1, h: 1 }
+                  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+                  for (var i = 0; i < rects.length; i++) {
+                    minX = Math.min(minX, rects[i].x)
+                    minY = Math.min(minY, rects[i].y)
+                    maxX = Math.max(maxX, rects[i].x + rects[i].w)
+                    maxY = Math.max(maxY, rects[i].y + rects[i].h)
+                  }
+                  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
+                }
+                readonly property real k: Math.min((width - pad * 2) / bounds.w, (height - pad * 2) / bounds.h)
+                readonly property real ox: (width - bounds.w * k) / 2 - bounds.x * k
+                readonly property real oy: (height - bounds.h * k) / 2 - bounds.y * k
+
+                Repeater {
+                  model: root.arrangeRects
+
+                  ArrangeTile {
+                    required property var modelData
+                    required property int index
+
+                    rect: modelData
+                    tileIndex: index
+                  }
+                }
+              }
+
+              Row {
+                anchors.right: parent.right
+                spacing: Style.spacing.xs
+
+                Button {
+                  text: "Reset"
+                  tooltipText: "Back to the machine profile's placement"
+                  fontSize: Style.font.caption
+                  foreground: root.bar.foreground
+                  fontFamily: root.bar.fontFamily
+                  bordered: true
+                  onClicked: root.resetArrangement()
+                }
+
+                Button {
+                  text: "Cancel"
+                  fontSize: Style.font.caption
+                  foreground: root.bar.foreground
+                  fontFamily: root.bar.fontFamily
+                  bordered: true
+                  onClicked: root.arrangeOpen = false
+                }
+
+                Button {
+                  text: "Apply"
+                  fontSize: Style.font.caption
+                  foreground: root.bar.foreground
+                  fontFamily: root.bar.fontFamily
+                  bordered: true
+                  active: true
+                  onClicked: root.applyArrangement()
+                }
+              }
+            }
           }
 
           Item {
@@ -987,12 +1127,91 @@ Panel {
     active: root.activeLayout === layoutValue
     hasCursor: root.cursorActive && root.focusSection === "layout" && root.selectedIndex === layoutIndex
 
+    tooltipText: layoutValue === "extend" ? "Right-click to arrange displays" : ""
+
     onClicked: root.setLayout(layoutValue)
+    onRightClicked: if (layoutValue === "extend") root.openArrangement()
     onHovered: function(isHovered) {
       if (!isHovered) return
       root.cursorActive = true
       root.focusSection = "layout"
       root.selectedIndex = layoutPill.layoutIndex
+    }
+  }
+
+  component ArrangeTile: Rectangle {
+    id: tile
+    required property var rect
+    required property int tileIndex
+
+    property bool dragging: false
+    property real dragX: 0
+    property real dragY: 0
+    property real grabX: 0
+    property real grabY: 0
+
+    x: dragging ? dragX : arrangeCanvas.ox + rect.x * arrangeCanvas.k
+    y: dragging ? dragY : arrangeCanvas.oy + rect.y * arrangeCanvas.k
+    z: dragging ? 1 : 0
+    width: rect.w * arrangeCanvas.k
+    height: rect.h * arrangeCanvas.k
+    color: dragging || tileMouse.containsMouse
+      ? Style.selectedFillFor(root.bar.foreground, Color.accent)
+      : Style.hoverFillFor(root.bar.foreground, Color.accent)
+    border.color: dragging ? Color.accent : root.bar.foreground
+    border.width: 1
+
+    Text {
+      anchors.centerIn: parent
+      anchors.verticalCenterOffset: -Style.space(4)
+      text: String(tile.tileIndex + 1)
+      color: root.bar.foreground
+      font.family: root.bar.fontFamily
+      font.pixelSize: Math.max(Style.font.body, Math.min(tile.height * 0.4, Style.font.display))
+      font.bold: true
+    }
+
+    Text {
+      anchors.bottom: parent.bottom
+      anchors.bottomMargin: Style.space(3)
+      anchors.horizontalCenter: parent.horizontalCenter
+      width: parent.width - Style.space(6)
+      horizontalAlignment: Text.AlignHCenter
+      elide: Text.ElideRight
+      text: tile.rect.name
+      color: Qt.darker(root.bar.foreground, 1.3)
+      font.family: root.bar.fontFamily
+      font.pixelSize: Style.font.caption
+    }
+
+    MouseArea {
+      id: tileMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      preventStealing: true
+      cursorShape: tile.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+      onPressed: function(mouse) {
+        var p = mapToItem(arrangeCanvas, mouse.x, mouse.y)
+        tile.grabX = p.x - tile.x
+        tile.grabY = p.y - tile.y
+        tile.dragX = tile.x
+        tile.dragY = tile.y
+        tile.dragging = true
+      }
+      onPositionChanged: function(mouse) {
+        if (!tile.dragging) return
+        var p = mapToItem(arrangeCanvas, mouse.x, mouse.y)
+        tile.dragX = p.x - tile.grabX
+        tile.dragY = p.y - tile.grabY
+      }
+      onReleased: {
+        if (!tile.dragging) return
+        var lx = (tile.dragX - arrangeCanvas.ox) / arrangeCanvas.k
+        var ly = (tile.dragY - arrangeCanvas.oy) / arrangeCanvas.k
+        tile.dragging = false
+        root.moveArranged(tile.tileIndex, lx, ly)
+      }
+      onCanceled: tile.dragging = false
     }
   }
 
