@@ -57,6 +57,21 @@ Panel {
     return focusedMonitor + " · " + focusedModeLabel
   }
 
+  // Display layout saved in monitor-layout.conf; "auto" means no file, so the
+  // machine profile in ~/.config/hypr/monitors.lua decides on its own.
+  readonly property var layoutOptions: [
+    { value: "auto", label: "Auto" },
+    { value: "extend", label: "Extend" },
+    { value: "mirror", label: "Mirror" },
+    { value: "internal", label: "Laptop" },
+    { value: "external", label: "External" }
+  ]
+  property string savedLayout: "auto"
+  // Layout picked while the reload is in flight, so the pill doesn't snap back.
+  property string pendingLayout: ""
+  readonly property string activeLayout: pendingLayout !== "" ? pendingLayout : savedLayout
+  readonly property bool layoutAvailable: internalMonitor !== "" && displays.length > 1
+
   // Carry sub-notch touchpad deltas between wheel events.
   property real wheelAccumulator: 0
 
@@ -64,6 +79,9 @@ Panel {
   //   "brightness" - single slider row, selectedIndex = -1 sentinel
   //                  (mirrors Audio's slider rows). Only present if a
   //                  controllable backlight was detected.
+  //   "layout"     - extend/mirror/laptop/external pills; a horizontal row
+  //                  like "scale". Only present with a laptop panel plus at
+  //                  least one other output.
   //   "scale"      - 6 Button scale presets; treated as a single
   //                  horizontal row from j/k's perspective. h/l moves
   //                  between presets, identical to bluetooth's header.
@@ -90,21 +108,23 @@ Panel {
     if (focusedModeOptions.length > 0) list.push("resolution")
     list.push("scale")
     if (displays.length > 1) list.push("monitors")
+    if (layoutAvailable) list.push("layout")
     return list
   }
 
   function sectionCount(section) {
     if (section === "brightness") return 0  // only the slider sentinel at -1
     if (section === "resolution") return 0  // lone combobox, sentinel at -1
+    if (section === "layout") return layoutOptions.length
     if (section === "scale") return scaleValues.length
     if (section === "monitors") return displays.length
     return 0
   }
 
   function sectionIsSingleRow(section) {
-    // Brightness and resolution are lone controls; scale presets sit
+    // Brightness and resolution are lone controls; layout and scale pills sit
     // horizontally.
-    return section === "brightness" || section === "resolution" || section === "scale"
+    return section === "brightness" || section === "resolution" || section === "layout" || section === "scale"
   }
 
   function sectionFirstIndex(section) {
@@ -142,14 +162,15 @@ Panel {
     }
   }
 
-  // h/l: in scale section, walks the preset row; everywhere else, no-op
-  // because adjustBrightness handles horizontal motion on the brightness
-  // slider.
+  // h/l: in the layout and scale sections, walks the pill row; everywhere
+  // else, no-op because adjustBrightness handles horizontal motion on the
+  // brightness slider.
   function moveCursorH(delta) {
-    if (focusSection !== "scale") return
+    if (focusSection !== "layout" && focusSection !== "scale") return
+    var count = sectionCount(focusSection)
     var next = selectedIndex + delta
     if (next < 0) next = 0
-    if (next > scaleValues.length - 1) next = scaleValues.length - 1
+    if (next > count - 1) next = count - 1
     selectedIndex = next
   }
 
@@ -162,6 +183,10 @@ Panel {
   function activateCursor() {
     if (focusSection === "resolution") {
       modeDropdown.toggle()
+      return
+    }
+    if (focusSection === "layout" && selectedIndex >= 0 && selectedIndex < layoutOptions.length) {
+      setLayout(layoutOptions[selectedIndex].value)
       return
     }
     if (focusSection === "scale" && selectedIndex >= 0 && selectedIndex < scaleValues.length) {
@@ -185,7 +210,7 @@ Panel {
     }
     var count = sectionCount(focusSection)
     if (sectionIsSingleRow(focusSection)) {
-      // Brightness/resolution use the -1 sentinel; scale clamps into presets.
+      // Brightness/resolution use the -1 sentinel; layout/scale clamp into pills.
       if (focusSection === "brightness" || focusSection === "resolution") selectedIndex = -1
       else if (selectedIndex < 0 || selectedIndex >= count) selectedIndex = 0
       return
@@ -229,6 +254,7 @@ Panel {
       brightness: root.brightnessPercent,
       brightnessAvailable: root.brightnessAvailable,
       focusedMonitor: root.focusedMonitor,
+      layout: root.activeLayout,
       resolution: root.focusedModeLabel,
       scale: root.monitorScale,
       displays: root.displays
@@ -250,6 +276,7 @@ Panel {
   function refresh() {
     if (!stateProc.running) stateProc.running = true
     if (!modesProc.running) modesProc.running = true
+    if (!layoutProc.running) layoutProc.running = true
   }
 
   function setBrightness(value) {
@@ -354,6 +381,42 @@ Panel {
     if (!actionProc.running) actionProc.running = true
   }
 
+  // "auto" drops the state file so the machine profile decides again. The
+  // other layouts are applied by ~/.config/hypr/monitor_layout.lua on reload.
+  // External-only also goes through Omarchy's internal-monitor-disable toggle:
+  // the clamshell watcher re-enables the laptop panel every 2s unless that
+  // toggle is set. Omarchy's own mirror toggle is cleared so it can't fight
+  // the chosen layout.
+  function setLayout(layout) {
+    var value = String(layout || "")
+    var internal = String(root.internalMonitor || "")
+    var valid = false
+    for (var i = 0; i < layoutOptions.length; i++) {
+      if (layoutOptions[i].value === value) valid = true
+    }
+    if (!valid || !/^[A-Za-z0-9._-]+$/.test(internal)) return
+    if (value === root.activeLayout) return
+
+    root.pendingLayout = value
+    actionProc.command = ["bash", "-c",
+      'dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy"; ' +
+      'file="$dir/monitor-layout.conf"; ' +
+      'omarchy-hyprland-monitor-internal-mirror off >/dev/null; ' +
+      'if [ "$1" = auto ]; then rm -f "$file"; ' +
+      'else mkdir -p "$dir" && printf "layout=%s\\ninternal=%s\\n" "$1" "$2" >"$file.tmp" && mv "$file.tmp" "$file" || exit 1; fi; ' +
+      // An output leaving mirror mode on a reload stays hidden from clients
+      // (no bar, no wallpaper, unknown to grim). Switching it off first makes
+      // the reload bring it back as a fresh output.
+      'if [ "$1" != mirror ]; then ' +
+      'for m in $(hyprctl monitors all -j | jq -r \'.[] | select(.mirrorOf != "none" and .disabled != true) | .name | select(test("^[A-Za-z0-9._-]+$"))\'); do ' +
+      'hyprctl eval "hl.monitor({ output = \\"$m\\", disabled = true })" >/dev/null; unmirrored=1; done; ' +
+      '[ -n "$unmirrored" ] && sleep 1; fi; ' +
+      'if [ "$1" = external ]; then hyprctl reload >/dev/null && omarchy-hyprland-monitor-internal off; ' +
+      'else omarchy-hyprland-monitor-internal on; hyprctl reload >/dev/null; fi',
+      "bash", value, internal]
+    if (!actionProc.running) actionProc.running = true
+  }
+
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
@@ -423,6 +486,19 @@ Panel {
         // Whatever the reload settled on is authoritative now; drop the
         // optimistic label even if the mode didn't take.
         root.pendingMode = ""
+      }
+    }
+  }
+
+  Process {
+    id: layoutProc
+    command: ["bash", "-c", 'cat "${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/monitor-layout.conf" 2>/dev/null']
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var match = String(text || "").match(/^layout=(\w+)\s*$/m)
+        root.savedLayout = match ? match[1] : "auto"
+        root.pendingLayout = ""
       }
     }
   }
@@ -512,7 +588,7 @@ Panel {
         if (dy !== 0) root.moveCursor(dy)
         else if (dx !== 0) {
           if (root.focusSection === "brightness") root.adjustBrightness(dx * 5)
-          else if (root.focusSection === "scale") root.moveCursorH(dx)
+          else root.moveCursorH(dx)
         }
       }
       onActivateRequested: if (root.cursorActive) root.activateCursor()
@@ -824,6 +900,47 @@ Panel {
             }
           }
 
+          // ---------- Layout ----------
+          PanelSeparator {
+            visible: root.layoutAvailable
+            foreground: root.bar.foreground
+          }
+
+          Column {
+            width: parent.width
+            spacing: Style.space(10)
+            visible: root.layoutAvailable
+
+            PanelSectionHeader {
+              text: "LAYOUT"
+              foreground: root.bar.foreground
+              fontFamily: root.bar.fontFamily
+            }
+
+            Grid {
+              id: layoutRow
+              width: parent.width
+              columns: root.layoutOptions.length
+              spacing: Style.spacing.xs
+
+              readonly property real cellWidth: (width - spacing * (columns - 1)) / columns
+
+              Repeater {
+                model: root.layoutOptions
+
+                LayoutPill {
+                  required property var modelData
+                  required property int index
+
+                  layoutValue: modelData.value
+                  text: modelData.label
+                  layoutIndex: index
+                  width: layoutRow.cellWidth
+                }
+              }
+            }
+          }
+
           Item {
             width: parent.width
             height: Style.space(4)
@@ -855,6 +972,30 @@ Panel {
       root.cursorActive = true
       root.focusSection = "scale"
       root.selectedIndex = pill.scaleIndex
+    }
+  }
+
+  component LayoutPill: Button {
+    id: layoutPill
+    required property string layoutValue
+    required property int layoutIndex
+
+    fontSize: Style.font.caption
+    foreground: root.bar.foreground
+    fontFamily: root.bar.fontFamily
+    horizontalPadding: Style.spacing.sm
+    verticalPadding: Style.spacing.controlPaddingY
+    bordered: true
+
+    active: root.activeLayout === layoutValue
+    hasCursor: root.cursorActive && root.focusSection === "layout" && root.selectedIndex === layoutIndex
+
+    onClicked: root.setLayout(layoutValue)
+    onHovered: function(isHovered) {
+      if (!isHovered) return
+      root.cursorActive = true
+      root.focusSection = "layout"
+      root.selectedIndex = layoutPill.layoutIndex
     }
   }
 

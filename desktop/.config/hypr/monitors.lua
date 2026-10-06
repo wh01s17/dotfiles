@@ -6,6 +6,7 @@ local default_monitor_scale = 1
 local output_scales = require("hypr.monitor_scales").load()
 local monitor_modes = require("hypr.monitor_modes")
 local output_modes = monitor_modes.load()
+local monitor_layout = require("hypr.monitor_layout")
 
 local function scale_for(output, fallback)
 	return output_scales[output] or fallback
@@ -20,6 +21,7 @@ end
 -- machine-profile.lua is intentionally local and ignored by Git. A missing
 -- selector leaves the safe preferred/automatic rules below in effect.
 local loaded, machine_profile = pcall(require, "hypr.machine-profile")
+local rules = {}
 
 if loaded then
 	local profiles = {
@@ -37,36 +39,43 @@ if loaded then
 	-- GDK_SCALE is global, so keep it neutral for mixed-DPI profiles and let
 	-- Hyprland apply the persisted compositor scale to each output.
 	hl.env("GDK_SCALE", tostring(default_gdk_scale))
-	configure_profile(scale_for, mode_for, monitor_modes.size)
+	rules = monitor_layout.capture(function()
+		configure_profile(scale_for, mode_for, monitor_modes.size)
+	end)
 elseif not tostring(machine_profile):find("module 'hypr.machine-profile' not found", 1, true) then
 	error(machine_profile)
 else
 	hl.env("GDK_SCALE", tostring(default_gdk_scale))
-	-- Kept multi-line on purpose: omarchy-hyprland-monitor-clamshell greps
-	-- one-line `hl.monitor({ output = "" ... scale = ... })` rules and, while an
-	-- external monitor is active, forces the laptop panel back to that scale
-	-- every 2s, overriding the per-output scales set by profiles.
-	hl.monitor({
-		output = "",
-		mode = "preferred",
-		position = "auto",
-		scale = default_monitor_scale,
-	})
-
-	local tuned = {}
-	for output in pairs(output_scales) do
-		tuned[output] = true
-	end
-	for output in pairs(output_modes) do
-		tuned[output] = true
-	end
-
-	for output in pairs(tuned) do
+	rules = monitor_layout.capture(function()
+		-- Kept multi-line on purpose: omarchy-hyprland-monitor-clamshell greps
+		-- one-line `hl.monitor({ output = "" ... scale = ... })` rules and, while an
+		-- external monitor is active, forces the laptop panel back to that scale
+		-- every 2s, overriding the per-output scales set by profiles.
 		hl.monitor({
-			output = output,
-			mode = mode_for(output, "preferred"),
+			output = "",
+			mode = "preferred",
 			position = "auto",
-			scale = scale_for(output, default_monitor_scale),
+			scale = default_monitor_scale,
 		})
-	end
+
+		local tuned = {}
+		for output in pairs(output_scales) do
+			tuned[output] = true
+		end
+		for output in pairs(output_modes) do
+			tuned[output] = true
+		end
+
+		for output in pairs(tuned) do
+			hl.monitor({
+				output = output,
+				mode = mode_for(output, "preferred"),
+				position = "auto",
+				scale = scale_for(output, default_monitor_scale),
+			})
+		end
+	end)
 end
+
+-- Extend/mirror/laptop-only/external-only picked in the shell's Display panel.
+monitor_layout.apply(monitor_layout.load(), rules, mode_for, scale_for)
