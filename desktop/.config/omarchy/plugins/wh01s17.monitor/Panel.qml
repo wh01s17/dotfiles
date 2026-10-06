@@ -57,16 +57,15 @@ Panel {
     return focusedMonitor + " · " + focusedModeLabel
   }
 
-  // Display layout saved in monitor-layout.conf; "auto" means no file, so the
-  // machine profile in ~/.config/hypr/monitors.lua decides on its own.
+  // Display layout saved in monitor-layout.conf, which survives reloads and
+  // reboots. Machine profiles only place the outputs, so no file means extend.
   readonly property var layoutOptions: [
-    { value: "auto", label: "Auto" },
     { value: "extend", label: "Extend" },
     { value: "mirror", label: "Mirror" },
     { value: "internal", label: "Laptop" },
     { value: "external", label: "External" }
   ]
-  property string savedLayout: "auto"
+  property string savedLayout: "extend"
   // Layout picked while the reload is in flight, so the pill doesn't snap back.
   property string pendingLayout: ""
   readonly property string activeLayout: pendingLayout !== "" ? pendingLayout : savedLayout
@@ -381,8 +380,7 @@ Panel {
     if (!actionProc.running) actionProc.running = true
   }
 
-  // "auto" drops the state file so the machine profile decides again. The
-  // other layouts are applied by ~/.config/hypr/monitor_layout.lua on reload.
+  // Layouts are applied by ~/.config/hypr/monitor_layout.lua on reload.
   // External-only also goes through Omarchy's internal-monitor-disable toggle:
   // the clamshell watcher re-enables the laptop panel every 2s unless that
   // toggle is set. Omarchy's own mirror toggle is cleared so it can't fight
@@ -402,8 +400,7 @@ Panel {
       'dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy"; ' +
       'file="$dir/monitor-layout.conf"; ' +
       'omarchy-hyprland-monitor-internal-mirror off >/dev/null; ' +
-      'if [ "$1" = auto ]; then rm -f "$file"; ' +
-      'else mkdir -p "$dir" && printf "layout=%s\\ninternal=%s\\n" "$1" "$2" >"$file.tmp" && mv "$file.tmp" "$file" || exit 1; fi; ' +
+      'mkdir -p "$dir" && printf "layout=%s\\ninternal=%s\\n" "$1" "$2" >"$file.tmp" && mv "$file.tmp" "$file" || exit 1; ' +
       // An output leaving mirror mode on a reload stays hidden from clients
       // (no bar, no wallpaper, unknown to grim). Switching it off first makes
       // the reload bring it back as a fresh output.
@@ -497,7 +494,7 @@ Panel {
       waitForEnd: true
       onStreamFinished: {
         var match = String(text || "").match(/^layout=(\w+)\s*$/m)
-        root.savedLayout = match ? match[1] : "auto"
+        root.savedLayout = match ? match[1] : "extend"
         root.pendingLayout = ""
       }
     }

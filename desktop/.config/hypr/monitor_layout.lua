@@ -2,7 +2,8 @@
 -- (laptop panel only) or external (external outputs only). The panel writes
 -- `layout=NAME` and `internal=OUTPUT` lines to the state file below and reloads
 -- Hyprland; monitors.lua applies the layout on top of the profile's own rules.
--- A missing file leaves the profile's arrangement untouched.
+-- Profiles only place outputs side by side, so extend (and a missing file)
+-- needs no overrides.
 local M = {}
 
 local layouts = { extend = true, mirror = true, internal = true, external = true }
@@ -92,6 +93,9 @@ function M.apply(state, rules, mode_for, scale_for)
 		})
 	end
 
+	-- External-only is applied through Omarchy's internal-monitor-disable
+	-- toggle instead, which the clamshell watcher honours rather than
+	-- re-enabling the panel every 2s.
 	if layout == "mirror" then
 		hl.monitor({ output = "", mode = "preferred", position = "auto", scale = internal_scale, mirror = internal })
 		for output, rule in pairs(externals) do
@@ -101,16 +105,6 @@ function M.apply(state, rules, mode_for, scale_for)
 		hl.monitor({ output = "", disabled = true })
 		for output in pairs(externals) do
 			hl.monitor({ output = output, disabled = true })
-		end
-	else
-		-- extend/external: undo profile mirrors (hp-gray mirrors by default).
-		-- Rules for one output merge, so the mirror has to be cleared explicitly.
-		-- External-only also sets Omarchy's internal-monitor-disable toggle,
-		-- which the clamshell watcher honours instead of re-enabling the panel.
-		for output, rule in pairs(externals) do
-			if rule.mirror then
-				hl.monitor({ output = output, mode = rule.mode or "preferred", position = "auto-right", scale = rule.scale, mirror = "" })
-			end
 		end
 	end
 end
