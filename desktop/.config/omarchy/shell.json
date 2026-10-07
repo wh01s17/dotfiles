@@ -118,11 +118,11 @@
         },
         {
           "id": "wh01s17.metronome",
-          "bpm": 100,
+          "accent": true,
           "beats": 4,
+          "bpm": 60,
           "subdivision": "1/4",
-          "volume": 1,
-          "accent": true
+          "volume": 0.7
         },
         {
           "id": "firewall-status",
