@@ -101,6 +101,28 @@ Panel {
   property string passwordText: ""
   property string identityText: ""
 
+  // Manual connect to a network that doesn't broadcast its SSID. Hidden APs
+  // show up in the scan list nameless, so there is no row to attach a name
+  // to; the form lives in its own row under the list instead.
+  property bool hiddenFormOpen: false
+  property string hiddenSsidText: ""
+  property string hiddenPasswordText: ""
+  property bool hiddenBusy: false
+  property string hiddenFailureReason: ""
+  readonly property bool canConnectHidden: networkManagerAvailable && wifiStationAvailable && Networking.wifiEnabled
+  readonly property bool hiddenFormValid: Model.hiddenFormValid(hiddenSsidText, hiddenPasswordText)
+
+  onCanConnectHiddenChanged: {
+    if (canConnectHidden) return
+    cancelHiddenForm()
+    if (focusSection === "hidden") focusSection = "dns"
+  }
+
+  onHiddenFormOpenChanged: {
+    if (!hiddenFormOpen && opened)
+      Qt.callLater(function() { if (keyCatcher) keyCatcher.forceActiveFocus() })
+  }
+
   // ConnectionFailReason values as a plain object, so Model.js helpers stay
   // pure JS and Node-testable.
   readonly property var connectionFailReasons: ({
@@ -114,7 +136,7 @@ Panel {
   // True while any wifi action is mid-flight. Rows
   // disable themselves on this so clicks on the other rows don't silently
   // no-op against runNetworkAction's serialized guard.
-  readonly property bool busy: actionKind !== ""
+  readonly property bool busy: actionKind !== "" || hiddenBusy
 
   // Index into `wifiNetworks` for keyboard navigation. -1 = no selection.
   property int selectedIndex: -1
@@ -124,7 +146,7 @@ Panel {
   // Keyboard focus zone for the panel. j/k crosses row boundaries:
   // header actions ⇄ band ⇄ DNS row ⇄ Wi-Fi networks. h/l move
   // within header actions, band pills, or DNS providers.
-  property string focusSection: "dns"  // "header" | "band" | "dns" | "wifi"
+  property string focusSection: "dns"  // "header" | "band" | "dns" | "wifi" | "hidden"
   property int headerIndex: 0
   readonly property bool canDisconnect: !!connectedWifiNetwork
   readonly property bool headerHasDisconnect: false
@@ -353,6 +375,7 @@ Panel {
       routerPingLatency = -1
       internetPingLatency = -1
       internetPingPacketLoss = 0
+      cancelHiddenForm()
       setScannerEnabled(false)
     }
   }
@@ -703,6 +726,7 @@ Panel {
   }
 
   function openPasswordPrompt(ssid) {
+    cancelHiddenForm()
     if (passwordSsid !== ssid) {
       passwordText = ""
       identityText = ""
@@ -796,6 +820,61 @@ Panel {
     id: enterpriseConnect
     property string secret: ""
     stdinEnabled: true
+    onStarted: {
+      write(secret + "\n")
+      secret = ""
+    }
+  }
+
+  function openHiddenForm() {
+    if (!canConnectHidden || busy) return
+    cancelPasswordPrompt()
+    cursorActive = true
+    focusSection = "hidden"
+    hiddenFailureReason = ""
+    hiddenFormOpen = true
+  }
+
+  // Leaves hiddenBusy alone: a connect already in flight still reports back
+  // through hiddenConnect even if the form was dismissed meanwhile.
+  function cancelHiddenForm() {
+    hiddenFormOpen = false
+    hiddenSsidText = ""
+    hiddenPasswordText = ""
+    hiddenFailureReason = ""
+  }
+
+  function connectHidden() {
+    if (busy || !hiddenFormValid) return
+    hiddenFailureReason = ""
+    hiddenBusy = true
+    hiddenConnect.secret = hiddenPasswordText
+    hiddenConnect.command = ["bash", "-c", Model.hiddenConnectScript, "nmcli-hidden", hiddenSsidText]
+    hiddenConnect.running = true
+  }
+
+  function finishHiddenConnect(output) {
+    if (!hiddenBusy) return
+    hiddenBusy = false
+    var reason = Model.hiddenConnectFailureReason(output)
+    if (reason === "") {
+      cancelHiddenForm()
+      refresh()
+      return
+    }
+    hiddenFailureReason = reason
+  }
+
+  // Same stdin hand-off as enterpriseConnect. The script's single status line
+  // lands when stdout closes, which also covers it dying without output.
+  Process {
+    id: hiddenConnect
+    property string secret: ""
+    stdinEnabled: true
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.finishHiddenConnect(text)
+    }
     onStarted: {
       write(secret + "\n")
       secret = ""
@@ -1025,7 +1104,7 @@ Panel {
       anchors.fill: parent
       // Freeze the cursor model while the inline password prompt is open;
       // the TextField inside owns input until Esc/Enter/Cancel.
-      blocked: root.passwordSsid !== ""
+      blocked: root.passwordSsid !== "" || root.hiddenFormOpen
 
       onMoveRequested: function(dx, dy) {
         if (!root.cursorActive) {
@@ -1074,12 +1153,30 @@ Panel {
             } else if (root.wifiNetworks.length > 0) {
               root.focusSection = "wifi"
               if (root.selectedIndex < 0) root.selectedIndex = 0
+            } else if (root.canConnectHidden) {
+              root.focusSection = "hidden"
+            }
+          } else if (root.focusSection === "hidden") {
+            // The hidden-network row sits under the list, so k climbs back
+            // into its last row (or DNS when the list is empty).
+            if (dy < 0) {
+              if (root.wifiNetworks.length > 0) {
+                root.focusSection = "wifi"
+                root.selectedIndex = root.wifiNetworks.length - 1
+                root.wifiActionFocused = false
+              } else {
+                root.focusSection = "dns"
+              }
             }
           } else {  // wifi
             // k from the top row escapes back up to the DNS row rather than
-            // wrapping around to the bottom of the list.
+            // wrapping around to the bottom of the list; j from the bottom row
+            // drops onto the hidden-network row.
             if (dy < 0 && root.selectedIndex <= 0) {
               root.focusSection = "dns"
+              root.wifiActionFocused = false
+            } else if (dy > 0 && root.selectedIndex >= root.wifiNetworks.length - 1 && root.canConnectHidden) {
+              root.focusSection = "hidden"
               root.wifiActionFocused = false
             }
             else root.selectByDelta(dy)
@@ -1097,6 +1194,7 @@ Panel {
           if (root.focusSection === "header") root.activateHeader()
           else if (root.focusSection === "band") root.activateBand()
           else if (root.focusSection === "dns") root.activateDns()
+          else if (root.focusSection === "hidden") root.openHiddenForm()
           else root.activateSelected()
         }
       }
@@ -1571,6 +1669,11 @@ Panel {
           }
         }
       }
+
+      HiddenNetworkRow {
+        visible: root.canConnectHidden
+        width: parent.width
+      }
     }
     }
   }
@@ -1974,6 +2077,170 @@ Panel {
         foreground: root.bar.foreground
         fontFamily: root.bar.fontFamily
         onClicked: row.submitCredentials()
+      }
+    }
+  }
+
+  // Entry for a network that doesn't broadcast its SSID. Collapsed it reads
+  // like a network row; activating it expands an inline form for the name and
+  // an optional passphrase (blank = open network). Esc cancels.
+  component HiddenNetworkRow: CursorSurface {
+    id: hiddenRow
+
+    readonly property bool isSelected: root.focusSection === "hidden"
+    readonly property string statusText: {
+      if (root.hiddenBusy) return "Connecting…"
+      if (root.hiddenFailureReason !== "") return root.hiddenFailureReason
+      return ""
+    }
+
+    hasCursor: root.cursorActive && isSelected && !root.hiddenFormOpen
+    foreground: root.bar.foreground
+    fill: root.hoverFill
+    currentFill: root.selectedFill
+    implicitHeight: hiddenBody.implicitHeight + (root.hiddenFormOpen ? hiddenForm.implicitHeight + Style.spacing.md : 0)
+
+    MouseArea {
+      id: hiddenMouse
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: hiddenBody.implicitHeight
+      hoverEnabled: true
+      acceptedButtons: Qt.LeftButton
+      cursorShape: Qt.PointingHandCursor
+      enabled: !root.busy
+
+      onContainsMouseChanged: if (containsMouse) { root.cursorActive = true; root.focusSection = "hidden"; root.wifiActionFocused = false }
+      onClicked: {
+        if (root.hiddenFormOpen) root.cancelHiddenForm()
+        else root.openHiddenForm()
+      }
+    }
+
+    Item {
+      id: hiddenBody
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.leftMargin: Style.space(10)
+      anchors.rightMargin: Style.space(10)
+      implicitHeight: Math.max(hiddenIcon.implicitHeight, hiddenInfo.implicitHeight) + Style.spacing.rowPaddingX
+
+      Text {
+        id: hiddenIcon
+        textFormat: Text.PlainText
+        text: "󰐕"
+        color: root.hiddenFailureReason !== "" ? root.bar.urgent : root.bar.foreground
+        font.family: root.bar.fontFamily
+        font.pixelSize: Style.font.title
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+      }
+
+      Column {
+        id: hiddenInfo
+        spacing: Style.space(1)
+        anchors.left: hiddenIcon.right
+        anchors.leftMargin: Style.space(10)
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+
+        Text {
+          textFormat: Text.PlainText
+          text: "Hidden network…"
+          color: root.bar.foreground
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.body
+          elide: Text.ElideRight
+          width: parent.width
+        }
+        Text {
+          textFormat: Text.PlainText
+          text: hiddenRow.statusText
+          visible: hiddenRow.statusText !== ""
+          height: visible ? implicitHeight : 0
+          color: root.hiddenFailureReason !== "" ? root.bar.urgent : root.bar.foreground
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.caption
+          elide: Text.ElideRight
+          width: parent.width
+        }
+      }
+    }
+
+    // Same layout as NetworkRow's enterprise prompt: name on top, passphrase
+    // below, connect button centred on the right.
+    Item {
+      id: hiddenForm
+      visible: root.hiddenFormOpen
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: hiddenMouse.bottom
+      anchors.leftMargin: Style.space(10)
+      anchors.rightMargin: Style.space(10)
+      anchors.topMargin: Style.space(4)
+      implicitHeight: ssidField.implicitHeight + Style.space(4) + hiddenPwField.implicitHeight + Style.spacing.rowGap
+      height: implicitHeight
+
+      TextField {
+        id: ssidField
+        anchors.left: parent.left
+        anchors.right: hiddenConnectBtn.left
+        anchors.top: parent.top
+        anchors.rightMargin: Style.space(6)
+        placeholderText: "Network name (SSID)"
+        font.family: Style.font.family
+        font.pixelSize: Style.font.body
+        foreground: root.bar.foreground
+        horizontalPadding: Style.spacing.controlGap
+        verticalPadding: Style.spacing.controlPaddingY
+        enabled: !root.hiddenBusy
+        text: root.hiddenSsidText
+
+        onAccepted: hiddenPwField.forceActiveFocus()
+        onTextChanged: if (root.hiddenFormOpen && text !== root.hiddenSsidText) root.hiddenSsidText = text
+        Keys.onEscapePressed: root.cancelHiddenForm()
+
+        onVisibleChanged: if (visible) Qt.callLater(forceActiveFocus)
+      }
+
+      TextField {
+        id: hiddenPwField
+        anchors.left: parent.left
+        anchors.right: hiddenConnectBtn.left
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: Style.spacing.rowGap / 2
+        anchors.rightMargin: Style.space(6)
+        password: true
+        placeholderText: "Passphrase (blank if open)"
+        font.family: Style.font.family
+        font.pixelSize: Style.font.body
+        foreground: root.bar.foreground
+        horizontalPadding: Style.spacing.controlGap
+        verticalPadding: Style.spacing.controlPaddingY
+        enabled: !root.hiddenBusy
+        text: root.hiddenPasswordText
+
+        onAccepted: root.connectHidden()
+        onTextChanged: if (root.hiddenFormOpen && text !== root.hiddenPasswordText) root.hiddenPasswordText = text
+        Keys.onEscapePressed: root.cancelHiddenForm()
+
+        // Disabling the field during the connect drops its focus; take it
+        // back after a failure so the passphrase can be retyped right away.
+        onEnabledChanged: if (enabled && root.hiddenFormOpen) Qt.callLater(forceActiveFocus)
+      }
+
+      PanelActionButton {
+        id: hiddenConnectBtn
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        enabled: root.hiddenFormValid && !root.busy
+        iconText: "󰄬"
+        tooltipText: "Connect"
+        foreground: root.bar.foreground
+        fontFamily: root.bar.fontFamily
+        onClicked: root.connectHidden()
       }
     }
   }

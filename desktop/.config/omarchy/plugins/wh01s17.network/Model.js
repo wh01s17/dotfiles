@@ -325,6 +325,38 @@ var enterpriseConnectScript =
   " && nmcli connection up uuid \"$u\"" +
   " || { nmcli connection delete uuid \"$u\" >/dev/null 2>&1; false; }"
 
+// Creates and activates a profile for a network that doesn't broadcast its
+// SSID ($1). The passphrase arrives on stdin (empty for an open network) so it
+// never shows up in argv. Prints "ok" or "fail:<nmcli error>" on stdout, and
+// drops the half-made profile on failure so retries don't pile up duplicates.
+var hiddenConnectScript =
+  "s=$1; u=$(uuidgen); IFS= read -r pw;" +
+  " set -- nmcli connection add type wifi con-name \"$s\" ssid \"$s\"" +
+  " 802-11-wireless.hidden yes connection.uuid \"$u\";" +
+  " [ -n \"$pw\" ] && set -- \"$@\" wifi-sec.key-mgmt wpa-psk;" +
+  " if err=$( { \"$@\" >/dev/null" +
+  " && { [ -z \"$pw\" ] || printf 'set 802-11-wireless-security.psk %s\\nsave\\nquit\\n' \"$pw\"" +
+  " | nmcli connection edit uuid \"$u\" >/dev/null; }" +
+  " && nmcli -w 45 connection up uuid \"$u\" >/dev/null; } 2>&1 ); then echo ok;" +
+  " else nmcli connection delete uuid \"$u\" >/dev/null 2>&1; printf 'fail:%s\\n' \"$err\"; fi"
+
+// A passphrase is optional (open networks), but WPA-PSK needs 8-63 chars.
+function hiddenFormValid(ssid, passphrase) {
+  var s = String(ssid || "")
+  var p = String(passphrase || "")
+  return s.length > 0 && s.length <= 32 && (p.length === 0 || (p.length >= 8 && p.length <= 63))
+}
+
+function hiddenConnectFailureReason(output) {
+  var text = String(output || "").trim()
+  if (text === "ok") return ""
+  if (/secrets were required|802-1x supplicant|no secrets/i.test(text)) return "Wrong password"
+  if (/could not be found|no network with ssid|not found/i.test(text)) return "Network not found"
+  if (/psk|property is invalid/i.test(text)) return "Invalid passphrase"
+  if (/timeout|timed out/i.test(text)) return "Timed out connecting"
+  return "Failed to connect"
+}
+
 function networkFailureReason(reason, needsCredentials, reasons) {
   var r = reasons || {}
   if (needsCredentials && reason === r.NoSecrets) return "Passphrase required"
@@ -374,6 +406,9 @@ if (typeof module !== "undefined") {
     requiresCredentials: requiresCredentials,
     canForgetNetwork: canForgetNetwork,
     enterpriseConnectScript: enterpriseConnectScript,
+    hiddenConnectScript: hiddenConnectScript,
+    hiddenFormValid: hiddenFormValid,
+    hiddenConnectFailureReason: hiddenConnectFailureReason,
     networkFailureReason: networkFailureReason,
     shouldRepromptPassphrase: shouldRepromptPassphrase
   }
