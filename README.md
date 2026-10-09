@@ -4,13 +4,45 @@ Configuración personal para **Omarchy 4 (Quattro)**, **Hyprland 0.56+**, **Omar
 
 Stow trata cada directorio de primer nivel como un paquete y crea enlaces simbólicos dentro de `$HOME`. La fuente real continúa versionada en este repositorio.
 
+## Índice
+
+1. [Estructura](#estructura)
+2. [Requisitos](#requisitos)
+3. [Instalación desde cero](#instalación-desde-cero)
+4. [Instalación en un sistema existente](#instalación-en-un-sistema-existente)
+5. [Hyprland en Lua](#hyprland-en-lua)
+   - [Perfiles por equipo](#perfiles-por-equipo)
+   - [Entrada y atajos personales](#entrada-y-atajos-personales)
+   - [Blur y transparencia](#blur-y-transparencia)
+   - [Luz nocturna y pantalla compartida](#luz-nocturna-y-pantalla-compartida)
+6. [Omarchy Shell](#omarchy-shell)
+   - [Distribución](#distribución)
+   - [Módulos propios y clones](#módulos-propios-y-clones)
+   - [Metrónomo](#metrónomo)
+   - [Git, firewall, unidades y actividad](#git-firewall-unidades-y-actividad)
+   - [Idle, salvapantallas y bloqueo](#idle-salvapantallas-y-bloqueo)
+   - [Reloj y calendario](#reloj-y-calendario)
+   - [Componente de estado](#componente-de-estado)
+7. [Panel CTF](#panel-ctf)
+8. [Pomodoro](#pomodoro)
+9. [Clima](#clima)
+10. [Servicios y reverse shells](#servicios-y-reverse-shells)
+11. [Accesos auxiliares de la barra](#accesos-auxiliares-de-la-barra)
+12. [Tema `wh01s17`](#tema-wh01s17)
+13. [Fastfetch](#fastfetch)
+14. [Kitty](#kitty)
+15. [Zsh y utilidades de terminal](#zsh-y-utilidades-de-terminal)
+16. [Mapa de implementación](#mapa-de-implementación)
+17. [Pruebas](#pruebas)
+18. [Actualizar o retirar](#actualizar-o-retirar)
+
 ## Estructura
 
 ```text
 dotfiles/
 ├── desktop/
 │   └── .config/
-│       ├── fastfetch/                  # Informe, wordmark ANSI y logo de Gengar
+│       ├── fastfetch/                  # Informe, wordmark ANSI y Gengar con los colores del tema
 │       ├── hypr/                       # Configuración Lua de Hyprland
 │       │   └── profiles/              # Monitores por equipo
 │       └── omarchy/
@@ -28,7 +60,7 @@ dotfiles/
 │           │   ├── wh01s17.network/    # Wi-Fi, DNS, QR y diagnóstico de red
 │           │   └── wh01s17.power/      # Batería, perfiles y estadísticas
 │           └── themes/
-│               └── wh01s17/            # Tema, wallpapers y maestros SVG
+│               └── wh01s17/            # Tema, wallpapers, maestros SVG y generador pixel art
 ├── terminal/
 │   ├── .config/kitty/
 │   │   ├── kitty.conf             # Base común y tema dinámico
@@ -81,8 +113,11 @@ sólo funcionarán cuando estén instalados. `subfinder`, `amass`, LM Studio,
 OpenCode, John the Ripper y el entorno local de Perl también son opcionales y
 sólo afectan las funciones o rutas de Zsh que los nombran.
 
-Para regenerar los wallpapers SVG se necesita `rsvg-convert` (`librsvg`), y
-para ejecutar `qmllint` durante el desarrollo se necesita Qt Declarative.
+Para regenerar los wallpapers SVG se necesita `rsvg-convert` (`librsvg`); los
+wallpapers pixel art necesitan `python3` e ImageMagick (`magick`). ImageMagick
+también recolorea el Gengar de Fastfetch con la paleta del tema activo; sin él
+se muestra el PNG original. Para ejecutar `qmllint` durante el desarrollo se
+necesita Qt Declarative.
 
 El metrónomo necesita `python3` y un reproductor PCM: usa `pw-cat` cuando
 está disponible y `aplay` como alternativa. El módulo de unidades montadas
@@ -92,7 +127,169 @@ cuando alguno está configurado, pero no instalan ni modifican reglas.
 
 Waybar, Walker, Mako, hypridle e hyprlock no son necesarios: Quattro reemplaza esos componentes con Omarchy Shell/Quickshell.
 
-## Instalación con Stow
+## Instalación desde cero
+
+Estos pasos parten de un equipo recién instalado con Omarchy Quattro, sin
+configuración previa. Ejecútalos en orden desde la terminal de la sesión
+gráfica (`Super+Enter`).
+
+### 1. Actualizar el sistema
+
+```bash
+omarchy update
+```
+
+Reinicia si la actualización lo solicita.
+
+### 2. Instalar dependencias
+
+```bash
+sudo pacman -S --needed \
+  git stow curl jq iproute2 wl-clipboard libnotify util-linux xdg-utils \
+  zsh fzf eza bat zoxide xclip bind whois nvm ttf-meslo-nerd \
+  fastfetch imagemagick python btop udisks2
+omarchy pkg aur add oh-my-posh-bin
+```
+
+Las herramientas opcionales (Solaar, WayScriber, `subfinder`, `amass`, etc.)
+se describen en [Requisitos](#requisitos) y pueden instalarse más adelante.
+
+### 3. Usar Kitty como terminal
+
+```bash
+omarchy install terminal kitty
+```
+
+El comando instala Kitty y lo deja como terminal predeterminada de Omarchy.
+
+### 4. Clonar el repositorio
+
+```bash
+git clone https://github.com/wh01s17/dotfiles.git "$HOME/dotfiles"
+cd "$HOME/dotfiles"
+```
+
+### 5. Elegir el perfil del equipo
+
+Si el equipo es uno de los perfiles versionados, créale sus selectores locales
+(ver [Perfiles por equipo](#perfiles-por-equipo)):
+
+```bash
+printf 'return "hp-gray"\n' > desktop/.config/hypr/machine-profile.lua
+printf 'include profiles/hp-gray.conf\n' > terminal/.config/kitty/machine-profile.conf
+```
+
+En otro equipo, omite este paso: Hyprland usará la resolución preferida de
+cada monitor y Kitty sus valores predeterminados.
+
+### 6. Respaldar la configuración predeterminada
+
+Una instalación limpia ya trae archivos reales que Stow no reemplaza, como
+`~/.config/hypr/`, `~/.config/kitty/kitty.conf` y
+`~/.config/omarchy/shell.json`. El directorio de Hyprland se aparta completo
+para que Stow lo enlace entero; el resto de los conflictos se renombra con el
+sufijo `.before-dotfiles`:
+
+```bash
+cd "$HOME/dotfiles"
+[ -d "$HOME/.config/hypr" ] && [ ! -L "$HOME/.config/hypr" ] &&
+  mv -n "$HOME/.config/hypr" "$HOME/.config/hypr.before-dotfiles"
+
+stow --simulate --target="$HOME" desktop terminal 2>&1 \
+  | sed -nE 's/^  \* cannot stow .* over existing target (.+) since neither a link nor a directory.*/\1/p' \
+  | while IFS= read -r conflict; do
+      mv -n -- "$HOME/$conflict" "$HOME/$conflict.before-dotfiles"
+    done
+
+stow --simulate --target="$HOME" desktop terminal
+```
+
+La última simulación debe terminar sin el aviso `would cause conflicts`.
+`mv -n` nunca sobrescribe una copia `.before-dotfiles` existente. La variable
+se llama `conflict` y no `path` porque en Zsh `path` está ligada a `PATH`.
+
+### 7. Crear los enlaces
+
+```bash
+stow --target="$HOME" desktop terminal
+```
+
+### 8. Configurar Zsh
+
+Cambia la shell de inicio e instala Oh My Zsh conservando el `.zshrc` ya
+enlazado:
+
+```bash
+chsh -s /usr/bin/zsh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
+  "" --unattended --keep-zshrc
+```
+
+Instala los plugins que carga `.zshrc`. `zsh-sudo` reutiliza el plugin `sudo`
+de Oh My Zsh con el nombre que espera la configuración:
+
+```bash
+ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git \
+  "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+git clone https://github.com/zsh-users/zsh-autosuggestions.git \
+  "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+mkdir -p "$ZSH_CUSTOM/plugins/zsh-sudo"
+ln -s "$HOME/.oh-my-zsh/plugins/sudo/sudo.plugin.zsh" \
+  "$ZSH_CUSTOM/plugins/zsh-sudo/zsh-sudo.plugin.zsh"
+```
+
+### 9. Instalar Node con NVM
+
+`.zshrc` usa `~/.config/nvm` y ejecuta `nvm use default` al iniciar, por lo
+que necesita un Node predeterminado:
+
+```bash
+export NVM_DIR="$HOME/.config/nvm"
+source /usr/share/nvm/init-nvm.sh
+nvm install --lts
+nvm alias default 'lts/*'
+```
+
+### 10. Instalar el plugin de bloqueo
+
+`shell.json` reemplaza el lock nativo por Lock Explorer. Clónalo sin volver a
+habilitarlo, porque `shell.json` ya lo declara:
+
+```bash
+omarchy plugin add https://github.com/SirJul1337/omarchy-lock-explorer.git --yes
+```
+
+### 11. Aplicar el tema y recargar
+
+```bash
+omarchy theme set wh01s17
+hyprctl reload
+hyprctl configerrors
+omarchy restart shell
+```
+
+Cierra la sesión y vuelve a entrar para que Zsh pase a ser la shell de inicio.
+En la nueva terminal, `fastfetch` debe mostrar el Gengar con los colores del
+tema y el prompt de Oh My Posh.
+
+### 12. Revisar y ajustar
+
+- Comprueba los enlaces con los `readlink` del
+  [paso 3 de la instalación en un sistema existente](#3-crear-los-enlaces) y
+  ejecuta las [pruebas](#pruebas).
+- Compara cada `.before-dotfiles` con su reemplazo y elimina las copias que
+  ya no necesites.
+- Revisa en `.zshrc` el alias `john` y las rutas de `PATH` propias de este
+  usuario (ver [Zsh y utilidades de terminal](#zsh-y-utilidades-de-terminal)).
+- Guarda las credenciales opcionales, como la de `ipinfo`, en
+  `~/.config/zsh/secrets.zsh`; `.zshrc` lo carga si existe y no se versiona.
+
+## Instalación en un sistema existente
+
+Usa estos pasos si el equipo ya tiene Zsh, Oh My Zsh y las demás dependencias
+de [Requisitos](#requisitos), por ejemplo para reinstalar los enlaces o
+sincronizar otro equipo ya configurado.
 
 ### 1. Clonar
 
@@ -606,7 +803,7 @@ debe interpretarse como aviso, no como prueba concluyente.
 variante oscura inspirada en `wh01s17.com`: superficies casi negras, tipografía
 monoespaciada y acentos verde fósforo, cian, ámbar, rojo y púrpura.
 
-Actívala y recorre sus dos fondos con:
+Actívala y recorre sus cinco fondos con:
 
 ```bash
 omarchy theme set wh01s17
@@ -622,8 +819,8 @@ Sus piezas son:
 | [`hyprland.lua`](desktop/.config/omarchy/themes/wh01s17/hyprland.lua) | Bordes verde/cian, radio de 6 px y sombras del tema |
 | [`icons.theme`](desktop/.config/omarchy/themes/wh01s17/icons.theme) | Selecciona `Yaru-prussiangreen-dark` |
 | [`shell.*.toml`](desktop/.config/omarchy/themes/wh01s17/) | Barra, controles, tipografía, menús, lock, notificaciones, popups, polkit, espaciado y tooltips |
-| [`backgrounds/`](desktop/.config/omarchy/themes/wh01s17/backgrounds/) | Dos wallpapers PNG 4K listos para usar |
-| [`sources/`](desktop/.config/omarchy/themes/wh01s17/sources/) | Maestros SVG editables de los wallpapers |
+| [`backgrounds/`](desktop/.config/omarchy/themes/wh01s17/backgrounds/) | Cinco wallpapers PNG 4K listos para usar |
+| [`sources/`](desktop/.config/omarchy/themes/wh01s17/sources/) | Maestros SVG y generador de los wallpapers pixel art |
 | [`brand/logo.svg`](desktop/.config/omarchy/themes/wh01s17/brand/logo.svg) | Geometría oficial de la marca |
 
 El tema se carga con los valores predeterminados y después se aplican las
@@ -635,7 +832,22 @@ vuelve a aplicarlo con `omarchy theme set wh01s17`.
 [`themes/wh01s17/README.md`](desktop/.config/omarchy/themes/wh01s17/README.md)
 documenta la paleta y
 [`DESIGN.md`](desktop/.config/omarchy/themes/wh01s17/DESIGN.md) las reglas de
-composición. Para regenerar los PNG desde los maestros:
+composición. Los fondos son:
+
+| Fondo | Contenido | Fuente |
+| --- | --- | --- |
+| `01-solid-mark.png` | Marca W sólida y `wh01s17` | `sources/01-solid-mark.svg` |
+| `02-outline-mark.png` | Marca W contorneada y `wh01s17` | `sources/02-outline-mark.svg` |
+| `03-pixel-moon.png` | Luna llena 8-bit con los verdes del tema | `sources/pixel-art.py` |
+| `04-pixel-moon-wordmark.png` | Cuarto creciente 8-bit con `wh01s17` en pixel art | `sources/pixel-art.py` |
+| `05-pixel-gengar-wordmark.png` | Gengar de Fastfetch con sus colores originales y `wh01s17` | `sources/pixel-art.py` |
+
+Las lunas reproducen la cara visible real: los mares y cráteres principales se
+ubican por latitud y longitud selenográficas y se iluminan según la fase. El
+Gengar es el sprite de `fastfetch/gengar.png` calcado píxel por píxel. Todo se
+dibuja en una cuadrícula de 240×135 que se escala 16× sin interpolación.
+
+Para regenerar los PNG:
 
 ```bash
 cd ~/.config/omarchy/themes/wh01s17
@@ -643,7 +855,11 @@ rsvg-convert --width 3840 --height 2160 \
   --output backgrounds/01-solid-mark.png sources/01-solid-mark.svg
 rsvg-convert --width 3840 --height 2160 \
   --output backgrounds/02-outline-mark.png sources/02-outline-mark.svg
+python3 sources/pixel-art.py
+omarchy theme set wh01s17
 ```
+
+El último comando copia los fondos regenerados al tema activo.
 
 ## Fastfetch
 
@@ -656,7 +872,15 @@ rsvg-convert --width 3840 --height 2160 \
 
 El logo [`gengar.png`](desktop/.config/fastfetch/gengar.png) se dibuja mediante
 el protocolo gráfico directo de Kitty, a 40×20 celdas con proporción
-conservada. La imagen no contiene el wordmark: el lanzador
+conservada. El lanzador lo recolorea con la paleta del tema activo de Omarchy:
+el sombreado toma `accent`, el cuerpo una mezcla oscura de `accent` (30 %) y
+`background` (70 %), los ojos `red` y los dientes `bright_foreground` (o
+`foreground`). Primero ajusta el PNG a sus cuatro colores de sprite y a una
+transparencia binaria, para que los bordes suavizados no dejen restos del color
+original. Cada paleta se genera una sola vez en
+`${XDG_CACHE_HOME:-$HOME/.cache}/fastfetch/`, así que cambiar de tema sólo
+cuesta una ejecución de ImageMagick. Si falta `magick`, el tema no define
+`accent` o se llama a `fastfetch` con opciones, se usa el PNG original. La imagen no contiene el wordmark: el lanzador
 [`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) compone
 `WH01S17` con una variante condensada del arte de seis filas usado por
 [`branding/screensaver.txt`](desktop/.config/omarchy/branding/screensaver.txt).
@@ -851,7 +1075,7 @@ el uso diario:
 | [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) | Recupera la última escala registrada por cada salida |
 | `hypr/profiles/*.lua` | Reglas versionadas de monitores para `hp-gray` y `omen` |
 | `kitty/profiles/*.conf` | Tamaños de fuente versionados para los mismos perfiles |
-| [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Wordmark textual 8-bit y delegación al binario real de Fastfetch |
+| [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Wordmark textual 8-bit, Gengar con los colores del tema y delegación al binario real de Fastfetch |
 | [`ctf-aliases.zsh`](desktop/.config/omarchy/bar/scripts/ctf-aliases.zsh) | Puente entre `.zshrc` y `ctf-ip.sh` |
 | [`manifest.json`](desktop/.config/omarchy/plugins/wh01s17.clock/manifest.json) | Declara el reloj como plugin de barra clonado de `omarchy.clock` |
 | `wh01s17.{audio,bluetooth,network,power}/` | Clones de los paneles oficiales con sus modelos y controles ampliados |
@@ -862,7 +1086,7 @@ el uso diario:
 | `wh01s17.clock/Model.js` | Fechas, semanas ISO, formatos y progreso anual/vital |
 | `wh01s17.clock/Panel.qml` | Calendario, navegación y controles persistentes |
 | `themes/wh01s17/shell.*.toml` | Fragmentos visuales que Omarchy combina al aplicar el tema |
-| `themes/wh01s17/backgrounds/*.png` | Salidas 4K; se regeneran desde `sources/*.svg` |
+| `themes/wh01s17/backgrounds/*.png` | Salidas 4K; `01`–`02` se regeneran desde `sources/*.svg` y `03`–`05` con `sources/pixel-art.py` |
 
 ## Pruebas
 
@@ -895,7 +1119,8 @@ for model in \
   fi
 done
 python3 -m py_compile \
-  "$HOME/.config/omarchy/plugins/wh01s17.metronome/metronome-engine.py"
+  "$HOME/.config/omarchy/plugins/wh01s17.metronome/metronome-engine.py" \
+  "$HOME/.config/omarchy/themes/wh01s17/sources/pixel-art.py"
 bash -n "$HOME/.config/fastfetch/wh01s17.sh"
 for script in "$HOME/.config/omarchy/bar/scripts/"*.sh; do
   bash -n "$script"
