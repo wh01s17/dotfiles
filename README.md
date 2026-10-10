@@ -54,8 +54,10 @@ dotfiles/
 │           ├── branding/               # Marca ASCII para el salvapantallas
 │           ├── plugins/
 │           │   ├── wh01s17.audio/      # Mezclador, entradas y salidas de audio
+│           │   ├── wh01s17.bar/        # Barra con hover por monitor
 │           │   ├── wh01s17.bluetooth/  # Dispositivos Bluetooth y salida de audio
 │           │   ├── wh01s17.clock/      # Reloj y calendario propios
+│           │   ├── wh01s17.indicators/ # Indicadores que respetan el hover por monitor
 │           │   ├── wh01s17.metronome/  # Metrónomo con motor de audio local
 │           │   ├── wh01s17.monitor/    # Escala independiente por monitor
 │           │   ├── wh01s17.network/    # Wi-Fi, DNS, QR y diagnóstico de red
@@ -569,6 +571,13 @@ distribución. Todos se declaran en `shell.json` y sus metadatos viven en el
 | `wh01s17.monitor` | `omarchy.monitor` | Escala persistente por salida y tooltip con resolución/escala |
 | `wh01s17.power` | `omarchy.power` | Batería, perfiles de energía y estadísticas del sistema |
 | `wh01s17.metronome` | Propio | Click track con dial de tempo, tap tempo, subdivisiones y acento |
+| `wh01s17.bar` | `omarchy.bar` | Estado de hover por monitor: revelar los indicadores en una pantalla no redistribuye las barras de las demás |
+| `wh01s17.indicators` | `omarchy.indicators` | Lee ese estado por monitor desde `wh01s17.bar` y carga sus propios indicadores desde `indicators/` |
+
+`wh01s17.bar` reemplaza la barra completa (`bar.id` en `shell.json`), así que
+no recibe las mejoras posteriores de `Bar.qml` en Omarchy. Al actualizar
+Omarchy, compara con `diff -u /usr/share/omarchy/shell/plugins/bar/Bar.qml
+desktop/.config/omarchy/plugins/wh01s17.bar/Bar.qml`.
 
 ### Metrónomo
 
