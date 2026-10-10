@@ -77,6 +77,8 @@ dotfiles/
 │   ├── .config/systemd/user/      # Timers de usuario: aviso de espacio, Codex y mise
 │   └── .local/bin/btrfs-space-check
 ├── system/btrfs/                  # Balance semanal y snapper; se instala con sudo, no con Stow
+├── .github/workflows/test.yml     # CI: ejecuta test.sh
+├── test.sh                        # Validación estática
 └── README.md
 ```
 
@@ -1170,50 +1172,30 @@ el uso diario:
 Validación estática:
 
 ```bash
-stow --simulate --verbose=2 --target="$HOME" desktop terminal maintenance
-luac -p "$HOME/.config/hypr/monitor_scales.lua" \
-  "$HOME/.config/hypr/monitors.lua" \
-  "$HOME/.config/hypr/profiles/"*.lua
-Hyprland --verify-config --config "$HOME/.config/hypr/hyprland.lua"
-jq empty "$HOME/.config/omarchy/shell.json"
-jq empty "$HOME/.config/omarchy/plugins/wh01s17.monitor/manifest.json"
-jq empty "$HOME/.config/omarchy/plugins/wh01s17.metronome/manifest.json"
-jq empty "$HOME/.config/fastfetch/config.jsonc"
-qmllint -I /usr/share/omarchy/shell \
-  "$HOME/.config/omarchy/bar/modules/StatusModule.qml" \
-  "$HOME/.config/omarchy/plugins/wh01s17.clock/Panel.qml" \
-  "$HOME/.config/omarchy/plugins/wh01s17.monitor/Panel.qml" \
-  "$HOME/.config/omarchy/plugins/wh01s17.metronome/BarWidget.qml" \
-  "$HOME/.config/omarchy/plugins/wh01s17.metronome/MetronomeCore.qml"
-for model in \
-  "$HOME/.config/omarchy/plugins/wh01s17.clock/Model.js" \
-  "$HOME/.config/omarchy/plugins/wh01s17.monitor/Model.js" \
-  "$HOME/.config/omarchy/plugins/wh01s17.metronome/Model.js"; do
-  if head -n 1 "$model" | grep -qx '\.pragma library'; then
-    tail -n +2 "$model" | node --check
-  else
-    node --check "$model"
-  fi
-done
-python3 -m py_compile \
-  "$HOME/.config/omarchy/plugins/wh01s17.metronome/metronome-engine.py" \
-  "$HOME/.config/omarchy/themes/wh01s17/sources/pixel-art.py"
-bash -n "$HOME/.config/fastfetch/wh01s17.sh"
-for script in "$HOME/.config/omarchy/bar/scripts/"*.sh; do
-  bash -n "$script"
-done
-zsh -n "$HOME/.zshrc"
-zsh -n "$HOME/.config/omarchy/bar/scripts/ctf-aliases.zsh"
-bash -n "$HOME/.local/bin/btrfs-space-check"
-bash -n "$HOME/dotfiles/system/btrfs/install.sh"
-bash -n "$HOME/dotfiles/system/btrfs/btrfs-balance-auto"
-systemd-analyze verify --user \
-  "$HOME/.config/systemd/user/"{btrfs-space-check,codex-staging-clean,mise-prune}.{service,timer}
+./test.sh
 ```
 
-La simulación de Stow no modifica archivos. `qmllint` puede mostrar avisos de
-tipado procedentes de los componentes dinámicos de Omarchy; los errores de
-sintaxis sí deben corregirse.
+[`test.sh`](test.sh) revisa los archivos del repositorio, no los de `$HOME`:
+
+| Comprobación | Alcance |
+| --- | --- |
+| Stow | Simula `desktop`, `terminal` y `maintenance` sin modificar archivos |
+| `jq`, `luac`, `node --check`, `ast` de Python | Todos los JSON, Lua, JavaScript y Python versionados; a los modelos QML se les quita `.pragma library` |
+| `bash -n` y ShellCheck | Cada `*.sh` y cada script con shebang de Bash |
+| `zsh -n` | `.zshrc` y los `*.zsh` |
+| Hyprland, `qmllint`, `systemd-analyze` | Sólo en la sesión local y si están instalados |
+
+`qmllint` revisa sólo los archivos cuyos imports resuelve: en la mayoría de los
+widgets, incluidos los originales de Omarchy, termina con código 255 sin
+mostrar ningún diagnóstico.
+
+ShellCheck no viene con Omarchy; instálalo con `sudo pacman -S shellcheck`.
+Sin él, `test.sh` omite esa comprobación localmente.
+
+El workflow [`test.yml`](.github/workflows/test.yml) ejecuta el mismo script
+en GitHub Actions en cada push y pull request. Con `CI` definida, una
+herramienta faltante es un error en vez de omitirse, y las comprobaciones que
+necesitan la sesión gráfica no se ejecutan.
 
 Validación de la sesión:
 
