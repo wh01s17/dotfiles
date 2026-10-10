@@ -30,6 +30,7 @@ DITHER_FULL = 0.2  # the full moon reads best as near-flat shapes
 
 VOID = (0x0A, 0x0E, 0x0F)
 FOREGROUND = (0xCB, 0xD5, 0xCE)
+SIGNAL = (0x84, 0xC9, 0x59)  # wordmark digits, as in 02-outline-mark
 TONES = [VOID, (0x4F, 0x7F, 0x34), (0x84, 0xC9, 0x59), (0xC6, 0xEC, 0x96)]
 SPARK = (0xF3, 0xFB, 0xEE)  # full-moon ray-crater cores only
 
@@ -288,12 +289,14 @@ def render_moon(full=False):
 
 
 def wordmark(word):
-    pixels = set()
+    """Return ({(col, row): rgb}, width, height): letters light, digits green."""
+    pixels = {}
     for i, ch in enumerate(word):
+        color = SIGNAL if ch.isdigit() else FOREGROUND
         for row, line in enumerate(GLYPHS[ch]):
             for col, bit in enumerate(line):
                 if bit == "#":
-                    pixels.add((i * 6 + col, row))
+                    pixels[(i * 6 + col, row)] = color
     return pixels, len(word) * 6 - 1, 7
 
 
@@ -315,7 +318,7 @@ def compose(art, height, word=None):
     grid = [[VOID] * GRID_W for _ in range(GRID_H)]
     cols = [c for c, _ in art]
     art_w = max(cols) - min(cols) + 1
-    text, text_w, text_h = wordmark(word) if word else (set(), 0, 0)
+    text, text_w, text_h = wordmark(word) if word else ({}, 0, 0)
 
     top = (GRID_H - height - (GAP + text_h if word else 0)) // 2
     # Center the visible pixels (for a moon, the lit part, not the disc).
@@ -324,8 +327,8 @@ def compose(art, height, word=None):
         grid[top + r][left + c] = color
     if word:
         tx, ty = (GRID_W - text_w) // 2, top + height + GAP
-        for c, r in text:
-            grid[ty + r][tx + c] = FOREGROUND
+        for (c, r), color in text.items():
+            grid[ty + r][tx + c] = color
     return grid
 
 
