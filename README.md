@@ -78,6 +78,7 @@ dotfiles/
 │   ├── .config/systemd/user/      # Timers de usuario: aviso de espacio, Codex y mise
 │   └── .local/bin/btrfs-space-check
 ├── system/btrfs/                  # Balance semanal y snapper; se instala con sudo, no con Stow
+├── docs/                          # CTF, Pomodoro y tema en detalle
 ├── .github/workflows/test.yml     # CI: ejecuta test.sh
 ├── test.sh                        # Validación estática
 └── README.md
@@ -693,82 +694,15 @@ compartido serialicen sus escrituras (ver `system-usage.sh`).
 
 ## Panel CTF
 
-[`ctf-ip.sh`](desktop/.config/omarchy/bar/scripts/ctf-ip.sh) muestra:
-
-| Segmento | Origen | Color |
-| --- | --- | --- |
-| Víctima | IP definida con `target` | Rojo |
-| VPN | `tun0`, `tun1`, `tap0`, `tap1`, `wg0`, `wg1` o `ppp0` | Cian |
-| WLAN | Interfaz de la ruta predeterminada, o `CTF_LAN_IFACES` | Verde |
-| Ausente | Sin dato | Gris |
-
-Controles de la barra:
-
-- clic izquierdo: abrir el panel de conexiones;
-- clic derecho: limpiar víctima.
-
-El panel ofrece botones para copiar o limpiar el objetivo.
-
-Comandos de Zsh:
-
-```bash
-target 10.10.11.42
-myip
-ctfcopy
-ctfclear
-```
-
-Estado: `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/bar/ctf`.
-
-Configuración opcional por entorno:
-
-| Variable | Uso |
-| --- | --- |
-| `CTF_VPN_IFACES` | Lista de interfaces VPN que se revisarán |
-| `CTF_LAN_IFACES` | Lista explícita de interfaces LAN; reemplaza la detección por ruta predeterminada |
-| `CTF_STATE_DIR` | Directorio alternativo para el objetivo persistente |
-
-El script valida direcciones IPv4 antes de guardarlas y migra, si existe, el
-estado antiguo de `~/.config/waybar/state/ctf`.
-
-El panel también muestra junto a cada valor la orden de configuración rápida:
-`target <ip>` para la víctima, `CTF_VPN_IFACES=tun0` para el túnel y
-`CTF_LAN_IFACES=wlan0` para la interfaz local.
+[`ctf-ip.sh`](desktop/.config/omarchy/bar/scripts/ctf-ip.sh) muestra en la
+barra la IP de la víctima, la VPN y la red local. Segmentos, controles y
+comandos de Zsh en [`docs/ctf.md`](docs/ctf.md).
 
 ## Pomodoro
 
-[`pomodoro.sh`](desktop/.config/omarchy/bar/scripts/pomodoro.sh) conserva cuatro sistemas:
-
-| Sistema | Trabajo | Descanso | Descanso largo |
-| --- | ---: | ---: | ---: |
-| Equilibrado | 40 min | 10 min | 20 min cada 4 sesiones |
-| Clásico | 25 min | 5 min | 15 min cada 4 sesiones |
-| Enfoque profundo | 50 min | 10 min | 20 min cada 4 sesiones |
-| Ultradiano | 90 min | 20 min | 30 min cada 2 sesiones |
-
-Controles:
-
-- clic izquierdo: abrir el panel Pomodoro;
-- clic central: saltar fase;
-- clic derecho: elegir sistema;
-- scroll: ajustar ±1 minuto.
-
-El panel permite iniciar/pausar, saltar, reiniciar y elegir sistema. Las mismas
-acciones están disponibles desde terminal:
-
-```bash
-~/.config/omarchy/bar/scripts/pomodoro.sh toggle
-~/.config/omarchy/bar/scripts/pomodoro.sh reset
-~/.config/omarchy/bar/scripts/pomodoro.sh skip
-~/.config/omarchy/bar/scripts/pomodoro.sh preset balanced
-```
-
-Los identificadores de preset son `balanced`, `classic`, `deep` y
-`ultradian`. `POMODORO_PRESET` define el predeterminado y
-`POMODORO_STATE_DIR` permite mover el estado. Los ajustes manuales están
-limitados al rango de 1 minuto a 4 horas.
-
-Durante una fase de enfoque activa, el script usa el servicio de notificaciones de Omarchy para activar DND. El estado vive en `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/bar/pomodoro`.
+[`pomodoro.sh`](desktop/.config/omarchy/bar/scripts/pomodoro.sh) ofrece cuatro
+sistemas de trabajo y descanso (equilibrado, clásico, enfoque profundo y
+ultradiano). Controles y estado en [`docs/pomodoro.md`](docs/pomodoro.md).
 
 ## Clima
 
@@ -819,67 +753,9 @@ debe interpretarse como aviso, no como prueba concluyente.
 
 ## Tema `wh01s17`
 
-[`themes/wh01s17`](desktop/.config/omarchy/themes/wh01s17/) implementa una
-variante oscura inspirada en `wh01s17.com`: superficies casi negras, tipografía
-monoespaciada y acentos verde fósforo, cian, ámbar, rojo y púrpura.
-
-Actívala y recorre sus cinco fondos con:
-
-```bash
-omarchy theme set wh01s17
-omarchy theme current
-omarchy theme bg next
-```
-
-Sus piezas son:
-
-| Ruta | Responsabilidad |
-| --- | --- |
-| [`colors.toml`](desktop/.config/omarchy/themes/wh01s17/colors.toml) | Paleta usada para generar configuraciones de aplicaciones |
-| [`hyprland.lua`](desktop/.config/omarchy/themes/wh01s17/hyprland.lua) | Bordes verde/cian, radio de 6 px y sombras del tema |
-| [`icons.theme`](desktop/.config/omarchy/themes/wh01s17/icons.theme) | Selecciona `Yaru-prussiangreen-dark` |
-| [`shell.*.toml`](desktop/.config/omarchy/themes/wh01s17/) | Barra, controles, tipografía, menús, lock, notificaciones, popups, polkit, espaciado y tooltips |
-| [`backgrounds/`](desktop/.config/omarchy/themes/wh01s17/backgrounds/) | Cinco wallpapers PNG 4K listos para usar |
-| [`sources/`](desktop/.config/omarchy/themes/wh01s17/sources/) | Maestros SVG y generador de los wallpapers pixel art |
-| [`brand/logo.svg`](desktop/.config/omarchy/themes/wh01s17/brand/logo.svg) | Geometría oficial de la marca |
-
-El tema se carga con los valores predeterminados y después se aplican las
-preferencias personales de `~/.config/hypr`. Por eso el radio de 3 px de
-`looknfeel.lua` prevalece sobre los 6 px propuestos por el tema, mientras sus
-colores de borde y sombras se conservan. Tras editar un archivo del tema,
-vuelve a aplicarlo con `omarchy theme set wh01s17`.
-
-[`themes/wh01s17/README.md`](desktop/.config/omarchy/themes/wh01s17/README.md)
-documenta la paleta y
-[`DESIGN.md`](desktop/.config/omarchy/themes/wh01s17/DESIGN.md) las reglas de
-composición. Los fondos son:
-
-| Fondo | Contenido | Fuente |
-| --- | --- | --- |
-| `01-solid-mark.png` | Marca W sólida y `wh01s17` | `sources/01-solid-mark.svg` |
-| `02-outline-mark.png` | Marca W contorneada y `wh01s17` | `sources/02-outline-mark.svg` |
-| `03-pixel-moon.png` | Luna llena 8-bit con los verdes del tema | `sources/pixel-art.py` |
-| `04-pixel-moon-wordmark.png` | Cuarto creciente 8-bit con `wh01s17` en pixel art | `sources/pixel-art.py` |
-| `05-pixel-gengar-wordmark.png` | Gengar de Fastfetch con sus colores originales y `wh01s17` | `sources/pixel-art.py` |
-
-Las lunas reproducen la cara visible real: los mares y cráteres principales se
-ubican por latitud y longitud selenográficas y se iluminan según la fase. El
-Gengar es el sprite de `fastfetch/gengar.png` calcado píxel por píxel. Todo se
-dibuja en una cuadrícula de 240×135 que se escala 16× sin interpolación.
-
-Para regenerar los PNG:
-
-```bash
-cd ~/.config/omarchy/themes/wh01s17
-rsvg-convert --width 3840 --height 2160 \
-  --output backgrounds/01-solid-mark.png sources/01-solid-mark.svg
-rsvg-convert --width 3840 --height 2160 \
-  --output backgrounds/02-outline-mark.png sources/02-outline-mark.svg
-python3 sources/pixel-art.py
-omarchy theme set wh01s17
-```
-
-El último comando copia los fondos regenerados al tema activo.
+[`themes/wh01s17`](desktop/.config/omarchy/themes/wh01s17/) es una variante
+oscura inspirada en `wh01s17.com`, con acentos verde fósforo, cian, ámbar, rojo
+y púrpura. Paleta, wallpapers y regeneración en [`docs/tema.md`](docs/tema.md).
 
 ## Fastfetch
 
