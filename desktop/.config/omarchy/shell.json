@@ -162,9 +162,6 @@
           "onClick": "omarchy menu clipboard"
         },
         {
-          "id": "omarchy.agents"
-        },
-        {
           "id": "services-monitor",
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
@@ -180,6 +177,9 @@
             "reverse": "#ff5f5f",
             "inactive": "#777777"
           }
+        },
+        {
+          "id": "omarchy.agents"
         },
         {
           "id": "wh01s17.bluetooth"
