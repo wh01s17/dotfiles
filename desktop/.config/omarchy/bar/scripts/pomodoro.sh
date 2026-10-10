@@ -289,7 +289,7 @@ preset_menu() {
       -- --width 420 || true
   )"
 
-  case "${choice%%$tab*}" in
+  case "${choice%%"$tab"*}" in
     "Equilibrado") set_preset balanced ;;
     "Clásico") set_preset classic ;;
     "Enfoque profundo") set_preset deep ;;

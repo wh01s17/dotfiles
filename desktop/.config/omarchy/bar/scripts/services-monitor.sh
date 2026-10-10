@@ -117,9 +117,9 @@ add_open_target() {
 }
 
 collect_listeners() {
-  local state recvq sendq local_address peer details port host process key record url
+  local local_address peer details port host process key record url
 
-  while read -r state recvq sendq local_address peer details; do
+  while read -r _ _ _ local_address peer details; do
     [[ -n "${local_address:-}" ]] || continue
     endpoint_port "$local_address"; port="$REPLY"
     [[ "$port" =~ ^[0-9]+$ ]] || continue
@@ -160,9 +160,9 @@ collect_listeners() {
 }
 
 collect_connections() {
-  local recvq sendq local_address peer details local_port peer_port process key record
+  local local_address peer details local_port peer_port process key record
 
-  while read -r recvq sendq local_address peer details; do
+  while read -r _ _ local_address peer details; do
     [[ -n "${peer:-}" ]] || continue
     endpoint_port "$local_address"; local_port="$REPLY"
     endpoint_port "$peer"; peer_port="$REPLY"

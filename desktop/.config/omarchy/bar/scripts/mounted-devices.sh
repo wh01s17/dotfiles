@@ -27,7 +27,7 @@ relevant_devices() {
 }
 
 json_status() {
-  local devices count prev_paths new_paths is_new class text tooltip subtitle rows_json
+  local devices count prev_paths new_paths is_new class text subtitle rows_json
 
   devices="$(relevant_devices)"
   count="$(jq 'length' <<< "$devices")"
@@ -97,7 +97,7 @@ json_status() {
 }
 
 choose_mountpoint() {
-  local devices mountpoints choice
+  local devices mountpoints
   devices="$(relevant_devices)"
   mapfile -t mountpoints < <(jq -r '.[].mountpoint' <<< "$devices")
 

@@ -39,10 +39,10 @@ themed_gengar() {
 	local source="$HOME/.config/fastfetch/gengar.png"
 	local bg red teeth body cache_dir logo i
 
-	[[ $accent_hex =~ ^[[:xdigit:]]{6}$ ]] && command -v magick >/dev/null || {
+	if ! [[ $accent_hex =~ ^[[:xdigit:]]{6}$ ]] || ! command -v magick >/dev/null; then
 		printf '%s' "$source"
 		return
-	}
+	fi
 
 	bg=$(theme_hex background)
 	red=$(theme_hex red)
