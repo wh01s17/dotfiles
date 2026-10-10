@@ -112,17 +112,16 @@ La sesión de terminal espera además:
 - `fzf` para el selector interactivo de temas de Oh My Posh;
 - `eza`, `bat`, `zoxide`, `xclip`, `host` y `whois` para los aliases y
   funciones de `~/.zshrc`;
-- NVM y un Node predeterminado, porque la inicialización ejecuta
-  `nvm use default`;
+- NVM con un Node predeterminado instalado: `.zshrc` agrega su `bin` al
+  `PATH` al iniciar;
 - MesloLGS Nerd Font Mono para Kitty y los glifos de la barra;
 - Fastfetch para el informe visual del sistema.
 
 En Omarchy, instala Oh My Posh desde AUR con `omarchy pkg aur add oh-my-posh-bin`.
 
 Solaar y WayScriber son opcionales, pero sus entradas de autostart y atajos
-sólo funcionarán cuando estén instalados. `subfinder`, `amass`, LM Studio,
-OpenCode, John the Ripper y el entorno local de Perl también son opcionales y
-sólo afectan las funciones o rutas de Zsh que los nombran.
+sólo funcionarán cuando estén instalados. `subfinder` y `amass` también son
+opcionales y sólo afectan las funciones de Zsh que los nombran.
 
 Para regenerar los wallpapers SVG se necesita `rsvg-convert` (`librsvg`); los
 wallpapers pixel art necesitan `python3` e ImageMagick (`magick`). ImageMagick
@@ -252,8 +251,8 @@ ln -s "$HOME/.oh-my-zsh/plugins/sudo/sudo.plugin.zsh" \
 
 ### 9. Instalar Node con NVM
 
-`.zshrc` usa `~/.config/nvm` y ejecuta `nvm use default` al iniciar, por lo
-que necesita un Node predeterminado:
+`.zshrc` usa `~/.config/nvm` y agrega al `PATH` la versión del alias
+`default`, por lo que necesita un Node predeterminado:
 
 ```bash
 export NVM_DIR="$HOME/.config/nvm"
@@ -291,8 +290,6 @@ tema y el prompt de Oh My Posh.
   ejecuta las [pruebas](#pruebas).
 - Compara cada `.before-dotfiles` con su reemplazo y elimina las copias que
   ya no necesites.
-- Revisa en `.zshrc` el alias `john` y las rutas de `PATH` propias de este
-  usuario (ver [Zsh y utilidades de terminal](#zsh-y-utilidades-de-terminal)).
 - Activa los timers de mantenimiento y, si `/` es btrfs, instala la parte de
   sistema (ver [Mantenimiento del disco](#mantenimiento-del-disco)).
 - Guarda las credenciales opcionales, como la de `ipinfo`, en
@@ -968,8 +965,15 @@ omarchy restart terminal
 
 [`terminal/.zshrc`](terminal/.zshrc) inicializa Oh My Zsh, Oh My Posh,
 Zoxide y NVM; carga los plugins `git`, `zsh-syntax-highlighting`,
-`zsh-autosuggestions` y `zsh-sudo`; define `nvim` como editor y agrega rutas
-locales de Perl, Ruby, LM Studio, OpenCode y John the Ripper.
+`zsh-autosuggestions` y `zsh-sudo`; define `nvim` como editor y antepone
+`~/.local/bin` al `PATH`.
+
+NVM no se carga al iniciar porque costaba casi un segundo por terminal. El
+`.zshrc` sigue la cadena del alias `default` (`default` → `lts/*` →
+`lts/<nombre>` → `vX.Y.Z`), agrega el `bin` de esa versión al `PATH` y, si no
+la encuentra instalada, usa la más nueva. La función `nvm` carga NVM la primera
+vez que se ejecuta. Los shims de mise se quitan del `PATH` para que `node` y
+`npm` sean siempre los de NVM.
 
 [`terminal/.config/oh-my-posh/pure.omp.json`](terminal/.config/oh-my-posh/pure.omp.json)
 guarda una copia local del tema Pure. Usa los colores ANSI de Kitty, cuya paleta
@@ -1065,9 +1069,7 @@ Funciones propias:
 
 Aliases destacados: `ls`, `ll`, `la`, `l` y `lla` usan Eza; `cat` usa Bat;
 `icat` usa `kitten icat`; `cd` usa Zoxide y `fastfetch` agrega el wordmark ANSI
-antes del informe. El alias `john` y varias entradas de `PATH` contienen rutas
-específicas de este usuario y deben adaptarse si el repositorio se instala con
-otro nombre de cuenta o estructura de directorios.
+antes del informe.
 
 Advertencias de seguridad:
 

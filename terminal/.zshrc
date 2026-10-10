@@ -364,26 +364,11 @@ alias ls='eza'
 alias cat='bat'
 alias icat="kitten icat"
 alias cd="z"
-alias john="/home/wh01s17/Documentos/git-clones/john/run/john"
 alias fastfetch="$HOME/.config/fastfetch/wh01s17.sh"
 
-# export JOHN=/home/wh01s17/Documentos/git-clones/john/run/john
-
-PATH="/home/wh01s17/perl5/bin${PATH:+:${PATH}}"; export PATH;
-PERL5LIB="/home/wh01s17/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
-PERL_LOCAL_LIB_ROOT="/home/wh01s17/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
-PERL_MB_OPT="--install_base \"/home/wh01s17/perl5\""; export PERL_MB_OPT;
-PERL_MM_OPT="INSTALL_BASE=/home/wh01s17/perl5"; export PERL_MM_OPT;
 eval "$(zoxide init zsh)"
 
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/home/wh01s17/.lmstudio/bin"
-
-# opencode
-export PATH=/home/wh01s17/.opencode/bin:$PATH
-
-export PATH="/home/wh01s17/.local/bin:$PATH"
-export PATH=$PATH:/home/wh01s17/.local/share/gem/ruby/3.2.0/bin:/home/wh01s17/Documentos/git-clones/john/run
+export PATH="$HOME/.local/bin:$PATH"
 export EDITOR=nvim
 
 [[ -r "$HOME/.config/omarchy/bar/scripts/ctf-aliases.zsh" ]] && \
@@ -392,14 +377,28 @@ export EDITOR=nvim
 [[ -r "$HOME/.config/omarchy/bar/scripts/git-branch-hook.zsh" ]] && \
   source "$HOME/.config/omarchy/bar/scripts/git-branch-hook.zsh"
 
-export NVM_DIR="$HOME/.config/nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-
 export PATH="$(echo "$PATH" | tr ':' '\n' | grep -v "$HOME/.local/share/mise/shims" | paste -sd ':' -)"
-nvm use default >/dev/null
-. /usr/share/nvm/init-nvm.sh
+
+# NVM: the default Node goes straight onto PATH and nvm itself loads on first
+# use; sourcing it at startup cost ~0.9 s. Follows the default alias chain
+# (default -> lts/* -> lts/<name> -> vX.Y.Z), else the newest installed version.
+export NVM_DIR="$HOME/.config/nvm"
+() {
+  local ver=default i
+  for i in 1 2 3; do
+    [[ -r $NVM_DIR/alias/$ver ]] && ver=$(<$NVM_DIR/alias/$ver)
+  done
+  if [[ ! -d $NVM_DIR/versions/node/$ver ]]; then
+    local -a installed=($NVM_DIR/versions/node/v*(NnOn:t))
+    ver=${installed[1]-}
+  fi
+  [[ -n $ver ]] && path=("$NVM_DIR/versions/node/$ver/bin" $path)
+}
+nvm() {
+  unfunction nvm
+  source /usr/share/nvm/init-nvm.sh
+  nvm "$@"
+}
 
 omp-theme() {
   zsh "$HOME/.config/oh-my-posh/theme-picker.zsh" "$@"
