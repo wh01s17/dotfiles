@@ -36,6 +36,7 @@ Stow trata cada directorio de primer nivel como un paquete y crea enlaces simbó
 17. [Mapa de implementación](#mapa-de-implementación)
 18. [Pruebas](#pruebas)
 19. [Actualizar o retirar](#actualizar-o-retirar)
+20. [Licencia](#licencia)
 
 ## Estructura
 
@@ -1233,3 +1234,9 @@ archivos que copió `install.sh`.
 `stow --delete` retira sólo los enlaces que administra; no elimina el
 repositorio, los selectores locales, el estado de CTF/Pomodoro ni las copias
 `.before-dotfiles` creadas al instalar.
+
+## Licencia
+
+[MIT](LICENSE). Los clones `wh01s17.*` de plugins oficiales (indicados como
+clones en [Módulos propios y clones](#módulos-propios-y-clones)) derivan del
+código de Omarchy y siguen sujetos a la licencia de Omarchy.
