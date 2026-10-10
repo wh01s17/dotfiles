@@ -1,0 +1,6 @@
+[Unit]
+Description=Borra copias sobrantes de actualizaciones de plugins de Codex
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/find %h/.codex/.tmp/marketplaces/.staging -mindepth 1 -maxdepth 1 -mtime +1 -exec rm -rf {} +

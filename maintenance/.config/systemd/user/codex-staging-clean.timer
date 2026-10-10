@@ -1,0 +1,9 @@
+[Unit]
+Description=Limpieza diaria del staging de Codex
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

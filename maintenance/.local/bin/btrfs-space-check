@@ -1,0 +1,24 @@
+#!/bin/bash
+# Avisa cuando el btrfs de / se está quedando sin espacio libre o sin espacio sin asignar.
+# Lee /sys, así que no necesita root.
+set -eu
+WARN_FREE_GIB=${WARN_FREE_GIB:-15}
+WARN_UNALLOC_GIB=${WARN_UNALLOC_GIB:-5}
+
+fs=/sys/fs/btrfs/$(findmnt -no UUID /)
+dev_bytes=0
+for s in "$fs"/devices/*/size; do dev_bytes=$((dev_bytes + $(<"$s") * 512)); done
+allocated=0
+for t in data metadata system; do allocated=$((allocated + $(<"$fs/allocation/$t/disk_total"))); done
+
+unalloc_gib=$(( (dev_bytes - allocated) / 1024**3 ))
+free_gib=$(( $(df --output=avail -B1 / | tail -1) / 1024**3 ))
+echo "libre: ${free_gib} GiB | sin asignar: ${unalloc_gib} GiB"
+
+if (( free_gib < WARN_FREE_GIB )); then
+    notify-send -u critical "Disco casi lleno" \
+        "Quedan ${free_gib} GiB libres en /. Borra archivos o snapshots (sudo snapper list)."
+elif (( unalloc_gib < WARN_UNALLOC_GIB )); then
+    notify-send -u critical "Btrfs sin espacio sin asignar" \
+        "Solo ${unalloc_gib} GiB sin asignar. Ejecuta: sudo systemctl start btrfs-balance-auto"
+fi

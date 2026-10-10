@@ -1,0 +1,6 @@
+[Unit]
+Description=Borra versiones de mise que ya no usa ninguna configuración
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mise prune --yes

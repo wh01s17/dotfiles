@@ -1,0 +1,9 @@
+[Unit]
+Description=Limpieza semanal de versiones viejas de mise
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

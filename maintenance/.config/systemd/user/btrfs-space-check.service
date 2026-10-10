@@ -1,0 +1,6 @@
+[Unit]
+Description=Aviso de espacio bajo en btrfs /
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/btrfs-space-check

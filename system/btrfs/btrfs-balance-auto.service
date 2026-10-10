@@ -1,0 +1,9 @@
+[Unit]
+Description=Btrfs balance filtrado de /
+ConditionACPower=true
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/btrfs-balance-auto /
+Nice=19
+IOSchedulingClass=idle

@@ -32,9 +32,10 @@ Stow trata cada directorio de primer nivel como un paquete y crea enlaces simbó
 13. [Fastfetch](#fastfetch)
 14. [Kitty](#kitty)
 15. [Zsh y utilidades de terminal](#zsh-y-utilidades-de-terminal)
-16. [Mapa de implementación](#mapa-de-implementación)
-17. [Pruebas](#pruebas)
-18. [Actualizar o retirar](#actualizar-o-retirar)
+16. [Mantenimiento del disco](#mantenimiento-del-disco)
+17. [Mapa de implementación](#mapa-de-implementación)
+18. [Pruebas](#pruebas)
+19. [Actualizar o retirar](#actualizar-o-retirar)
 
 ## Estructura
 
@@ -70,6 +71,10 @@ dotfiles/
 │   │   ├── pure.omp.json          # Tema Pure personalizado
 │   │   └── theme-picker.zsh       # Selector interactivo de temas
 │   └── .zshrc
+├── maintenance/
+│   ├── .config/systemd/user/      # Timers de usuario: aviso de espacio, Codex y mise
+│   └── .local/bin/btrfs-space-check
+├── system/btrfs/                  # Balance semanal y snapper; se instala con sudo, no con Stow
 └── README.md
 ```
 
@@ -79,6 +84,10 @@ Los paquetes Stow son:
 | --- | --- | --- |
 | `desktop` | `~/.config/` | Fastfetch, Hyprland y Omarchy Shell |
 | `terminal` | `$HOME` y `~/.config/` | Zsh, Oh My Posh y Kitty |
+| `maintenance` | `~/.config/systemd/user/` y `~/.local/bin/` | Timers de limpieza y aviso de espacio en disco |
+
+`system/` no es un paquete Stow: sus archivos van a `/etc` y `/usr/local` y se
+copian con su propio instalador (ver [Mantenimiento del disco](#mantenimiento-del-disco)).
 
 ## Requisitos
 
@@ -195,13 +204,13 @@ cd "$HOME/dotfiles"
 [ -d "$HOME/.config/hypr" ] && [ ! -L "$HOME/.config/hypr" ] &&
   mv -n "$HOME/.config/hypr" "$HOME/.config/hypr.before-dotfiles"
 
-stow --simulate --target="$HOME" desktop terminal 2>&1 \
+stow --simulate --target="$HOME" desktop terminal maintenance 2>&1 \
   | sed -nE 's/^  \* cannot stow .* over existing target (.+) since neither a link nor a directory.*/\1/p' \
   | while IFS= read -r conflict; do
       mv -n -- "$HOME/$conflict" "$HOME/$conflict.before-dotfiles"
     done
 
-stow --simulate --target="$HOME" desktop terminal
+stow --simulate --target="$HOME" desktop terminal maintenance
 ```
 
 La última simulación debe terminar sin el aviso `would cause conflicts`.
@@ -211,7 +220,7 @@ se llama `conflict` y no `path` porque en Zsh `path` está ligada a `PATH`.
 ### 7. Crear los enlaces
 
 ```bash
-stow --target="$HOME" desktop terminal
+stow --target="$HOME" desktop terminal maintenance
 ```
 
 ### 8. Configurar Zsh
@@ -282,6 +291,8 @@ tema y el prompt de Oh My Posh.
   ya no necesites.
 - Revisa en `.zshrc` el alias `john` y las rutas de `PATH` propias de este
   usuario (ver [Zsh y utilidades de terminal](#zsh-y-utilidades-de-terminal)).
+- Activa los timers de mantenimiento y, si `/` es btrfs, instala la parte de
+  sistema (ver [Mantenimiento del disco](#mantenimiento-del-disco)).
 - Guarda las credenciales opcionales, como la de `ipinfo`, en
   `~/.config/zsh/secrets.zsh`; `.zshrc` lo carga si existe y no se versiona.
 
@@ -301,7 +312,7 @@ cd "$HOME/dotfiles"
 ### 2. Simular y resolver conflictos
 
 ```bash
-stow --simulate --verbose=2 --target="$HOME" desktop terminal
+stow --simulate --verbose=2 --target="$HOME" desktop terminal maintenance
 ```
 
 Si Stow informa un conflicto, respalda únicamente la ruta indicada. En una
@@ -323,7 +334,7 @@ No uses `stow --adopt` sin revisar sus efectos: puede incorporar archivos locale
 ### 3. Crear los enlaces
 
 ```bash
-stow --restow --target="$HOME" desktop terminal
+stow --restow --target="$HOME" desktop terminal maintenance
 ```
 
 Comprueba los destinos importantes:
@@ -1064,6 +1075,61 @@ Recarga la sesión después de editar:
 exec zsh
 ```
 
+## Mantenimiento del disco
+
+Btrfs reparte el disco en chunks de datos y de metadatos. Si los chunks de
+datos ocupan todo el espacio sin asignar, los metadatos no pueden crecer y el
+sistema responde `No space left on device` aunque `df` muestre espacio libre.
+Recuperarse exige agregar un dispositivo temporal y hacer un balance; estas
+tareas evitan llegar a ese punto.
+
+Tareas de usuario (paquete `maintenance`):
+
+| Timer | Frecuencia | Acción |
+| --- | --- | --- |
+| `btrfs-space-check` | Cada hora | Notifica si quedan menos de 15 GiB libres o menos de 5 GiB sin asignar. Lee `/sys`, no necesita root |
+| `codex-staging-clean` | Diaria | Borra de `~/.codex/.tmp/marketplaces/.staging` las copias de actualizaciones de plugins con más de un día |
+| `mise-prune` | Semanal | `mise prune --yes`: elimina versiones que ninguna configuración usa y conserva las que están en ejecución |
+
+Los umbrales del aviso se cambian con `WARN_FREE_GIB` y `WARN_UNALLOC_GIB`.
+
+Stow sólo crea los enlaces; los timers se activan aparte:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now \
+  btrfs-space-check.timer codex-staging-clean.timer mise-prune.timer
+```
+
+Tareas de sistema (`system/btrfs/`, requiere que `/` sea btrfs):
+
+| Componente | Acción |
+| --- | --- |
+| `btrfs-balance-auto.timer` | Balance semanal sólo de datos (`-dusage` 0, 10, 25 y 50), con prioridad baja y únicamente conectado a la corriente |
+| `/etc/tmpfiles.d/btrfs-reclaim.conf` | Activa `dynamic_reclaim` y `periodic_reclaim` del kernel en cada arranque; el instalador lo genera con el UUID de `/` |
+| Snapper (`root`) | `NUMBER_LIMIT=2-5` y `FREE_LIMIT=0.2`: conserva cinco snapshots y baja a dos cuando queda menos del 20 % libre |
+
+```bash
+sudo "$HOME/dotfiles/system/btrfs/install.sh"
+```
+
+El instalador copia los archivos, por lo que hay que volver a ejecutarlo
+después de editarlos. Termina lanzando un primer balance y mostrando su
+registro.
+
+`FREE_LIMIT` sólo actúa porque `NUMBER_LIMIT` es un rango. `SPACE_LIMIT` no se
+usa porque requiere cuotas de btrfs. El balance omite los metadatos a propósito:
+compactarlos les quita margen, que es justamente lo que provoca el bloqueo.
+
+Revisión:
+
+```bash
+systemctl --user list-timers
+systemctl list-timers btrfs-balance-auto.timer snapper-cleanup.timer
+journalctl --user -u btrfs-space-check -n 5
+sudo btrfs filesystem usage -T /
+```
+
 ## Mapa de implementación
 
 Esta tabla cubre los archivos auxiliares que normalmente no se editan durante
@@ -1093,7 +1159,7 @@ el uso diario:
 Validación estática:
 
 ```bash
-stow --simulate --verbose=2 --target="$HOME" desktop terminal
+stow --simulate --verbose=2 --target="$HOME" desktop terminal maintenance
 luac -p "$HOME/.config/hypr/monitor_scales.lua" \
   "$HOME/.config/hypr/monitors.lua" \
   "$HOME/.config/hypr/profiles/"*.lua
@@ -1127,6 +1193,11 @@ for script in "$HOME/.config/omarchy/bar/scripts/"*.sh; do
 done
 zsh -n "$HOME/.zshrc"
 zsh -n "$HOME/.config/omarchy/bar/scripts/ctf-aliases.zsh"
+bash -n "$HOME/.local/bin/btrfs-space-check"
+bash -n "$HOME/dotfiles/system/btrfs/install.sh"
+bash -n "$HOME/dotfiles/system/btrfs/btrfs-balance-auto"
+systemd-analyze verify --user \
+  "$HOME/.config/systemd/user/"{btrfs-space-check,codex-staging-clean,mise-prune}.{service,timer}
 ```
 
 La simulación de Stow no modifica archivos. `qmllint` puede mostrar avisos de
@@ -1148,7 +1219,7 @@ fastfetch
 ```bash
 cd "$HOME/dotfiles"
 git pull --ff-only
-stow --restow --target="$HOME" desktop terminal
+stow --restow --target="$HOME" desktop terminal maintenance
 omarchy restart shell
 omarchy restart terminal
 ```
@@ -1157,8 +1228,14 @@ Para retirar únicamente los enlaces:
 
 ```bash
 cd "$HOME/dotfiles"
-stow --delete --target="$HOME" desktop terminal
+stow --delete --target="$HOME" desktop terminal maintenance
 ```
+
+Antes de retirar `maintenance`, desactiva sus timers con
+`systemctl --user disable --now btrfs-space-check.timer codex-staging-clean.timer mise-prune.timer`.
+La parte de sistema se retira con
+`sudo systemctl disable --now btrfs-balance-auto.timer` y borrando los
+archivos que copió `install.sh`.
 
 `stow --delete` retira sólo los enlaces que administra; no elimina el
 repositorio, los selectores locales, el estado de CTF/Pomodoro ni las copias

@@ -1,0 +1,14 @@
+#!/bin/bash
+# Compacta los chunks de btrfs medio vacíos para que siempre quede espacio sin asignar
+# (evita el "No space left on device" con df mostrando espacio libre).
+set -u
+MNT=${1:-/}
+
+# Pasadas crecientes: las primeras son casi gratis y liberan espacio para las siguientes.
+# Solo datos: compactar metadatos les quita margen, que fue justo lo que llenó el disco.
+for u in 0 10 25 50; do
+    echo "== balance -dusage=$u"
+    btrfs balance start -dusage="$u" "$MNT" || break
+done
+
+btrfs filesystem usage -T "$MNT" | head -n 12
