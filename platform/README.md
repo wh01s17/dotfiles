@@ -11,7 +11,7 @@ proporciona lo mismo.
 | Ruta | Contenido |
 | --- | --- |
 | `.local/share/omarchy/` | Runtime (`OMARCHY_PATH`): shell, `bin/`, `default/`, `config/`, `install/` |
-| `.local/share/omarchy/system/` | Archivos que los paquetes instalan fuera de `/usr/share/omarchy`; `arch/install.sh` elige cuáles aplicar |
+| `.local/share/omarchy/system/` | Archivos que los paquetes instalan fuera de `/usr/share/omarchy`; `install.sh` elige cuáles aplicar |
 | `.local/share/omarchy/nvim/config/` | Configuración LazyVim de `omarchy-nvim`; se copia a `~/.config/nvim` si falta |
 | `.config/uwsm/env.d/10-omarchy` | Entorno de la sesión: `OMARCHY_PATH` y `PATH` |
 | `.config/systemd/user/` | Servicios de usuario que apuntan a la copia |
@@ -27,7 +27,7 @@ proporciona lo mismo.
 Regenerar desde un equipo con Omarchy:
 
 ```bash
-~/workspace/post-install-linux/arch/tools/vendor-omarchy.py --force
+~/workspace/arch-desktop/tools/vendor-omarchy.py --force
 ```
 
 Los cambios propios hechos a mano dentro de la copia se pierden al

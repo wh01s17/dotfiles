@@ -95,7 +95,7 @@ Los paquetes Stow son:
 | `apps` | `~/.config/` y `~/.local/share/` | **Sólo Arch puro.** Herramientas de mise, apps predeterminadas y webapps propias. Se enlaza con `stow --no-folding` |
 
 En Omarchy se enlazan `desktop terminal maintenance`. En Arch puro,
-`post-install-linux/arch/install.sh` enlaza además `platform` y `apps`, y
+[`arch-desktop`](https://github.com/wh01s17/arch-desktop) (`install.sh`) enlaza además `platform` y `apps`, y
 aplica el resto de la configuración del sistema.
 
 `system/` no es un paquete Stow: sus archivos van a `/etc` y `/usr/local` y se

@@ -92,7 +92,7 @@ check_platform() {
   done < <(find "$root/bin" -type f -print0)
   [[ -z $luac ]] || "$luac" -p "${platform_lua[@]}" || return
   check_bash "${platform_bash[@]}" || return
-  # The Arch adaptations from post-install-linux/arch/tools/vendor-omarchy.py.
+  # The Arch adaptations from arch-desktop/tools/vendor-omarchy.py.
   grep -q 'local/share/omarchy' "$root/default/bash/env-bootstrap" || return
   ! grep -q 'pacman.conf$' "$root/install/post-install/pacman.sh"
 }
