@@ -69,7 +69,16 @@ check_js() {
   done
 }
 
-need stow && run "stow (simulación)" stow --simulate --target="$HOME" desktop terminal maintenance
+check_stow() {
+  # On plain Arch, desktop and terminal are stowed from the renamed build.
+  if [[ -d .arch-build ]]; then
+    stow --simulate --target="$HOME" platform maintenance &&
+      stow --simulate --dir=.arch-build --target="$HOME" desktop terminal
+  else
+    stow --simulate --target="$HOME" desktop terminal maintenance
+  fi
+}
+need stow && run "stow (simulación)" check_stow
 need jq && run "JSON (${#json[@]})" check_json "${json[@]}"
 luac=$(command -v luac || command -v luac5.4 || true)
 if [[ -n $luac ]]; then
