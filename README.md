@@ -91,6 +91,12 @@ Los paquetes Stow son:
 | `desktop` | `~/.config/` | Fastfetch, Hyprland y Omarchy Shell |
 | `terminal` | `$HOME` y `~/.config/` | Zsh, Oh My Posh y Kitty |
 | `maintenance` | `~/.config/systemd/user/` y `~/.local/bin/` | Timers de limpieza y aviso de espacio en disco |
+| `platform` | `~/.local/share/omarchy/`, `~/.config/uwsm/` y `~/.config/systemd/user/` | **Sólo Arch puro.** Copia congelada de Omarchy 4.0.4 (MIT) que sustituye a `/usr/share/omarchy`; ver `platform/README.md` |
+| `apps` | `~/.config/` y `~/.local/share/` | **Sólo Arch puro.** Herramientas de mise, apps predeterminadas y webapps propias. Se enlaza con `stow --no-folding` |
+
+En Omarchy se enlazan `desktop terminal maintenance`. En Arch puro,
+`post-install-linux/arch/install.sh` enlaza además `platform` y `apps`, y
+aplica el resto de la configuración del sistema.
 
 `system/` no es un paquete Stow: sus archivos van a `/etc` y `/usr/local` y se
 copian con su propio instalador (ver [Mantenimiento del disco](#mantenimiento-del-disco)).

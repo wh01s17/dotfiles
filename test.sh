@@ -39,15 +39,18 @@ local_only() { # local_only TOOL: succeeds outside CI when TOOL is installed
   [[ -z ${CI-} ]] && command -v "$1" >/dev/null
 }
 
-mapfile -t json < <(git ls-files '*.json' '*.jsonc')
-mapfile -t lua < <(git ls-files '*.lua')
-mapfile -t js < <(git ls-files '*.js')
-mapfile -t py < <(git ls-files '*.py')
-mapfile -t zshfiles < <(git ls-files '*.zsh' '.zshrc' '*/.zshrc')
+# platform/ is a frozen copy of Omarchy (MIT): checked separately below, not
+# held to this repo's ShellCheck and style rules.
+own=(':!:platform/**')
+mapfile -t json < <(git ls-files -- '*.json' '*.jsonc' "${own[@]}")
+mapfile -t lua < <(git ls-files -- '*.lua' "${own[@]}")
+mapfile -t js < <(git ls-files -- '*.js' "${own[@]}")
+mapfile -t py < <(git ls-files -- '*.py' "${own[@]}")
+mapfile -t zshfiles < <(git ls-files -- '*.zsh' '.zshrc' '*/.zshrc' "${own[@]}")
 bash_scripts=()
 while IFS= read -r f; do
   [[ $f == *.sh ]] || head -n 1 "$f" | grep -qE '^#!.*\bbash\b' && bash_scripts+=("$f")
-done < <(git ls-files)
+done < <(git ls-files -- "${own[@]}")
 
 check_json() { for f in "$@"; do jq empty "$f" || return; done; }
 check_bash() { for f in "$@"; do bash -n "$f" || return; done; }
@@ -80,13 +83,30 @@ run "Bash -n (${#bash_scripts[@]})" check_bash "${bash_scripts[@]}"
 need zsh && run "Zsh -n (${#zshfiles[@]})" check_zsh "${zshfiles[@]}"
 need shellcheck && run "ShellCheck (${#bash_scripts[@]})" shellcheck "${bash_scripts[@]}"
 
+check_platform() {
+  local root=platform/.local/share/omarchy file
+  local -a platform_lua=() platform_bash=()
+  mapfile -t platform_lua < <(find "$root/default/hypr" "$root/config/hypr" -name '*.lua')
+  while IFS= read -r -d '' file; do
+    head -n 1 "$file" | grep -qE '^#!.*\bbash\b' && platform_bash+=("$file")
+  done < <(find "$root/bin" -type f -print0)
+  [[ -z $luac ]] || "$luac" -p "${platform_lua[@]}" || return
+  check_bash "${platform_bash[@]}" || return
+  # The Arch adaptations from post-install-linux/arch/tools/vendor-omarchy.py.
+  grep -q 'local/share/omarchy' "$root/default/bash/env-bootstrap" || return
+  ! grep -q 'pacman.conf$' "$root/install/post-install/pacman.sh"
+}
+if [[ -d platform ]]; then
+  run "platform (copia de Omarchy)" check_platform
+fi
+
 if local_only Hyprland; then
   run "Hyprland" Hyprland --verify-config --config "$HOME/.config/hypr/hyprland.lua"
 fi
 if local_only qmllint; then
   # Only files qmllint can resolve: on most widgets (and on Omarchy's own
   # originals) it exits 255 without printing a diagnostic.
-  run "QML" qmllint -I /usr/share/omarchy/shell \
+  run "QML" qmllint -I "${OMARCHY_PATH:-/usr/share/omarchy}/shell" \
     desktop/.config/omarchy/bar/modules/StatusModule.qml \
     desktop/.config/omarchy/plugins/wh01s17.clock/Panel.qml \
     desktop/.config/omarchy/plugins/wh01s17.monitor/Panel.qml \

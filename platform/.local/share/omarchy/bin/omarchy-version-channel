@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# omarchy:summary=Show the release channel (frozen copy)
+# omarchy:hidden=true
+#
+# wh01s17: replaced in the frozen copy. Upstream ties this command to the
+# Omarchy package repository or to a git checkout of OMARCHY_PATH, which
+# here would be ~/dotfiles.
+
+echo frozen
