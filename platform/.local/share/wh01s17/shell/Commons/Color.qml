@@ -206,7 +206,7 @@ QtObject {
     for (var tk in themeShellValues) merged[tk] = themeShellValues[tk]
     for (var uk in userShellValues) merged[uk] = userShellValues[uk]
     shellValues = merged
-    Style.applyShellValues(merged)
+    Qt.callLater(function() { Style.applyShellValues(merged) })
   }
 
   function loadShell(raw) {

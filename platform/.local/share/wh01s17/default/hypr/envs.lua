@@ -35,6 +35,10 @@ end
 table.insert(kept, 1, bin_dir)
 hl.env("PATH", table.concat(kept, ":"))
 
+if os.getenv("WH01S17_VM_RENDERING") == "1" then
+  hl.env("LIBGL_ALWAYS_SOFTWARE", "1")
+end
+
 -- Hardware-specific environment.
 require("default.hypr.nvidia")
 
