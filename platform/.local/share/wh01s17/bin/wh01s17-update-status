@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# wh01s17:summary=Refresh the shell update status
+# wh01s17:hidden=true
+
+set -e
+
+if wh01s17-update-available >/dev/null; then
+  wh01s17-shell -q core.system-update refresh
+else
+  wh01s17-shell -q core.system-update clear
+fi

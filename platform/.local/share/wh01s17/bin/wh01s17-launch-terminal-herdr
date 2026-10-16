@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Launch or attach to the persistent herdr session in a terminal
+
+exec wh01s17-launch-terminal herdr

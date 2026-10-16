@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# wh01s17:summary=Restore the default wh01s17 Plymouth boot theme and SDDM login screen
+# wh01s17:requires-sudo=true
+
+set -euo pipefail
+
+"$WH01S17_PATH/bin/wh01s17-refresh-plymouth"
+"$WH01S17_PATH/bin/wh01s17-refresh-sddm"

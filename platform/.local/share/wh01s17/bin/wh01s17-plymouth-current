@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# wh01s17:summary=Show which theme is styling the Plymouth boot screen
+# wh01s17:examples=wh01s17 plymouth current
+
+# wh01s17-plymouth-set installs the theme's unlock.png as a byte-for-byte
+# copy of logo.png, so matching it back identifies the current theme.
+installed_logo=/usr/share/plymouth/themes/wh01s17/logo.png
+
+if cmp -s "$WH01S17_PATH/default/plymouth/logo.png" "$installed_logo"; then
+  echo default
+  exit
+fi
+
+wh01s17-plymouth-list | while read -r name; do
+  if cmp -s "$(wh01s17-theme-dir "$name")/unlock.png" "$installed_logo"; then
+    echo "$name"
+    exit
+  fi
+done

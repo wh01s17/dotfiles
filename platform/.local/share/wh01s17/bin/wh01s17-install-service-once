@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# wh01s17:summary=Install the ONCE service, enable its background service, and launch the TUI.
+# wh01s17:requires-sudo=true
+
+echo "Installing ONCE..."
+wh01s17-pkg-add once-bin
+
+echo "Enabling ONCE background service..."
+sudo systemctl enable --now once-background.service
+
+echo -e "\nLaunching ONCE..."
+once

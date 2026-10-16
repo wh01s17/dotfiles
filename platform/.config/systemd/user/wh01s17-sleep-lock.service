@@ -1,0 +1,20 @@
+[Unit]
+Description=Lock wh01s17 before suspend
+# The monitor calls into the running wh01s17 shell. Wait until UWSM has imported
+# WH01S17_PATH and WAYLAND_DISPLAY, but keep the default target ordering so the
+# monitor starts before graphical-session.target is reached.
+After=dbus.socket wayland-session-waitenv.service
+Requires=dbus.socket
+PartOf=graphical-session.target
+ConditionEnvironment=WH01S17_PATH
+ConditionEnvironment=WAYLAND_DISPLAY
+
+[Service]
+Environment=PATH=%h/.local/share/wh01s17/bin:%h/.local/bin:/usr/local/bin:/usr/bin
+Type=simple
+ExecStart=%h/.local/share/wh01s17/bin/wh01s17-system-sleep-monitor
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

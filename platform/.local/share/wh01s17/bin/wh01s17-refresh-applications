@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# wh01s17:summary=Ensure default application launchers and mise wrappers are installed.
+
+# Copy .desktop declarations
+mkdir -p ~/.local/share/applications
+cp "$WH01S17_PATH"/applications/*.desktop ~/.local/share/applications/
+
+if wh01s17-cmd-present alacritty; then
+  cp "$WH01S17_PATH/default/alacritty/Alacritty.desktop" ~/.local/share/applications/
+fi
+
+if [[ -f "$WH01S17_PATH/install/user/mise.sh" ]]; then
+  bash "$WH01S17_PATH/install/user/mise.sh"
+fi
+
+update-desktop-database ~/.local/share/applications

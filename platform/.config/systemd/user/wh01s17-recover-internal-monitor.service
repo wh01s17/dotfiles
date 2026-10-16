@@ -1,0 +1,12 @@
+[Unit]
+Description=Recover the internal monitor toggle when no external display is connected
+Before=graphical-session-pre.target
+ConditionPathExists=%h/.local/state/wh01s17/toggles/hypr/internal-monitor-disable.lua
+
+[Service]
+Environment=PATH=%h/.local/share/wh01s17/bin:%h/.local/bin:/usr/local/bin:/usr/bin
+Type=oneshot
+ExecStart=%h/.local/share/wh01s17/bin/wh01s17-hw-recover-internal-monitor
+
+[Install]
+WantedBy=graphical-session-pre.target

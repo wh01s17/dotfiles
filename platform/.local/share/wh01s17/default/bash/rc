@@ -1,0 +1,7 @@
+: "${WH01S17_PATH:=$HOME/.local/share/wh01s17}"
+source "$WH01S17_PATH/default/bash/envs"
+source "$WH01S17_PATH/default/bash/shell"
+source "$WH01S17_PATH/default/bash/aliases"
+source "$WH01S17_PATH/default/bash/functions"
+source "$WH01S17_PATH/default/bash/init"
+[[ $- == *i* ]] && bind -f "$WH01S17_PATH/default/bash/inputrc"

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# wh01s17:summary=Open Voxtype AI model setup
+
+set -e
+
+wh01s17-launch-floating-terminal-with-presentation "voxtype setup model"
+wh01s17-restart-shell

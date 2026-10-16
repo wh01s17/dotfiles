@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# wh01s17:summary=Show the wh01s17 Quickshell on-screen display
+# wh01s17:args=[-i|--icon <icon>] [-m|--message <text>] [-p|--progress <0-100>] [-d|--duration <ms>]
+# wh01s17:examples=wh01s17 osd -i brightness -p 50 | wh01s17 osd -m "Hello"
+
+set -euo pipefail
+
+icon=""
+message=""
+progress=""
+progress_text=""
+max="100"
+duration=""
+
+while (($#)); do
+  case $1 in
+    -i|--icon) icon="${2:-}"; shift 2 ;;
+    -m|--message) message="${2:-}"; shift 2 ;;
+    -p|--progress) progress="${2:-}"; shift 2 ;;
+    -d|--duration) duration="${2:-}"; shift 2 ;;
+    -h|--help) wh01s17 osd --help; exit 0 ;;
+    *) echo "Unknown OSD option: $1" >&2; exit 1 ;;
+  esac
+done
+
+if [[ -n $progress ]]; then
+  progress_text="${progress}%"
+fi
+
+payload=$(jq -cn \
+  --arg icon "$icon" \
+  --arg message "$message" \
+  --arg value "$progress" \
+  --arg progressText "$progress_text" \
+  --arg max "$max" \
+  --arg duration "$duration" \
+  '{icon:$icon,message:$message,value:$value,progressText:$progressText,max:$max,duration:$duration}')
+
+wh01s17-shell -q osd show "$payload"

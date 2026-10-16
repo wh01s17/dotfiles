@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# wh01s17:summary=Overwrite the user herdr config with the wh01s17 default and reload herdr.
+
+wh01s17-refresh-config herdr/config.toml
+wh01s17-restart-herdr

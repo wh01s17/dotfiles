@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# wh01s17:summary=Cycle to the next media source and transfer playback when the current source is playing
+# wh01s17:args=[next|previous]
+# wh01s17:examples=wh01s17 audio source switch | wh01s17-audio-source-switch previous
+
+direction="${1:-next}"
+
+case "$direction" in
+  next)
+    wh01s17-shell media sourceSwitch
+    ;;
+  previous)
+    wh01s17-shell media sourceSwitchPrevious
+    ;;
+  *)
+    echo "Usage: wh01s17-audio-source-switch [next|previous]" >&2
+    exit 1
+    ;;
+esac

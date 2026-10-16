@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# wh01s17:summary=Remove Dropbox and its bar plugin.
+# wh01s17:requires-sudo=true
+
+dropbox-cli stop 2>/dev/null || true
+wh01s17-plugin-disable core.dropbox
+wh01s17-pkg-drop dropbox dropbox-cli libappindicator-gtk3 python-gpgme nautilus-dropbox
+
+echo ""
+echo "Dropbox has been removed."

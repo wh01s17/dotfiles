@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# wh01s17:summary=Install a supported browser
+# wh01s17:args=<chrome|brave|brave-origin|edge|firefox|zen>
+# wh01s17:examples=wh01s17 install browser firefox | wh01s17 install browser brave
+
+source "$WH01S17_PATH/install/helpers/browser-policy.sh"
+
+setup_chromium_policy_directory() {
+  browser_policy_setup_dir "$1"
+}
+
+announce_browser_installed() {
+  echo ""
+  echo "$1 browser installed. Make it the default via Setup > Defaults > Browser."
+}
+
+copy_chromium_flags() {
+  mkdir -p ~/.config
+  cp -f "$WH01S17_PATH/config/chromium-flags.conf" "$1"
+  wh01s17-install-chromium-copy-url
+  wh01s17-install-chromium-ytdlp
+}
+
+setup_firefox_wayland() {
+  mkdir -p ~/.config/environment.d
+  echo "MOZ_ENABLE_WAYLAND=1" > ~/.config/environment.d/wh01s17-firefox-wayland.conf
+}
+
+case $1 in
+chrome)
+  echo "Installing Chrome..."
+  wh01s17-pkg-aur-add google-chrome || exit 1
+
+  setup_chromium_policy_directory /etc/opt/chrome/policies/managed
+  copy_chromium_flags ~/.config/chrome-flags.conf
+  wh01s17-theme-set-browser
+  announce_browser_installed "Chrome"
+  ;;
+edge)
+  echo "Installing Edge..."
+  wh01s17-pkg-aur-add microsoft-edge-stable-bin || exit 1
+
+  setup_chromium_policy_directory /etc/opt/edge/policies/managed
+  copy_chromium_flags ~/.config/microsoft-edge-stable-flags.conf
+  wh01s17-theme-set-browser
+  announce_browser_installed "Edge"
+  ;;
+brave)
+  echo "Installing Brave..."
+  wh01s17-pkg-aur-add brave-bin || exit 1
+
+  setup_chromium_policy_directory /etc/brave/policies/managed
+  copy_chromium_flags ~/.config/brave-flags.conf
+  wh01s17-theme-set-browser
+  announce_browser_installed "Brave"
+  ;;
+brave-origin)
+  echo "Installing Brave Origin..."
+  wh01s17-pkg-aur-add brave-origin-bin || exit 1
+
+  setup_chromium_policy_directory /etc/brave/policies/managed
+  copy_chromium_flags ~/.config/brave-origin-flags.conf
+  wh01s17-theme-set-browser
+  announce_browser_installed "Brave Origin"
+  ;;
+firefox)
+  echo "Installing Firefox..."
+  wh01s17-pkg-add firefox || exit 1
+
+  browser_policy_setup_firefox_distribution /usr/lib/firefox/distribution
+  setup_firefox_wayland
+  announce_browser_installed "Firefox"
+  ;;
+zen)
+  echo "Installing Zen..."
+  wh01s17-pkg-aur-add zen-browser-bin || exit 1
+
+  browser_policy_setup_firefox_distribution /opt/zen-browser/distribution
+  setup_firefox_wayland
+  announce_browser_installed "Zen"
+  ;;
+*)
+  echo "Usage: wh01s17-install-browser <chrome|brave|brave-origin|edge|firefox|zen>"
+  exit 1
+  ;;
+esac

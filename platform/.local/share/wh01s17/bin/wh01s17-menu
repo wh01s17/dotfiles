@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# wh01s17:summary=Control the wh01s17 menu (toggle / summon / close / refresh)
+# wh01s17:args=[toggle|summon|close|refresh|ping] [route]
+# wh01s17:examples=wh01s17 menu | wh01s17 menu toggle system | wh01s17 menu summon style.theme | wh01s17 menu refresh
+
+# Thin wrapper around the standard plugin IPC surface. The menu is the
+# first-party `core.menu` plugin; routes are passed as JSON payload.
+
+set -euo pipefail
+
+verb="${1-toggle}"
+route="${2-root}"
+
+menu_payload() {
+  jq -nc --arg menu "$1" '{ menu: $menu }'
+}
+
+case "$verb" in
+  toggle)
+    exec wh01s17-shell shell toggle core.menu "$(menu_payload "$route")"
+    ;;
+  summon)
+    exec wh01s17-shell shell summon core.menu "$(menu_payload "$route")"
+    ;;
+  close)
+    exec wh01s17-shell shell hide core.menu
+    ;;
+  refresh | ping)
+    exec wh01s17-shell shell call core.menu "$verb" "{}"
+    ;;
+  -h | --help | help)
+    cat <<USAGE
+Usage: wh01s17 menu [verb] [route]
+
+Verbs:
+  toggle [route]   Open the menu at <route>, or close it if already open. Default verb.
+  summon [route]   Always open the menu (no close-if-visible toggle).
+  close            Close the menu if it is visible.
+  refresh          Re-parse the menu JSONC files.
+  ping             Health check.
+
+Route is an item id (e.g. setup.power) or alias (e.g. power). Defaults to
+"root", which opens the top-level menu.
+USAGE
+    exit 0
+    ;;
+  *)
+    echo "wh01s17-menu: unknown verb '$verb'. Try 'wh01s17 menu --help'." >&2
+    exit 2
+    ;;
+esac

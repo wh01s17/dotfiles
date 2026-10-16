@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# wh01s17:summary=Refresh the SDDM theme from default
+# wh01s17:requires-sudo=true
+
+# Reuse the fixed-file publisher so root never resolves an untrusted source or
+# follows a destination symlink while restoring the packaged SDDM theme.
+exec "$WH01S17_PATH/bin/wh01s17-plymouth-set" --refresh-sddm-default

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# wh01s17:summary=Dismiss a notification by summary substring. Used by the first-run notifications to dismiss them after clicking for action.
+# wh01s17:args=<summary>
+
+if (($# == 0)); then
+  echo "Usage: wh01s17-notification-dismiss <summary>"
+  exit 1
+fi
+
+wh01s17-shell -q notifications dismiss "$1"

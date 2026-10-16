@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# wh01s17:summary=Install the ChatGPT desktop app
+# wh01s17:requires-sudo=true
+
+set -e
+
+echo "Installing ChatGPT..."
+wh01s17-pkg-add openai-codex-desktop
+
+echo "Opening ChatGPT..."
+setsid uwsm-app -- /usr/bin/chatgpt >/dev/null 2>&1 &
+
+echo ""
+echo "ChatGPT has been installed."

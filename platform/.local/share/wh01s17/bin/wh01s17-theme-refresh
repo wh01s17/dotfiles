@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# wh01s17:summary=Refresh the current theme from its templates.
+
+THEME_NAME_PATH="$HOME/.local/state/wh01s17/current/theme.name"
+
+if [[ -f $THEME_NAME_PATH ]]; then
+  WH01S17_THEME_SKIP_BACKGROUND=1 wh01s17-theme-set "$(cat $THEME_NAME_PATH)"
+fi

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# wh01s17:summary=Install Spotify.
+# wh01s17:requires-sudo=true
+
+set -e
+
+echo "Installing Spotify..."
+wh01s17-pkg-add spotify
+
+echo "Opening Spotify..."
+setsid uwsm-app -- /usr/bin/spotify >/dev/null 2>&1 &
+
+echo ""
+echo "Spotify has been installed."

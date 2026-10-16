@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# wh01s17:summary=Show the frozen wh01s17 version
+# wh01s17:hidden=true
+#
+# Replaced for plain Arch: the original managed a remote package
+# repository, uploaded data or treated the runtime path (here ~/dotfiles)
+# as a git checkout.
+
+cat "${WH01S17_PATH:-$HOME/.local/share/wh01s17}/VERSION"

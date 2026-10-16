@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# wh01s17:summary=Open HEY webmail and translate mailto links
+# wh01s17:args=[url]
+
+url="$1"
+web_url="https://app.hey.com"
+
+# Handle mailto: URLs
+if [[ $url =~ ^mailto: ]]; then
+  email=$(echo "$url" | sed 's/mailto://')
+  web_url="https://app.hey.com/messages/new?to=$email"
+fi
+
+exec wh01s17-launch-webapp "$web_url"

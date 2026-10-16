@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# wh01s17:summary=Edit, set, or reset About branding
+# wh01s17:group=branding
+# wh01s17:name=about
+# wh01s17:args=<image|text|reset>
+# wh01s17:examples=wh01s17 branding about image | wh01s17 branding about text | wh01s17 branding about reset
+
+set -euo pipefail
+
+case "${1:-}" in
+image)
+  image=$(wh01s17-file-select --title "Pick PNG or SVG for About" --extensions "png svg")
+  if wh01s17-transcode-ascii "$image" ~/.config/wh01s17/branding/about.txt --width 54 --height 26; then
+    wh01s17-launch-about >/dev/null 2>&1
+  fi
+  ;;
+text)
+  wh01s17-launch-editor ~/.config/wh01s17/branding/about.txt >/dev/null 2>&1 && wh01s17-launch-about >/dev/null 2>&1
+  ;;
+reset)
+  cp "$WH01S17_PATH/icon.txt" ~/.config/wh01s17/branding/about.txt && wh01s17-launch-about >/dev/null 2>&1
+  ;;
+*)
+  echo "Usage: wh01s17-branding-about <image|text|reset>" >&2
+  exit 1
+  ;;
+esac

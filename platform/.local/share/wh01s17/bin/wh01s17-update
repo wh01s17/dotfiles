@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# wh01s17:summary=Update wh01s17 and system packages
+# wh01s17:args=[-y]
+# wh01s17:examples=wh01s17 update | wh01s17 update -y
+# wh01s17:requires-sudo=true
+
+set -e
+
+if [[ -z ${WH01S17_UPDATE_LOGGED:-} ]]; then
+  script_command=$(printf '%q ' "$0" "$@")
+  exec env WH01S17_UPDATE_LOGGED=1 script -qefc "$script_command" "/tmp/wh01s17-update.log"
+fi
+
+if ! wh01s17-update-lock held; then
+  exec wh01s17-update-lock run "$0" "$@"
+fi
+
+trap 'echo ""; echo -e "\033[0;31mSomething went wrong during the update!\n\nPlease review the output above carefully, correct the error, and retry the update.\033[0m"' ERR
+trap 'wh01s17-update-stay-awake stop' EXIT
+
+wh01s17-update-requires-free-space
+
+# -y is a promise not to ask anything. Steps that would need an answer report
+# and move on instead of waiting on a prompt nobody is here to give.
+[[ ${1:-} != "-y" ]] || export WH01S17_UPDATE_UNATTENDED=1
+
+if [[ ${1:-} == "-y" ]] || wh01s17-update-confirm; then
+  # Before the snapshot: the cache is on the snapshotted subvolume, so pruning
+  # after it frees nothing until that snapshot ages out.
+  wh01s17-update-pkg-prune
+
+  # 127 means Snapper is deliberately absent. Any other failure already said
+  # what went wrong, and a missing snapshot is not worth blocking an update
+  # over, but it must not pass for one either.
+  wh01s17-snapshot create || (($? == 127)) ||
+    echo -e "\e[33mContinuing the update without a snapshot.\e[0m" >&2
+
+  wh01s17-update-stay-awake start
+
+  wh01s17-update-dev
+  wh01s17-update-keyring
+
+  # Migrations ship with the packages installed here and are written against
+  # them, so everything below waits on this finishing. An upgrade that stopped
+  # takes the update with it rather than migrating against what is still on disk.
+  wh01s17-update-system-pkgs
+  wh01s17-migrate
+  wh01s17-hook post-update
+  wh01s17-update-aur-pkgs
+  wh01s17-update-mise
+  wh01s17-update-orphan-pkgs
+
+  wh01s17-update-analyze-logs
+  wh01s17-update-status
+
+  # Release update-owned inhibitors before offering a reboot. A confirmed
+  # reboot can terminate this process before its EXIT trap gets a chance to
+  # remove the persistent Stay Awake marker.
+  wh01s17-update-stay-awake stop
+  trap - EXIT
+
+  wh01s17-update-restart
+fi

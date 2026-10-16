@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# wh01s17:summary=Wake displays and restore brightness after idle
+# wh01s17:group=system
+# wh01s17:name=wake
+# wh01s17:examples=wh01s17 system wake
+
+wh01s17-brightness-display on
+wh01s17-brightness-keyboard restore
+wh01s17-hyprland-monitor-clamshell >/dev/null 2>&1 || true

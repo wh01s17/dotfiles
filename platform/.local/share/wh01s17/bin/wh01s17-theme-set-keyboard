@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# wh01s17:summary=Apply the current theme keyboard color to supported keyboards
+# wh01s17:hidden=true
+
+wh01s17-theme-set-keyboard-asus-rog
+wh01s17-theme-set-keyboard-f16

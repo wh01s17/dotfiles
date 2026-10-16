@@ -91,11 +91,11 @@ Los paquetes Stow son:
 | `desktop` | `~/.config/` | Fastfetch, Hyprland y Omarchy Shell |
 | `terminal` | `$HOME` y `~/.config/` | Zsh, Oh My Posh y Kitty |
 | `maintenance` | `~/.config/systemd/user/` y `~/.local/bin/` | Timers de limpieza y aviso de espacio en disco |
-| `platform` | `~/.local/share/omarchy/`, `~/.config/uwsm/` y `~/.config/systemd/user/` | **Sólo Arch puro.** Copia congelada de Omarchy 4.0.4 (MIT) que sustituye a `/usr/share/omarchy`; ver `platform/README.md` |
+| `platform` | `~/.local/share/wh01s17/`, `~/.config/uwsm/` y `~/.config/systemd/user/` | **Sólo Arch puro.** Runtime del escritorio wh01s17 (copia congelada y renombrada de Omarchy 4.0.4, MIT); ver `platform/README.md` |
 | `apps` | `~/.config/` y `~/.local/share/` | **Sólo Arch puro.** Herramientas de mise, apps predeterminadas y webapps propias. Se enlaza con `stow --no-folding` |
 
 En Omarchy se enlazan `desktop terminal maintenance`. En Arch puro,
-[`arch-desktop`](https://github.com/wh01s17/arch-desktop) (`install.sh`) enlaza además `platform` y `apps`, y
+[`arch-desktop`](https://github.com/wh01s17/arch-desktop) (`install.sh`) genera una versión renombrada a wh01s17 de `desktop` y `terminal` (en `.arch-build/`, ignorado por Git), enlaza además `platform` y `apps`, y
 aplica el resto de la configuración del sistema.
 
 `system/` no es un paquete Stow: sus archivos van a `/etc` y `/usr/local` y se

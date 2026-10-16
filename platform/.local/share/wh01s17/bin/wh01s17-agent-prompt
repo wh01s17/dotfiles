@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# wh01s17:summary=Launch the default coding agent with a prompt
+# wh01s17:args=[--inline] <prompt...>
+# wh01s17:examples=wh01s17 agent prompt "Review this project"
+
+# Prompts live here rather than on `wh01s17 agent`, where a bare prompt would
+# shadow the subcommands under that group.
+
+set -euo pipefail
+
+inline=()
+if [[ ${1:-} == "--inline" ]]; then
+  inline=(--inline)
+  shift
+fi
+
+if (($# == 0)); then
+  echo "Usage: wh01s17 agent prompt [--inline] <prompt...>" >&2
+  exit 1
+fi
+
+exec wh01s17-agent "${inline[@]}" --prompt "$*"

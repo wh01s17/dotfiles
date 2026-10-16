@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# wh01s17:summary=Open the wh01s17 background switcher
+# wh01s17:group=theme
+# wh01s17:name=bg-switcher
+# wh01s17:aliases=wh01s17 background
+
+theme_name=$(cat "$HOME/.local/state/wh01s17/current/theme.name" 2>/dev/null)
+current_background=$(readlink -f "$HOME/.local/state/wh01s17/current/background" 2>/dev/null)
+
+wh01s17-menu-images \
+  --selected "$current_background" \
+  "$HOME/.local/state/wh01s17/current/theme/backgrounds" \
+  "$HOME/.config/wh01s17/backgrounds/$theme_name"

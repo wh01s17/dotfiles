@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# wh01s17:summary=Upload logs (disabled)
+# wh01s17:hidden=true
+#
+# Replaced for plain Arch: the original managed a remote package
+# repository, uploaded data or treated the runtime path (here ~/dotfiles)
+# as a git checkout.
+
+echo "$(basename "$0"): no disponible en este sistema." >&2
+exit 1

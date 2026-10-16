@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# wh01s17:summary=Install Zed Editor and configure it with the current wh01s17 theme
+
+echo "Installing Zed Editor..."
+wh01s17-pkg-add zed omazed
+
+# Apply wh01s17 theme to Zed
+omazed setup
+
+setsid uwsm-app -- gtk-launch dev.zed.Zed >/dev/null 2>&1 &

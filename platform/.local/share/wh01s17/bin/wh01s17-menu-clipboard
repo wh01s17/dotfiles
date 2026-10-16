@@ -1,0 +1,6 @@
+#!/bin/bash
+# wh01s17:summary=Launch the clipboard manager
+# wh01s17:group=menu
+# wh01s17:examples=wh01s17 menu clipboard
+
+wh01s17-shell shell toggle core.clipboard

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# wh01s17:summary=Print the directory holding a theme, preferring a user-installed copy
+# wh01s17:args=<theme-name>
+# wh01s17:examples=wh01s17 theme dir tokyo-night
+
+theme="${1:-}"
+
+if [[ -z $theme ]]; then
+  echo "Usage: wh01s17-theme-dir <theme-name>" >&2
+  exit 1
+fi
+
+if [[ -d $HOME/.config/wh01s17/themes/$theme ]]; then
+  echo "$HOME/.config/wh01s17/themes/$theme"
+else
+  echo "$WH01S17_PATH/themes/$theme"
+fi

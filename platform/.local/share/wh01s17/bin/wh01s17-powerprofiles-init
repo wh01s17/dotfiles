@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Set the correct power profile on boot based on current AC/battery state.
+
+exec wh01s17-powerprofiles-set autodetect

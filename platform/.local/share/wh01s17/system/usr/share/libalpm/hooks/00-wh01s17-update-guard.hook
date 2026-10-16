@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Checking wh01s17 update entrypoint...
+When = PreTransaction
+Depends = wh01s17
+Exec = /usr/bin/wh01s17-update-pacman-guard
+AbortOnFail

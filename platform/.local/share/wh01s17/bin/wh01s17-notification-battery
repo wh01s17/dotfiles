@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Show the current battery status notification
+
+wh01s17-notification-send -g 󰁹 -u low "$(wh01s17-battery-status)"

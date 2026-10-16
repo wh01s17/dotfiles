@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "core.audio",
+  "name": "Audio",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Volume slider, output picker, per-app mixer",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Audio",
+    "description": "Volume slider, output picker, per-app mixer",
+    "category": "Audio",
+    "allowMultiple": false
+  }
+}

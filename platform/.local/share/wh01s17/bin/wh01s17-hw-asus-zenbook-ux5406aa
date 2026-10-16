@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Detect ASUS Zenbook UX5406AA series laptops on Intel Panther Lake.
+
+wh01s17-hw-match "ux5406aa" && wh01s17-hw-intel-ptl

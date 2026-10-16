@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# wh01s17:summary=Check whether Dropbox is installed and running
+# wh01s17:hidden=true
+
+set -euo pipefail
+
+if wh01s17-cmd-present dropbox-cli && dropbox-cli running >/dev/null 2>&1; then
+  exit 0
+fi
+
+pgrep -x dropbox >/dev/null 2>&1

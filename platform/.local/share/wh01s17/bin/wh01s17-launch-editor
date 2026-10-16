@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# wh01s17:summary=Launch the default editor selected via wh01s17 defaults.
+# wh01s17:args=[--inline] <path>
+
+default_editor="$HOME/.local/state/wh01s17/defaults/editor"
+
+if [[ ${1:-} == "--inline" ]]; then
+  inline=true
+  shift
+else
+  inline=false
+fi
+
+if [[ -f $default_editor ]]; then
+  read -r editor <"$default_editor"
+else
+  editor="nvim"
+fi
+
+wh01s17-cmd-present "$editor" || editor="nvim"
+
+case "${editor##*/}" in
+nvim | vim | nano | micro | hx | helix | fresh)
+  if [[ $inline == "true" ]]; then
+    exec "$editor" "$@"
+  else
+    exec wh01s17-launch-tui "$editor" "$@"
+  fi
+  ;;
+*)
+  exec setsid uwsm-app -- "$editor" "$@"
+  ;;
+esac

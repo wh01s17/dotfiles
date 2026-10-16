@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "core.menu",
+  "name": "wh01s17 menu",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Quickshell-powered wh01s17 command menu",
+  "kinds": [
+    "menu",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "menu": "Menu.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "wh01s17 menu",
+    "description": "Launches the wh01s17 menu",
+    "category": "Compositor",
+    "allowMultiple": false
+  }
+}

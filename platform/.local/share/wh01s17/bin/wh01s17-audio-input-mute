@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# wh01s17:summary=Toggle microphone mute. Drives the hardware mic-mute LED on laptops that expose one.
+
+wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle >/dev/null
+
+if wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED; then
+  wh01s17-brightness-keyboard-mute on
+  wh01s17-osd -i microphone-muted -m "Microphone muted"
+else
+  wh01s17-brightness-keyboard-mute off
+  wh01s17-osd -i microphone -m "Microphone on"
+fi

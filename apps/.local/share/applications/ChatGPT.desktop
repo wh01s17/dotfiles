@@ -2,7 +2,7 @@
 Version=1.0
 Name=ChatGPT
 Comment=ChatGPT
-Exec=omarchy-launch-webapp https://chatgpt.com/
+Exec=wh01s17-launch-webapp https://chatgpt.com/
 Terminal=false
 Type=Application
 Icon=chatgpt

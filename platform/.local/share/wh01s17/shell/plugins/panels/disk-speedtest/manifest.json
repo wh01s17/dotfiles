@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "core.disk-speedtest",
+  "name": "Disk speed test",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Live disk write and read speed dials. Summon with: wh01s17-shell shell summon core.disk-speedtest",
+  "kinds": [
+    "panel"
+  ],
+  "entryPoints": {
+    "panel": "Panel.qml"
+  }
+}

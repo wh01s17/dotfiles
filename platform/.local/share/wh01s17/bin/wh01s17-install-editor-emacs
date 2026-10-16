@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# wh01s17:summary=Install Emacs with wh01s17 theme and font integration via the wh01s17-emacs AUR package
+
+echo "Installing Emacs..."
+wh01s17-pkg-aur-add wh01s17-emacs && wh01s17-install-emacs
+
+# emacsclient opens a frame on the running daemon, not a second Emacs
+setsid uwsm-app -- gtk-launch emacsclient >/dev/null 2>&1 &

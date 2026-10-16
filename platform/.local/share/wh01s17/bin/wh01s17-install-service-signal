@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# wh01s17:summary=Install Signal and launch it.
+# wh01s17:requires-sudo=true
+
+set -e
+
+echo "Installing Signal..."
+wh01s17-pkg-add signal-desktop
+
+echo "Opening Signal..."
+setsid uwsm-app -- /usr/bin/signal-desktop >/dev/null 2>&1 &
+
+echo ""
+echo "Signal has been installed."

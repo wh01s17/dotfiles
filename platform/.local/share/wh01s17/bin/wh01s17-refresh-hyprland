@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# wh01s17:summary=Overwrite all the user Hyprland Lua configs in ~/.config/hypr with the wh01s17 defaults.
+
+wh01s17-refresh-config hypr/.luarc.json
+wh01s17-refresh-config hypr/autostart.lua
+wh01s17-refresh-config hypr/bindings.lua
+wh01s17-refresh-config hypr/input.lua
+wh01s17-refresh-config hypr/looknfeel.lua
+wh01s17-refresh-config hypr/hyprland.lua
+wh01s17-refresh-config hypr/monitors.lua
+
+mkdir -p ~/.local/state/wh01s17/toggles/hypr
+cp "$WH01S17_PATH/default/hypr/toggles/flags.lua" ~/.local/state/wh01s17/toggles/hypr/

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Launch or attach to the Work tmux session in a terminal
+
+exec wh01s17-launch-terminal bash -c "tmux attach || tmux new -s Work"

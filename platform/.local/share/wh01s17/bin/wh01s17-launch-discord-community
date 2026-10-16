@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# wh01s17:summary=Open the wh01s17 Discord community in the Discord app or a browser.
+
+invite="https://discord.gg/tXFUdasqhY"
+
+if wh01s17-cmd-present discord; then
+  exec setsid uwsm-app -- discord --url -- "discord://-/invite/${invite##*/}"
+else
+  exec wh01s17-launch-webapp "$invite"
+fi

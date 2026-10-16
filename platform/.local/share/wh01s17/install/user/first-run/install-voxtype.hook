@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+if wh01s17-done ensure voxtype-install-invitation; then
+  wh01s17-notification-send -u critical -g  "Install Dictation with Voxtype" \
+    "Click to install voice dictation for wh01s17." \
+    --exec wh01s17-launch-floating-terminal-with-presentation wh01s17-voxtype-install
+fi

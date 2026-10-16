@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# wh01s17:summary=Overwrite the user tmux config with the wh01s17 default and reload tmux.
+
+wh01s17-refresh-config tmux/tmux.conf
+wh01s17-restart-tmux

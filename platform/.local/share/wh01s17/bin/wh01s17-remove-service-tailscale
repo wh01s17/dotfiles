@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# wh01s17:summary=Remove Tailscale and its bar plugin.
+# wh01s17:requires-sudo=true
+
+tailscale down 2>/dev/null || true
+systemctl --user disable --now wh01s17-tailscale-receive.service 2>/dev/null || true
+sudo systemctl disable --now tailscaled.service 2>/dev/null || true
+wh01s17-plugin-disable core.tailscale
+wh01s17-webapp-remove "Tailscale" 2>/dev/null || true
+wh01s17-pkg-drop tailscale
+
+echo ""
+echo "Tailscale has been removed."

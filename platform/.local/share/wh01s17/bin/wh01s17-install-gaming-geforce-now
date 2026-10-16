@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# wh01s17:summary=Install and launch Geforce Now.
+# wh01s17:group=install
+# wh01s17:name=gaming geforce-now
+
+set -e
+
+echo "Installing GeForce NOW..."
+wh01s17-pkg-add flatpak
+cd /tmp
+
+# Download and run GeForce NOW
+curl -LO https://international.download.nvidia.com/GFNLinux/GeForceNOWSetup.bin
+chmod +x GeForceNOWSetup.bin
+./GeForceNOWSetup.bin
+
+# Ensure a separate browser process not started by GFN is available.
+# If not, it seems like GFN has a tendency to hang on login.
+setsid wh01s17-launch-browser

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Show the weather status notification after wh01s17 has started.
+# To put it into use, remove .sample from this file name.
+
+weather=$(wh01s17-weather-status 2>/dev/null) || true
+
+if [[ -n $weather && $weather != "Weather unavailable" ]]; then
+  wh01s17-notification-send -u low "$weather"
+fi

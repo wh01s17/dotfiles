@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# wh01s17:summary=Open a config file in the user's editor and surface a toast
+# wh01s17:args=<path>
+# wh01s17:examples=wh01s17 launch config-editor ~/.config/hypr/hyprland.lua
+
+path="${1-}"
+
+if [[ -z $path ]]; then
+  echo "Usage: wh01s17-launch-config-editor <path>" >&2
+  exit 1
+fi
+
+wh01s17-notification-send -u low "Editing config file" "$path"
+exec wh01s17-launch-editor "$path"

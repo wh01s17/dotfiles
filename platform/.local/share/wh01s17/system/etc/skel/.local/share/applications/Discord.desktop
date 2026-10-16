@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Name=Discord
+Exec=wh01s17-launch-webapp https://discord.com/channels/@me
+Terminal=false
+Type=Application
+Icon=wh01s17-discord
+StartupNotify=true

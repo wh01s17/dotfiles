@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "core.dev-gallery",
+  "name": "Dev gallery",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Visual reference for wh01s17-shell common UI components. Summon with: wh01s17-shell shell summon core.dev-gallery '{}' (or run: wh01s17 dev ui-preview).",
+  "kinds": [
+    "panel"
+  ],
+  "entryPoints": {
+    "panel": "GalleryPanel.qml"
+  }
+}

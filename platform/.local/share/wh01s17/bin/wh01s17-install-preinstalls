@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# wh01s17:summary=Restore the preinstalled wh01s17 applications (web apps, TUIs, and selected packages).
+# wh01s17:requires-sudo=true
+
+if gum confirm "Are you sure you want to restore all preinstalled web apps, TUI wrappers, and desktop applications?"; then
+  echo -e "Restoring preinstalled wh01s17 applications...\n"
+
+  # Recreates the shipped .desktop launchers (web apps and TUIs) and the mise stubs
+  # that back claude, gh, opencode, and the rest of the agents
+  wh01s17-refresh-applications
+
+  # Mirrors the list in wh01s17-remove-preinstalls; both track wh01s17-base.packages
+  if ! wh01s17-pkg-add \
+    aether \
+    cliamp \
+    libreoffice-fresh \
+    xournalpp \
+    pinta \
+    obsidian \
+    obs-studio \
+    kdenlive \
+    moonlight-qt \
+    lazydocker \
+    omacut \
+    omacalc \
+    omawrite; then
+    echo -e "\nPreinstalls are still marked as removed. Fix the errors above and try again."
+    exit 1
+  fi
+
+  # Last, so a failure above leaves the opt-out intact rather than restoring
+  # keybindings for apps that never came back
+  rm -f ~/.local/state/wh01s17/preinstalls-removed
+  hyprctl reload
+fi

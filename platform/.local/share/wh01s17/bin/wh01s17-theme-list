@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# wh01s17:summary=List available themes
+# wh01s17:examples=wh01s17 theme list | wh01s17 theme set "Tokyo Night"
+
+{
+  find ~/.config/wh01s17/themes/ -mindepth 1 -maxdepth 1 \( -type d -o -type l \) -printf '%f\n'
+  find "$WH01S17_PATH/themes/" -mindepth 1 -maxdepth 1 -type d -printf '%f\n'
+} | sort -u | sed -E 's/(^|-)([a-z])/\1\u\2/g; s/-/ /g'

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# wh01s17:summary=Reboot after closing application windows
+# wh01s17:examples=wh01s17 reboot | wh01s17 system reboot
+# wh01s17:aliases=wh01s17 reboot
+
+# Schedule the reboot in the user manager so closing the terminal's systemd
+# scope cannot terminate it before it runs.
+systemd-run --user --collect --quiet --on-active="2s" --timer-property=AccuracySec=100ms systemctl reboot --no-wall || exit 1
+
+wh01s17-osd -i reboot -m "Rebooting" -d 5000
+
+wh01s17-state clear re*-required
+
+# Now close all windows
+wh01s17-hyprland-window-close-all
+sleep 1 # Allow apps like Chrome to shutdown correctly

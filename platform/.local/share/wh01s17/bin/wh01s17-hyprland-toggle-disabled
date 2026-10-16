@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# wh01s17:summary=Check if a Hyprland toggle is currently disabled (missing).
+# wh01s17:args=<flag-name>
+
+[[ ! -f "$HOME/.local/state/wh01s17/toggles/hypr/$1.lua" ]]

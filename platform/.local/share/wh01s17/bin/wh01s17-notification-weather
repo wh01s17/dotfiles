@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Toggle the current weather panel
+
+wh01s17-shell shell toggle core.weather

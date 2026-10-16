@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# wh01s17:summary=Toggle screensaver availability
+
+wh01s17-toggle screensaver-off
+
+if wh01s17-toggle-enabled screensaver-off; then
+  wh01s17-notification-send -g 󱄄 "Screensaver disabled"
+else
+  wh01s17-notification-send -g 󱄄 "Screensaver enabled"
+fi

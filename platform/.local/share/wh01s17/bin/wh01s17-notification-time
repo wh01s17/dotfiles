@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Show the current time and date notification
+
+wh01s17-notification-send -g  -u low "$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")"

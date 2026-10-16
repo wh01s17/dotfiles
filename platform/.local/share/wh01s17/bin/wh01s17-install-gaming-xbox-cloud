@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# wh01s17:summary=Install Xbox Cloud Gaming as a web app and launch it.
+# wh01s17:group=install
+# wh01s17:name=gaming xbox-cloud
+
+set -e
+
+echo "Installing Xbox Cloud Gaming..."
+wh01s17-webapp-install "Xbox Cloud Gaming" "https://www.xbox.com/en-US/play" "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/xbox.png"
+
+setsid wh01s17-launch-webapp "https://www.xbox.com/en-US/play" >/dev/null 2>&1 &

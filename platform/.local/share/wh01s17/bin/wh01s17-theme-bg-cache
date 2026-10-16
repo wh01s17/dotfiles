@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# wh01s17:summary=Cache background switcher thumbnails for the current theme
+
+theme_name=$(cat "$HOME/.local/state/wh01s17/current/theme.name" 2>/dev/null)
+
+wh01s17-menu-images \
+  --cache-only \
+  "$HOME/.local/state/wh01s17/current/theme/backgrounds" \
+  "$HOME/.config/wh01s17/backgrounds/$theme_name"

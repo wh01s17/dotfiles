@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+# Only invite when there's a reader to use and it isn't set up yet (the lock
+# PAM file is the last thing the setup writes on success).
+if wh01s17-hw-fingerprint && [[ ! -f /etc/pam.d/wh01s17-lock-fingerprint ]] &&
+  wh01s17-done ensure fingerprint-setup-invitation; then
+  wh01s17-notification-send -u critical -g 󰈷 "Setup Fingerprint Reader" \
+    "Enable sudo and unlocking with your fingerprint." \
+    --exec wh01s17-launch-floating-terminal-with-presentation wh01s17-setup-security-fingerprint
+fi

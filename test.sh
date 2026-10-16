@@ -84,7 +84,7 @@ need zsh && run "Zsh -n (${#zshfiles[@]})" check_zsh "${zshfiles[@]}"
 need shellcheck && run "ShellCheck (${#bash_scripts[@]})" shellcheck "${bash_scripts[@]}"
 
 check_platform() {
-  local root=platform/.local/share/omarchy file
+  local root=platform/.local/share/wh01s17 file
   local -a platform_lua=() platform_bash=()
   mapfile -t platform_lua < <(find "$root/default/hypr" "$root/config/hypr" -name '*.lua')
   while IFS= read -r -d '' file; do
@@ -93,11 +93,11 @@ check_platform() {
   [[ -z $luac ]] || "$luac" -p "${platform_lua[@]}" || return
   check_bash "${platform_bash[@]}" || return
   # The Arch adaptations from arch-desktop/tools/vendor-omarchy.py.
-  grep -q 'local/share/omarchy' "$root/default/bash/env-bootstrap" || return
+  grep -q 'local/share/wh01s17' "$root/default/bash/env-bootstrap" || return
   ! grep -q 'pacman.conf$' "$root/install/post-install/pacman.sh"
 }
 if [[ -d platform ]]; then
-  run "platform (copia de Omarchy)" check_platform
+  run "platform (runtime wh01s17)" check_platform
 fi
 
 if local_only Hyprland; then

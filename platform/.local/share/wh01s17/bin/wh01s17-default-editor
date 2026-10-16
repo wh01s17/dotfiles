@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# wh01s17:summary=Set the default editor used by wh01s17-launch-editor
+# wh01s17:args=[code|cursor|zed|sublime_text|helix|vim|emacs|nvim]
+# wh01s17:examples=wh01s17 default editor | wh01s17 default editor code | wh01s17 default editor helix
+
+editor_file="$HOME/.local/state/wh01s17/defaults/editor"
+
+if (($# == 0)); then
+  if [[ -f $editor_file ]]; then
+    read -r editor <"$editor_file"
+  fi
+
+  [[ -n $editor ]] && echo "$editor" || echo "nvim"
+  exit 0
+fi
+
+case "$1" in
+code) editor="code"; name="VSCode"; glyph= ;;
+cursor) editor="cursor"; name="Cursor"; glyph= ;;
+zed | zeditor) editor="zeditor"; name="Zed"; glyph= ;;
+sublime_text) editor="sublime_text"; name="Sublime Text"; glyph= ;;
+helix) editor="helix"; name="Helix"; glyph= ;;
+vim) editor="vim"; name="Vim"; glyph= ;;
+emacs) editor="emacs"; name="Emacs"; glyph= ;;
+nvim) editor="nvim"; name="Neovim"; glyph= ;;
+*)
+  echo "Usage: wh01s17-default-editor <code|cursor|zed|sublime_text|helix|vim|emacs|nvim>"
+  exit 1
+  ;;
+esac
+
+mkdir -p "$(dirname "$editor_file")"
+printf '%s\n' "$editor" >"$editor_file"
+
+wh01s17-notification-send -g $glyph "$name is now the default editor"

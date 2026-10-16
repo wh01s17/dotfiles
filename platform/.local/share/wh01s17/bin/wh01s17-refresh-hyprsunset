@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# wh01s17:summary=Overwrite the user config for hyprsunset with the wh01s17 default and restart the service.
+
+wh01s17-refresh-config hypr/hyprsunset.conf
+wh01s17-restart-hyprsunset

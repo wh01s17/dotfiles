@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# wh01s17:summary=Reset shell.json to wh01s17 defaults
+# wh01s17:examples=wh01s17 refresh shell
+
+set -euo pipefail
+
+wh01s17-refresh-config wh01s17/shell.json
+wh01s17-bar defaults
+
+wh01s17-restart-shell

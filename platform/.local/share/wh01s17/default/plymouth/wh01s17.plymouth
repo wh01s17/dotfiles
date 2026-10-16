@@ -1,0 +1,11 @@
+[Plymouth Theme]
+Name=wh01s17
+Description=wh01s17 splash screen.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/wh01s17
+ScriptFile=/usr/share/plymouth/themes/wh01s17/wh01s17.script
+ConsoleLogBackgroundColor=0x1a1b26
+MonospaceFont=Cantarell 11
+Font=Cantarell 11

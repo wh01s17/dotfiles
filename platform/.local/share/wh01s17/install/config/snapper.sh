@@ -1,0 +1,24 @@
+SNAPPER_CONFIG_PATH="${WH01S17_SNAPPER_CONFIG_PATH:-/etc/snapper/configs/root}"
+SNAPPER_CONF_PATH="${WH01S17_SNAPPER_CONF_PATH:-/etc/conf.d/snapper}"
+template="${WH01S17_SNAPPER_TEMPLATE:-${WH01S17_PATH:-$HOME/.local/share/wh01s17}/default/snapper/root}"
+
+echo "Configuring wh01s17 Snapper snapshot retention"
+
+if [[ ! -f $SNAPPER_CONFIG_PATH ]]; then
+  mkdir -p "$(dirname "$SNAPPER_CONFIG_PATH")"
+
+  if [[ ${WH01S17_SNAPPER_CONFIGURE_TEST:-0} == "1" ]]; then
+    : >"$SNAPPER_CONFIG_PATH"
+  else
+    snapper --no-dbus -c root create-config / >/dev/null 2>&1 || snapper -c root create-config / >/dev/null
+  fi
+fi
+
+install -m 0644 "$template" "$SNAPPER_CONFIG_PATH"
+
+mkdir -p "$(dirname "$SNAPPER_CONF_PATH")"
+printf '%s\n' 'SNAPPER_CONFIGS="root"' >"$SNAPPER_CONF_PATH"
+chmod 0644 "$SNAPPER_CONF_PATH"
+
+systemctl disable --now snapper-timeline.timer >/dev/null 2>&1 || true
+systemctl enable --now snapper-cleanup.timer limine-snapper-sync.service >/dev/null 2>&1 || true

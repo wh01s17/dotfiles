@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# wh01s17:summary=Update user-installed git themes
+
+mapfile -t themes < <(wh01s17-theme-extras)
+
+for theme in "${themes[@]}"; do
+  echo "Updating: $(basename "$theme")"
+  git -C "$theme" pull
+done

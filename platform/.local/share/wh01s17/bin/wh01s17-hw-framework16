@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# wh01s17:summary=Detect whether the computer is a Framework Laptop 16.
+
+[[ $(cat /sys/class/dmi/id/sys_vendor 2>/dev/null) == "Framework" ]] &&
+  wh01s17-hw-match "Laptop 16"

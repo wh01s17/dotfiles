@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# wh01s17:summary=Launch a floating terminal with the wh01s17 presentation wrapper
+# wh01s17:args=<command>
+
+# Export the current theme's gum styling so gum widgets match the active theme
+# even after a theme switch (the inherited environment is captured at login).
+source wh01s17-restart-gum
+
+cmd="$*"
+presentation_script="wh01s17-show-logo; $cmd; if (( \$? != 130 )); then wh01s17-show-done; fi"
+
+exec setsid uwsm-app -- xdg-terminal-exec --app-id=org.wh01s17.terminal --title=wh01s17 -e bash -c "$presentation_script"

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "core.background",
+  "name": "Background",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Desktop background renderer with click handling and transitions",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Background.qml"
+  }
+}

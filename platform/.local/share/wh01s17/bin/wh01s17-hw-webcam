@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Check whether a webcam is available
+
+[[ -n $(wh01s17-capture-webcam-list) ]]

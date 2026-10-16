@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# wh01s17:summary=Launch a terminal in the active terminal's current directory
+# wh01s17:args=[command...]
+
+exec setsid uwsm-app -- xdg-terminal-exec --dir="$(wh01s17-cmd-terminal-cwd)" "$@"

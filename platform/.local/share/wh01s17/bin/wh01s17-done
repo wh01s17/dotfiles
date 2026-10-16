@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# wh01s17:summary=Check or mark completed wh01s17 setup tasks
+# wh01s17:args=<check|mark|ensure> <name>
+# wh01s17:hidden=true
+
+set -e
+
+if (( $# != 2 )); then
+  echo "Usage: wh01s17-done <check|mark|ensure> <name>" >&2
+  exit 1
+fi
+
+action=$1
+name=$2
+done_dir="$HOME/.local/state/wh01s17/done"
+marker="$done_dir/$name"
+
+if [[ $name == */* || $name == "." || $name == ".." ]]; then
+  echo "Invalid done marker name: $name" >&2
+  exit 1
+fi
+
+case "$action" in
+  check)
+    [[ -f $marker ]]
+    ;;
+  mark)
+    mkdir -p "$done_dir"
+    touch "$marker"
+    ;;
+  ensure)
+    mkdir -p "$done_dir"
+    (set -o noclobber; : >"$marker") 2>/dev/null
+    ;;
+  *)
+    echo "Usage: wh01s17-done <check|mark|ensure> <name>" >&2
+    exit 1
+    ;;
+esac

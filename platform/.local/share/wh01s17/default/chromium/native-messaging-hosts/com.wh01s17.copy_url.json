@@ -1,0 +1,9 @@
+{
+  "name": "com.wh01s17.copy_url",
+  "description": "wh01s17 Copy URL clipboard host",
+  "path": "__HOST_PATH__",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://bgpiichlckmfanooecilcjemknkcpngb/"
+  ]
+}

@@ -1,0 +1,12 @@
+[Unit]
+Description=Save incoming Taildrop files to the downloads directory
+ConditionPathExists=/usr/bin/tailscale
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/wh01s17-tailscale-receive
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

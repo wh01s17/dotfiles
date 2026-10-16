@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# wh01s17:summary=Show the release channel (frozen copy)
+# wh01s17:hidden=true
+#
+# Replaced for plain Arch: the original managed a remote package
+# repository, uploaded data or treated the runtime path (here ~/dotfiles)
+# as a git checkout.
+
+echo frozen

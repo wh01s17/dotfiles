@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# wh01s17:summary=Update Arch signing keys
+# wh01s17:hidden=true
+#
+# Replaced for plain Arch: the original managed a remote package
+# repository, uploaded data or treated the runtime path (here ~/dotfiles)
+# as a git checkout.
+
+echo -e "\e[32m\nUpdate Arch signing keys\e[0m"
+sudo pacman -Sy --noconfirm --needed archlinux-keyring >/dev/null

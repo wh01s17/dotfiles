@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = wh01s17-settings
+Target = wh01s17-settings-dev
+
+[Action]
+Description = Pausing Hyprland config auto-reload for wh01s17 settings update...
+When = PreTransaction
+Depends = wh01s17
+Exec = /usr/bin/wh01s17-hyprland-reload-guard pause

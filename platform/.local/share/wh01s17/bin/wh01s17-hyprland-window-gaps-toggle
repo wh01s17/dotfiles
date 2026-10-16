@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Toggles the window gaps globally between no gaps and the default.
+
+wh01s17-hyprland-toggle window-no-gaps

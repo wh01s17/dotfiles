@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# wh01s17:summary=List available monospace fonts
+# wh01s17:examples=wh01s17 font list | wh01s17 font set "CaskaydiaMono Nerd Font"
+
+fc-list :spacing=100 -f "%{family[0]}\n" | grep -v -i -E 'emoji|signwriting|wh01s17' | sort -u

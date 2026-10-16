@@ -1,34 +1,27 @@
 # platform
 
-Paquete Stow sólo para Arch puro: una copia congelada del runtime de
-Omarchy 4.0.4-1 (licencia MIT, ver `.local/share/omarchy/LICENSE`).
-Con él, los paquetes `desktop`, `terminal` y `maintenance` funcionan igual
-que en Omarchy, sin el repositorio de paquetes de Omarchy.
-
-No lo instales en un equipo con Omarchy: allí `/usr/share/omarchy` ya
-proporciona lo mismo.
+Paquete Stow sólo para Arch puro: el runtime del escritorio wh01s17
+(shell, comandos y valores por defecto). Es una copia congelada de Omarchy
+4.0.4-1 (licencia MIT, ver `.local/share/wh01s17/LICENSE` y `UPSTREAM`),
+renombrada a wh01s17: comandos `wh01s17-*`, variables `WH01S17_*`,
+`~/.config/wh01s17` y plugins internos `core.*`.
 
 | Ruta | Contenido |
 | --- | --- |
-| `.local/share/omarchy/` | Runtime (`OMARCHY_PATH`): shell, `bin/`, `default/`, `config/`, `install/` |
-| `.local/share/omarchy/system/` | Archivos que los paquetes instalan fuera de `/usr/share/omarchy`; `install.sh` elige cuáles aplicar |
-| `.local/share/omarchy/nvim/config/` | Configuración LazyVim de `omarchy-nvim`; se copia a `~/.config/nvim` si falta |
-| `.config/uwsm/env.d/10-omarchy` | Entorno de la sesión: `OMARCHY_PATH` y `PATH` |
-| `.config/systemd/user/` | Servicios de usuario que apuntan a la copia |
+| `.local/share/wh01s17/` | Runtime (`WH01S17_PATH`): shell, `bin/`, `default/`, `config/`, `install/` |
+| `.local/share/wh01s17/system/` | Archivos de sistema; `install.sh` de arch-desktop elige cuáles aplicar |
+| `.local/share/wh01s17/nvim/config/` | Configuración LazyVim; se copia a `~/.config/nvim` si falta |
+| `.config/uwsm/env.d/10-wh01s17` | Entorno de la sesión: `WH01S17_PATH` y `PATH` |
+| `.config/systemd/user/` | Servicios de usuario |
 
-## Diferencias con Omarchy
+Los paquetes `desktop` y `terminal` de estos dotfiles siguen usando los
+nombres de Omarchy (los usa tu Omarchy actual); en Arch, arch-desktop genera
+una versión renombrada con `tools/arch-dotfiles.py`.
 
-- Sin los temas de serie ni las migraciones: sólo se usa el tema `wh01s17`.
-- `omarchy-update` actualiza Arch (pacman, AUR, mise) sin tocar el repositorio
-  de Omarchy ni hacer `git pull` en `OMARCHY_PATH` (que aquí es `~/dotfiles`).
-- Los comandos de canales, reinstalación y enlace de desarrollo están
-  desactivados.
-
-Regenerar desde un equipo con Omarchy:
+Regenerar desde un equipo con Omarchy (necesita fontTools):
 
 ```bash
 ~/workspace/arch-desktop/tools/vendor-omarchy.py --force
 ```
 
-Los cambios propios hechos a mano dentro de la copia se pierden al
-regenerarla; revisa `git diff` antes de hacer commit.
+Los cambios hechos a mano dentro de la copia se pierden al regenerarla.

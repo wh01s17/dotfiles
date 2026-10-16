@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Name=WhatsApp
+Exec=wh01s17-launch-webapp https://web.whatsapp.com/
+Terminal=false
+Type=Application
+Icon=whatsapp
+StartupNotify=true

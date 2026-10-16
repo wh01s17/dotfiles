@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# wh01s17:summary=Restart the hyprsunset service (used for blue light filtering/night light).
+
+wh01s17-restart-app hyprsunset

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "core.reminders",
+  "name": "Reminders",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Interactive reminder setup flow",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "ReminderFlow.qml"
+  }
+}
