@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# wh01s17:summary=Disabled in the frozen copy
+# wh01s17:summary=Not available on this system
 # wh01s17:hidden=true
 #
 # Replaced for plain Arch: the original managed a remote package

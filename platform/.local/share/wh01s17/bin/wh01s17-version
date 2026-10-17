@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# wh01s17:summary=Show the frozen wh01s17 version
+# wh01s17:summary=Show the wh01s17 version
 # wh01s17:hidden=true
 #
 # Replaced for plain Arch: the original managed a remote package
