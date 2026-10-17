@@ -1,5 +1,7 @@
 [Unit]
 Description=Borra copias sobrantes de actualizaciones de plugins de Codex
+# Sin Codex instalado (o aún sin usar) la carpeta no existe y find fallaría.
+ConditionPathIsDirectory=%h/.codex/.tmp/marketplaces/.staging
 
 [Service]
 Type=oneshot
