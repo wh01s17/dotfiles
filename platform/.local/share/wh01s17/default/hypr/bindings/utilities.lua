@@ -30,7 +30,7 @@ o.bind_toggle("SUPER + CTRL + N", "Toggle nightlight", "nightlight")
 o.bind("SUPER + CTRL + Delete", "Toggle laptop display", "wh01s17-hyprland-monitor-internal toggle")
 o.bind("SUPER + CTRL + ALT + Delete", "Toggle laptop display mirroring", "wh01s17-hyprland-monitor-internal-mirror toggle")
 o.bind("switch:on:Lid Switch", nil, "wh01s17-system-lid-close", { locked = true })
-o.bind("switch:off:Lid Switch", nil, "wh01s17-hyprland-monitor-clamshell", { locked = true })
+o.bind("switch:off:Lid Switch", nil, "wh01s17-system-lid-open", { locked = true })
 
 o.bind("PRINT", "Screenshot", "wh01s17-capture-screenshot")
 o.bind("ALT + PRINT", "Screenrecording", "wh01s17-capture-screenrecording --stop-recording || wh01s17-menu toggle trigger.capture.screenrecord")

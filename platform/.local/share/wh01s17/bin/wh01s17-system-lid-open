@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# wh01s17:summary=Reconcile displays and resume idle when the laptop lid opens
+# wh01s17:group=system
+# wh01s17:hidden=true
+
+marker="$HOME/.local/state/wh01s17/lid-paused-idle"
+if [[ -f $marker ]]; then
+  rm -f "$marker"
+  wh01s17-shell -q idle enable
+fi
+wh01s17-hyprland-monitor-clamshell
