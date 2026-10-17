@@ -38,7 +38,7 @@ BarWidget {
       ShapePath {
         readonly property real unit: root.markHeight / 304
         fillColor: "transparent"
-        strokeColor: Color.accent
+        strokeColor: Colors.accent
         strokeWidth: 1.4
         joinStyle: ShapePath.MiterJoin
         scale: Qt.size(unit, unit)
