@@ -943,7 +943,7 @@ Tareas de sistema (`system/btrfs/`, requiere que `/` sea btrfs):
 | --- | --- |
 | `btrfs-balance-auto.timer` | Balance semanal sólo de datos (`-dusage` 0, 10, 25 y 50), con prioridad baja y únicamente conectado a la corriente |
 | `/etc/tmpfiles.d/btrfs-reclaim.conf` | Activa `dynamic_reclaim` y `periodic_reclaim` del kernel en cada arranque; el instalador lo genera con el UUID de `/` |
-| Snapper (`root`) | `NUMBER_LIMIT=2-5` y `FREE_LIMIT=0.2`: conserva cinco snapshots y baja a dos cuando queda menos del 20 % libre |
+| Snapper (`root`) | `NUMBER_LIMIT=5`: conserva cinco snapshots |
 
 ```bash
 sudo "$HOME/dotfiles/system/btrfs/install.sh"
@@ -953,8 +953,9 @@ El instalador copia los archivos, por lo que hay que volver a ejecutarlo
 después de editarlos. Termina lanzando un primer balance y mostrando su
 registro.
 
-`FREE_LIMIT` sólo actúa porque `NUMBER_LIMIT` es un rango. `SPACE_LIMIT` no se
-usa porque requiere cuotas de btrfs. El balance omite los metadatos a propósito:
+`NUMBER_LIMIT` es fijo: un rango (`2-5`), igual que `SPACE_LIMIT` y
+`FREE_LIMIT`, requiere cuotas de btrfs, y sin ellas `snapper cleanup` falla con
+`quota not working (qgroup not set)`. El balance omite los metadatos a propósito:
 compactarlos les quita margen, que es justamente lo que provoca el bloqueo.
 
 Revisión:

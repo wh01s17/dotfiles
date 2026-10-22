@@ -16,8 +16,9 @@ w /sys/fs/btrfs/$uuid/allocation/data/dynamic_reclaim - - - - 1
 w /sys/fs/btrfs/$uuid/allocation/data/periodic_reclaim - - - - 1
 EOF
 
-# FREE_LIMIT solo actúa si NUMBER_LIMIT es un rango: borra hasta el mínimo cuando queda <20% libre
-snapper -c root set-config NUMBER_LIMIT=2-5 NUMBER_LIMIT_IMPORTANT=2-5 FREE_LIMIT=0.2
+# Límite fijo: un rango (p. ej. 2-5) exige cuotas btrfs y sin ellas `snapper cleanup`
+# falla con "quota not working (qgroup not set)", abortando wh01s17-update
+snapper -c root set-config NUMBER_LIMIT=5 NUMBER_LIMIT_IMPORTANT=5
 
 systemctl daemon-reload
 systemd-tmpfiles --create /etc/tmpfiles.d/btrfs-reclaim.conf
