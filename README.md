@@ -133,6 +133,20 @@ Solaar y WayScriber son opcionales, pero sus entradas de autostart y atajos
 sólo funcionarán cuando estén instalados. `subfinder` y `amass` también son
 opcionales y sólo afectan las funciones de Zsh que los nombran.
 
+Para habilitar WayScriber en Arch/Omarchy:
+
+```bash
+omarchy pkg aur add wayscriber-bin
+```
+
+El autostart lo inicia en modo daemon al entrar en la sesión. Si lo instalas
+con la sesión ya abierta, ejecuta
+`hyprctl dispatch 'hl.dsp.exec_cmd("wayscriber --daemon")'`.
+Después usa `Super+Alt+A` para mostrarlo
+u ocultarlo. Los atajos `Super+Alt+P` y `Super+Alt+D` controlan passthrough y
+dibujo/interacción. No hace falta habilitar además `wayscriber.service`:
+esta configuración ya inicia el daemon desde Hyprland.
+
 Para regenerar los wallpapers SVG se necesita `rsvg-convert` (`librsvg`); los
 wallpapers pixel art necesitan `python3` e ImageMagick (`magick`). ImageMagick
 también recolorea el Gengar de Fastfetch con la paleta del tema activo; sin él
