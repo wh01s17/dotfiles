@@ -15,6 +15,12 @@ show_always = true
 symbol = " "
 disabled = false
 
+[sudo]
+disabled = false
+format = "[$symbol]($style)"
+symbol = " "
+style = "bold red"
+
 [git_metrics]
 disabled = false
 
