@@ -4,7 +4,7 @@
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
-# Oh My Zsh loads plugins; Oh My Posh provides the prompt.
+# Oh My Zsh loads plugins; Starship provides the prompt.
 ZSH_THEME=""
 
 # Uncomment the following line to use case-sensitive completion.
@@ -400,31 +400,19 @@ nvm() {
   nvm "$@"
 }
 
-omp-theme() {
-  zsh "$HOME/.config/oh-my-posh/theme-picker.zsh" "$@"
-}
-
-_omp_active_config="$HOME/.config/oh-my-posh/active.omp.json"
-if (( $+commands[jq] )) && jq -e '.var.omp_right_above_input == true' "$_omp_active_config" >/dev/null 2>&1; then
-  [[ -v POSH_DISABLE_STREAMING ]] || export POSH_DISABLE_STREAMING=omp-right-above-input
-elif [[ ${POSH_DISABLE_STREAMING-} == omp-right-above-input ]]; then
-  unset POSH_DISABLE_STREAMING
-fi
-unset _omp_active_config
-
-eval "$(oh-my-posh init zsh --config "$HOME/.config/oh-my-posh/active.omp.json" --strict)"
+eval "$(starship init zsh)"
 
 # Separate completed commands from the next prompt, but not shell startup.
-typeset -gi _omp_command_ran=0
-_omp_sparse_preexec() {
-  _omp_command_ran=1
+typeset -gi _prompt_command_ran=0
+_prompt_sparse_preexec() {
+  _prompt_command_ran=1
 }
-_omp_sparse_precmd() {
-  if (( _omp_command_ran )); then
+_prompt_sparse_precmd() {
+  if (( _prompt_command_ran )); then
     print
-    _omp_command_ran=0
+    _prompt_command_ran=0
   fi
 }
 autoload -Uz add-zsh-hook
-add-zsh-hook preexec _omp_sparse_preexec
-add-zsh-hook precmd _omp_sparse_precmd
+add-zsh-hook preexec _prompt_sparse_preexec
+add-zsh-hook precmd _prompt_sparse_precmd
