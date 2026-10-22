@@ -86,6 +86,9 @@
           "id": "omarchy.weather"
         },
         {
+          "id": "omarchy.system-update"
+        },
+        {
           "id": "pomodoro",
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
@@ -107,9 +110,6 @@
             "short-break-paused",
             "long-break-paused"
           ]
-        },
-        {
-          "id": "omarchy.system-update"
         }
       ],
       "right": [
@@ -118,9 +118,9 @@
         },
         {
           "id": "wh01s17.metronome",
-          "accent": true,
-          "beats": 4,
-          "bpm": 60,
+          "accent": false,
+          "beats": 1,
+          "bpm": 80,
           "subdivision": "1/4",
           "volume": 0.7
         },
