@@ -69,10 +69,7 @@ dotfiles/
 │   ├── .config/kitty/
 │   │   ├── kitty.conf             # Base común y tema dinámico
 │   │   └── profiles/              # Tamaño de fuente por equipo
-│   ├── .config/oh-my-posh/
-│   │   ├── active.omp.json        # Enlace al tema elegido
-│   │   ├── pure.omp.json          # Tema Pure personalizado
-│   │   └── theme-picker.zsh       # Selector interactivo de temas
+│   ├── .config/starship.toml      # Prompt de Starship
 │   └── .zshrc
 ├── maintenance/
 │   ├── .config/systemd/user/      # Timers de usuario: aviso de espacio, Codex y mise
@@ -89,7 +86,7 @@ Los paquetes Stow son:
 | Paquete | Destino | Contenido |
 | --- | --- | --- |
 | `desktop` | `~/.config/` | Fastfetch, Hyprland y Omarchy Shell |
-| `terminal` | `$HOME` y `~/.config/` | Zsh, Oh My Posh y Kitty |
+| `terminal` | `$HOME` y `~/.config/` | Zsh, Starship y Kitty |
 | `maintenance` | `~/.config/systemd/user/` y `~/.local/bin/` | Timers de limpieza y aviso de espacio en disco |
 | `platform` | `~/.local/share/wh01s17/`, `~/.config/uwsm/` y `~/.config/systemd/user/` | **Sólo Arch puro.** Runtime del escritorio wh01s17 (copia congelada y renombrada de Omarchy 4.0.4, MIT); ver `platform/README.md` |
 | `apps` | `~/.config/` y `~/.local/share/` | **Sólo Arch puro.** Herramientas de mise, apps predeterminadas y webapps propias. Se enlaza con `stow --no-folding` |
@@ -117,9 +114,8 @@ de `util-linux` y `xdg-open` de `xdg-utils`.
 
 La sesión de terminal espera además:
 
-- Oh My Zsh, Oh My Posh y los plugins `zsh-syntax-highlighting`,
+- Oh My Zsh, Starship y los plugins `zsh-syntax-highlighting`,
   `zsh-autosuggestions` y `zsh-sudo`;
-- `fzf` para el selector interactivo de temas de Oh My Posh;
 - `eza`, `bat`, `zoxide`, `xclip`, `host` y `whois` para los aliases y
   funciones de `~/.zshrc`;
 - NVM con un Node predeterminado instalado: `.zshrc` agrega su `bin` al
@@ -127,7 +123,7 @@ La sesión de terminal espera además:
 - MesloLGS Nerd Font Mono para Kitty y los glifos de la barra;
 - Fastfetch para el informe visual del sistema.
 
-En Omarchy, instala Oh My Posh desde AUR con `omarchy pkg aur add oh-my-posh-bin`.
+Omarchy ya instala Starship; en otro sistema, instálalo con `sudo pacman -S starship`.
 
 Solaar y WayScriber son opcionales, pero sus entradas de autostart y atajos
 sólo funcionarán cuando estén instalados. `subfinder` y `amass` también son
@@ -180,9 +176,8 @@ Reinicia si la actualización lo solicita.
 ```bash
 sudo pacman -S --needed \
   git stow curl jq iproute2 wl-clipboard libnotify util-linux xdg-utils \
-  zsh fzf eza bat zoxide xclip bind whois nvm ttf-meslo-nerd \
+  zsh starship fzf eza bat zoxide xclip bind whois nvm ttf-meslo-nerd \
   fastfetch imagemagick python btop udisks2
-omarchy pkg aur add oh-my-posh-bin
 ```
 
 Las herramientas opcionales (Solaar, WayScriber, `subfinder`, `amass`, etc.)
@@ -305,7 +300,7 @@ omarchy restart shell
 
 Cierra la sesión y vuelve a entrar para que Zsh pase a ser la shell de inicio.
 En la nueva terminal, `fastfetch` debe mostrar el Gengar con los colores del
-tema y el prompt de Oh My Posh.
+tema y el prompt de Starship.
 
 ### 12. Revisar y ajustar
 
@@ -371,8 +366,7 @@ readlink -f "$HOME/.config/omarchy/branding/screensaver.txt"
 readlink -f "$HOME/.config/omarchy/themes/wh01s17"
 readlink -f "$HOME/.config/kitty"
 readlink -f "$HOME/.zshrc"
-readlink -f "$HOME/.config/oh-my-posh/pure.omp.json"
-readlink -f "$HOME/.config/oh-my-posh/active.omp.json"
+readlink -f "$HOME/.config/starship.toml"
 ```
 
 ### 4. Aplicar y validar
@@ -862,7 +856,7 @@ omarchy restart terminal
 
 ## Zsh y utilidades de terminal
 
-[`terminal/.zshrc`](terminal/.zshrc) inicializa Oh My Zsh, Oh My Posh,
+[`terminal/.zshrc`](terminal/.zshrc) inicializa Oh My Zsh, Starship,
 Zoxide y NVM; carga los plugins `git`, `zsh-syntax-highlighting`,
 `zsh-autosuggestions` y `zsh-sudo`; define `nvim` como editor y antepone
 `~/.local/bin` al `PATH`.
@@ -874,86 +868,18 @@ la encuentra instalada, usa la más nueva. La función `nvm` carga NVM la primer
 vez que se ejecuta. Los shims de mise se quitan del `PATH` para que `node` y
 `npm` sean siempre los de NVM.
 
-[`terminal/.config/oh-my-posh/pure.omp.json`](terminal/.config/oh-my-posh/pure.omp.json)
-guarda una copia local del tema Pure. Usa los colores ANSI de Kitty, cuya paleta
-cambia con el tema activo de Omarchy. Muestra la ruta y el estado Git en la
-primera línea, y el símbolo de entrada en la segunda. El lado derecho muestra
-la hora y, cuando corresponde, fallos de tuberías o señales, comandos de más
-de tres segundos, trabajos en segundo plano, entornos de Python, versiones de
-lenguajes en proyectos,
-Terraform, Nix y tareas pendientes. Se oculta si no cabe junto al lado
-izquierdo. El prompt anterior se reduce a `❯` después de ejecutar un comando.
-Los colores siguen la paleta activa de Omarchy; no se recupera la paleta del
-tema anterior.
+[`terminal/.config/starship.toml`](terminal/.config/starship.toml) configura
+el prompt de Starship. Parte de la configuración por defecto y sólo agrega lo
+necesario: el usuario siempre visible, el código de salida al final de la línea
+de información, las líneas agregadas y borradas sin commit (`git_metrics`) y
+los iconos de estado Git de Omarchy con contadores de stash, modificados,
+staged y untracked. El resto del archivo son los iconos del preset
+`nerd-font-symbols`.
 
-Los indicadores de nube y otras herramientas especializadas del tema anterior
-no tienen aquí un equivalente con la misma activación por comando.
-
-`omp-theme` abre un selector con búsqueda y vista previa dentro de la terminal.
-Obtiene la lista de temas del repositorio oficial de Oh My Posh y descarga el
-tema elegido una sola vez a `terminal/.config/oh-my-posh/themes/`. La copia
-oficial queda intacta. `functional-overlay.json` define las funciones comunes
-y `compose-theme.py` combina esas reglas con el tema seleccionado, respetando
-sus colores, iconos, separadores y bloques. En el modo original, cuando el tema
-ya tiene un bloque derecho, la configuración activa usa `extends` para guardar
-sólo los cambios.
-Si falta ese bloque, el compositor genera la configuración efectiva a partir
-del tema original y añade un bloque derecho de estilo sencillo. Sólo se
-conserva la configuración efectiva del tema activo. `active.omp.json` es un
-enlace que se cambia de forma atómica y cuyo destino contiene el nombre del
-tema; `--current` lee ese enlace. La vista previa de `fzf` usa la composición
-final, igual que la terminal nueva. El panel se abre debajo de la lista y
-muestra el tema oficial a la izquierda y el mismo tema con el acento y los
-colores de Omarchy a la derecha. Al elegir un tema oficial con `Enter`, se abre
-un cuadro para escoger entre colores originales y colores de Omarchy con las
-flechas y confirmar con `Enter`. `Esc` cancela sin cambiar el tema. `pure-local`
-se aplica directamente porque ya usa los colores de Omarchy.
-
-La capa común añade transient prompt `❯`,
-ruta acortada a unos 80 caracteres e indicador de solo lectura, Git con
-upstream, ahead/behind, stash, estados de archivos y operaciones activas,
-estado de salida y señal, duración desde 3 segundos, trabajos en segundo
-plano, direnv, entornos y versiones de lenguajes, Terraform, Nix y hora. Las
-herramientas aparecen sólo en su contexto; Taskwarrior se incluye sólo si
-`task` está instalado. Se usa renderizado en streaming cuando es compatible
-con la disposición del tema. En temas de dos líneas, todo bloque derecho se
-dibuja junto a la línea contextual, encima de la línea donde se escriben los
-comandos; se desactiva streaming para que Oh My Posh lo renderice allí. Los
-temas de una línea conservan su disposición original. Las versiones de los
-runtimes tienen una caché de un minuto para reducir el coste del prompt derecho
-sin retrasar la detección del proyecto. Los bloques derechos se ocultan cuando
-no caben junto al contexto. Algunos segmentos ya presentes
-pueden presentar estos datos con su propio formato. Oh My Posh no expone un
-indicador de `git bisect` equivalente al anterior, y ciertos temas sin un
-segmento apropiado requieren el bloque derecho sencillo.
-Los hooks `preexec` y `precmd` de `.zshrc` separan el prompt después de cada
-comando ejecutado, sin agregar espacio al abrir la terminal ni cambiar el
-diseño de los temas.
-
-`pure-local` conserva su diseño y los colores ANSI que siguen la paleta activa
-de Kitty/Omarchy. Los temas oficiales conservan sus colores propios, incluidos
-los hexadecimales en el modo normal. `omp-theme --omarchy NOMBRE` activa un
-tema oficial con la paleta ANSI de Omarchy, y `omp-theme --omarchy` abre el
-selector en ese modo. La variante de color se genera a partir del tema local
-sin alterar su copia original. `omp-theme --mode` muestra `original` u `omarchy`;
-`--current` sigue mostrando el nombre del tema base. Los colores ANSI siguen
-los cambios posteriores de Omarchy. Los gradientes de Oh My Posh requieren
-colores hexadecimales y toman una instantánea de la paleta al seleccionar el
-tema. Ni el inicio normal de Zsh ni la lectura del tema activo
-requieren Internet. El catálogo de temas se guarda en `catalog.names` durante
-siete días y se puede actualizar manualmente con `omp-theme --refresh`;
-si la red falla, `--list` muestra la última lista descargada y los temas
-locales. Un tema elegido se descarga sólo si aún no está en caché. También
-puedes usar `omp-theme --list`, `omp-theme --current`, `omp-theme NOMBRE` y
-`omp-theme pure-local`. El selector activa la recarga del prompt; si la sesión
-actual no cambia, ejecuta `exec zsh`.
-
-Para sumar otra función a todos los temas, edita `functional-overlay.json`:
-agrega una regla de segmento a `missing_segments` o ajusta las reglas de ruta,
-Git y estado. Vuelve a seleccionar el tema para regenerar `active.omp.json`;
-añade `--omarchy` si ese es el modo activo. Si la composición falla, ejecuta
-`ln -sfn pure.omp.json "$HOME/.config/oh-my-posh/active.omp.json"` y después
-`exec zsh`; el tema Pure local seguirá funcionando sin el selector.
+Starship no agrega una línea vacía antes del primer prompt (`add_newline =
+false`); los hooks `preexec` y `precmd` de `.zshrc` separan el prompt sólo
+después de cada comando ejecutado. `starship explain` describe los segmentos
+del prompt actual y `starship timings` muestra cuánto tarda cada uno.
 
 Funciones propias:
 

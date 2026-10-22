@@ -12,8 +12,5 @@ __pycache__/
 /desktop/.config/hypr/machine-profile.lua
 /terminal/.config/kitty/machine-profile.conf
 
-# Oh My Posh theme catalog cache, refreshed by theme-picker.zsh.
-terminal/.config/oh-my-posh/catalog.names
-
 # Built by arch-desktop/tools/arch-dotfiles.py on plain Arch (renamed desktop/terminal).
 /.arch-build/
