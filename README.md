@@ -941,8 +941,8 @@ Tareas de sistema (`system/btrfs/`, requiere que `/` sea btrfs):
 
 | Componente | Acción |
 | --- | --- |
-| `btrfs-balance-auto.timer` | Balance semanal sólo de datos (`-dusage` 0, 10, 25 y 50), con prioridad baja y únicamente conectado a la corriente |
-| `/etc/tmpfiles.d/btrfs-reclaim.conf` | Activa `dynamic_reclaim` y `periodic_reclaim` del kernel en cada arranque; el instalador lo genera con el UUID de `/` |
+| `btrfs-balance-auto.timer` | Balance semanal sólo de datos (`-dusage` 0, 10, 25 y 50), con prioridad baja; también con batería, para no saltarse la semana ni ignorar un arranque manual |
+| `/etc/tmpfiles.d/btrfs-reclaim.conf` | Activa `dynamic_reclaim` y `periodic_reclaim` del kernel (los que tenga) en cada arranque; el instalador lo genera con el UUID de `/` |
 | Snapper (`root`) | `NUMBER_LIMIT=5`: conserva cinco snapshots |
 
 ```bash

@@ -1,6 +1,5 @@
 [Unit]
 Description=Btrfs balance filtrado de /
-ConditionACPower=true
 
 [Service]
 Type=oneshot
