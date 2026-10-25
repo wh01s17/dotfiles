@@ -125,8 +125,8 @@ La sesión de terminal espera además:
 
 Omarchy ya instala Starship; en otro sistema, instálalo con `sudo pacman -S starship`.
 
-Solaar y WayScriber son opcionales, pero sus entradas de autostart y atajos
-sólo funcionarán cuando estén instalados. `subfinder` y `amass` también son
+WayScriber es opcional, pero su entrada de autostart y sus atajos
+sólo funcionarán cuando esté instalado. `subfinder` y `amass` también son
 opcionales y sólo afectan las funciones de Zsh que los nombran.
 
 Para habilitar WayScriber en Arch/Omarchy:
@@ -180,7 +180,7 @@ sudo pacman -S --needed \
   fastfetch imagemagick python btop udisks2
 ```
 
-Las herramientas opcionales (Solaar, WayScriber, `subfinder`, `amass`, etc.)
+Las herramientas opcionales (WayScriber, `subfinder`, `amass`, etc.)
 se describen en [Requisitos](#requisitos) y pueden instalarse más adelante.
 
 ### 3. Usar Kitty como terminal
@@ -391,7 +391,7 @@ exec zsh
 | [`input.lua`](desktop/.config/hypr/input.lua) | Teclado US `altgr-intl`, Caps Lock, repetición y salida de tableta |
 | [`bindings.lua`](desktop/.config/hypr/bindings.lua) | Multimedia y controles de WayScriber |
 | [`looknfeel.lua`](desktop/.config/hypr/looknfeel.lua) | Gaps, bordes, radio, blur y transición de escritorios |
-| [`autostart.lua`](desktop/.config/hypr/autostart.lua) | Inicio automático de Solaar |
+| [`autostart.lua`](desktop/.config/hypr/autostart.lua) | Inicio automático de WayScriber |
 | [`hyprsunset.conf`](desktop/.config/hypr/hyprsunset.conf) | Perfiles horarios de temperatura de color |
 | [`xdph.conf`](desktop/.config/hypr/xdph.conf) | Selector de pantalla para `xdg-desktop-portal-hyprland` |
 | [`.luarc.json`](desktop/.config/hypr/.luarc.json) | Stubs y globales `hl`/`o` para el servidor de lenguaje Lua |
