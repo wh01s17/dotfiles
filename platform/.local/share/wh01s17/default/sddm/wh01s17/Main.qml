@@ -7,7 +7,11 @@ Rectangle {
   height: 480
   color: "#1a1b26"
 
-  property string currentUser: userModel.lastUser
+  // A fresh install has no last user yet; fall back to the first one listed
+  // (NameRole is Qt.UserRole + 1), or every login is sent with an empty name.
+  property string currentUser: userModel.lastUser !== ""
+    ? userModel.lastUser
+    : (userModel.data(userModel.index(0, 0), Qt.UserRole + 1) || "")
   property bool loginFailed: false
   property int sessionIndex: {
     for (var i = 0; i < sessionModel.rowCount(); i++) {
