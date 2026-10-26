@@ -4,7 +4,9 @@
 # With CI set, a missing tool for a portable check is a failure. Checks that
 # need the live session (Hyprland, Omarchy's QML modules, the user's systemd
 # units) run only outside CI and only when their tool is installed.
-# shellcheck disable=SC2329 # check_* functions are called through run
+# check_* functions are called through run: SC2329 on ShellCheck 0.10+, SC2317
+# on older releases such as the one in CI.
+# shellcheck disable=SC2317,SC2329
 set -uo pipefail
 cd "$(dirname "$0")" || exit
 
