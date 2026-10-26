@@ -887,7 +887,7 @@ Funciones propias:
 | --- | --- |
 | `extractPorts <archivo-nmap>` | Extrae puertos abiertos y la primera IPv4; copia los puertos mediante `xclip` |
 | `mkt` | Crea `nmap/`, `content/`, `exploits/` y archivos de notas/flags en el directorio actual |
-| `git_config <usuario> <email> <token>` | Configura identidad, editor y credenciales globales de Git |
+| `git_config <usuario> <email>` | Configura identidad y editor globales de Git, y las credenciales de GitHub mediante `gh` |
 | `ipinfo <IP> [--whois\|--geo\|--info]` | Consulta WHOIS o servicios externos de geolocalización/IP |
 | `subdomain_enum <dominio>` | Combina resultados pasivos de Subfinder y Amass y elimina duplicados |
 | `target`, `myip`, `ctfcopy`, `ctfclear` | Controlan el estado compartido del panel CTF |
@@ -898,8 +898,6 @@ antes del informe.
 
 Advertencias de seguridad:
 
-- `git_config` configura `credential.helper store` y guarda el token sin
-  cifrar en `~/.git-credentials`; no lo uses en una máquina compartida.
 - `ipinfo` depende de una credencial de API. No publiques credenciales dentro
   de `.zshrc`: muévela a una variable de entorno o almacén de secretos y rota
   cualquier valor que ya haya sido versionado.

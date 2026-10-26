@@ -305,31 +305,19 @@ function ipinfo() {
 
 # --- git -------------------------------------------------------------------
 
-# Configure global git identity and store a GitHub token.
-# The token is prompted for when omitted, so it never lands in shell history.
+# Configure global git identity and editor; GitHub credentials come from gh.
 function git_config() {
     emulate -L zsh
 
-    local username="$1" email="$2" git_token="$3"
+    local username="$1" email="$2"
     if [[ -z "$username" || -z "$email" ]]; then
-        print -u2 -- "Usage: git_config <UserName> <Email> [Git Token]"
-        print -u2 -- "       Omit the token to be prompted for it (keeps it out of history)."
-        return 1
-    fi
-
-    if [[ -z "$git_token" ]]; then
-        read -rs "git_token?Git token (hidden): "
-        print
-    fi
-    if [[ -z "$git_token" ]]; then
-        print -u2 -- "[!] No token provided; aborting."
+        print -u2 -- "Usage: git_config <UserName> <Email>"
         return 1
     fi
 
     git config --global user.name "$username"   || return 1
     git config --global user.email "$email"     || return 1
     git config --global core.autocrlf input
-    git config --global credential.helper store
 
     local editor=""
     if [[ -n "$EDITOR" ]] && (( $+commands[${EDITOR%% *}] )); then
@@ -343,16 +331,24 @@ function git_config() {
         print -u2 -- "[!] No usable editor found; leaving core.editor untouched."
     fi
 
-    # Replace any existing github.com entry (a stale one would win) but keep
-    # credentials for every other host instead of truncating the whole file.
-    local creds="$HOME/.git-credentials" tmp
-    tmp="$(mktemp)" || return 1
-    [[ -f "$creds" ]] && grep -vF -- '@github.com' "$creds" > "$tmp"
-    print -r -- "https://${username}:${git_token}@github.com" >> "$tmp"
-    mv -- "$tmp" "$creds" || { rm -f -- "$tmp"; return 1; }
-    chmod 600 -- "$creds"
+    if (( ! $+commands[gh] )); then
+        print -u2 -- "[!] gh not found; install it and rerun to set up GitHub credentials."
+        return 1
+    fi
+    gh auth status --hostname github.com &> /dev/null ||
+        gh auth login --hostname github.com --git-protocol https || return 1
 
-    print -r -- "[+] Git configured for '$username' (credentials in $creds, mode 600)"
+    # Same as `gh auth setup-git`, but through mise's shim: setup-git writes the
+    # path of gh's versioned install directory, which breaks after a gh upgrade.
+    local gh_bin="$HOME/.local/share/mise/shims/gh" host
+    [[ -x "$gh_bin" ]] || gh_bin="${commands[gh]}"
+    for host in github.com gist.github.com; do
+        git config --global --unset-all "credential.https://$host.helper"
+        git config --global --add "credential.https://$host.helper" ''
+        git config --global --add "credential.https://$host.helper" "!$gh_bin auth git-credential"
+    done
+
+    print -r -- "[+] Git configured for '$username' (GitHub credentials via gh)"
 }
 
 alias ll='eza -lhg'
