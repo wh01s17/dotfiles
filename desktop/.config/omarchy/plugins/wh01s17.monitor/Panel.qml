@@ -71,6 +71,14 @@ Panel {
   readonly property string activeLayout: pendingLayout !== "" ? pendingLayout : savedLayout
   readonly property bool layoutAvailable: internalMonitor !== "" && displays.length > 1
 
+  property bool externalOpen: false
+  property var savedExternals: []
+  property var selectedExternals: []
+  readonly property var externalDisplays: Model.externalDisplays(displays, internalMonitor)
+  readonly property var connectedSelection: externalDisplays.filter(function(display) {
+    return root.selectedExternals.indexOf(display.name) >= 0
+  }).map(function(display) { return display.name })
+
   // Extend arrangement editor, opened by right-clicking Extend. Rects are in
   // Hyprland's logical space ({ name, x, y, w, h }); monitorGeometry is the
   // live layout from `hyprctl monitors all -j`.
@@ -115,6 +123,10 @@ Panel {
     list.push("scale")
     if (displays.length > 1) list.push("monitors")
     if (layoutAvailable) list.push("layout")
+    if (externalOpen && layoutAvailable) {
+      list.push("externals")
+      list.push("externalApply")
+    }
     return list
   }
 
@@ -124,6 +136,8 @@ Panel {
     if (section === "layout") return layoutOptions.length
     if (section === "scale") return scaleValues.length
     if (section === "monitors") return displays.length
+    if (section === "externals") return externalDisplays.length
+    if (section === "externalApply") return 1
     return 0
   }
 
@@ -203,6 +217,9 @@ Panel {
       var d = displays[selectedIndex]
       if (d) toggleDisplay(d.name, d.enabled)
     }
+    if (focusSection === "externals" && selectedIndex >= 0 && selectedIndex < externalDisplays.length)
+      toggleExternal(externalDisplays[selectedIndex].name)
+    if (focusSection === "externalApply") applyExternals()
     // brightness: no separate action; the slider value is the action.
   }
 
@@ -403,14 +420,41 @@ Panel {
   // toggle is set. Omarchy's own mirror toggle is cleared so it can't fight
   // the chosen layout.
   function setLayout(layout) {
+    if (layout === "external") {
+      root.arrangeOpen = false
+      root.selectedExternals = Model.externalSelection(root.displays, root.internalMonitor, root.savedExternals)
+      root.externalOpen = true
+      Qt.callLater(function() { root.ensureCursorVisible(externalSelector) })
+      return
+    }
+    root.externalOpen = false
     if (String(layout || "") === root.activeLayout) return
     runLayout(layout, "keep", "")
+  }
+
+  function toggleExternal(name) {
+    if (actionProc.running) return
+    var selected = root.connectedSelection.slice()
+    var index = selected.indexOf(name)
+    if (index >= 0) {
+      if (selected.length <= 1) return
+      selected.splice(index, 1)
+    } else {
+      selected.push(name)
+    }
+    root.selectedExternals = selected
+  }
+
+  function applyExternals() {
+    if (actionProc.running || root.connectedSelection.length === 0) return
+    runLayout("external", "keep", "")
   }
 
   // arrangementAction: "keep" leaves monitor-arrangement.conf alone, "write"
   // replaces it with `arrangement`, "clear" drops it so the profile's own
   // placement returns.
   function runLayout(layout, arrangementAction, arrangement) {
+    if (actionProc.running) return
     var value = String(layout || "")
     var internal = String(root.internalMonitor || "")
     var valid = false
@@ -419,12 +463,19 @@ Panel {
     }
     if (!valid || !/^[A-Za-z0-9._-]+$/.test(internal)) return
 
+    var externals = value === "external" ? root.connectedSelection : root.savedExternals
+    if (value === "external" && externals.length === 0) return
+    for (var e = 0; e < externals.length; e++) {
+      if (!/^[A-Za-z0-9._-]+$/.test(externals[e])) return
+    }
+
     root.pendingLayout = value
     actionProc.command = ["bash", "-c",
       'dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy"; ' +
       'file="$dir/monitor-layout.conf"; ' +
       'omarchy-hyprland-monitor-internal-mirror off >/dev/null; ' +
-      'mkdir -p "$dir" && printf "layout=%s\\ninternal=%s\\n" "$1" "$2" >"$file.tmp" && mv "$file.tmp" "$file" || exit 1; ' +
+      'mkdir -p "$dir" && { printf "layout=%s\\ninternal=%s\\n" "$1" "$2"; ' +
+      'if [ -n "$5" ]; then printf "%s\\n" "$5"; fi; } >"$file.tmp" && mv "$file.tmp" "$file" || exit 1; ' +
       'arr="$dir/monitor-arrangement.conf"; ' +
       'if [ "$3" = write ]; then printf "%s\\n" "$4" >"$arr.tmp" && mv "$arr.tmp" "$arr" || exit 1; ' +
       'elif [ "$3" = clear ]; then rm -f "$arr"; fi; ' +
@@ -437,11 +488,13 @@ Panel {
       '[ -n "$unmirrored" ] && sleep 1; fi; ' +
       'if [ "$1" = external ]; then hyprctl reload >/dev/null && omarchy-hyprland-monitor-internal off; ' +
       'else omarchy-hyprland-monitor-internal on; hyprctl reload >/dev/null; fi',
-      "bash", value, internal, arrangementAction, arrangement]
+      "bash", value, internal, arrangementAction, arrangement,
+      externals.map(function(name) { return "external=" + name }).join("\n")]
     if (!actionProc.running) actionProc.running = true
   }
 
   function openArrangement() {
+    root.externalOpen = false
     root.arrangeRects = Model.initialArrangement(root.monitorGeometry, root.internalMonitor)
     root.arrangeOpen = root.arrangeRects.length > 1
     if (root.arrangeOpen) Qt.callLater(function() { root.ensureCursorVisible(arrangeEditor) })
@@ -497,6 +550,7 @@ Panel {
       }
       cursorActive = false
       arrangeOpen = false
+      externalOpen = false
     }
   }
 
@@ -560,6 +614,13 @@ Panel {
       onStreamFinished: {
         var match = String(text || "").match(/^layout=(\w+)\s*$/m)
         root.savedLayout = match ? match[1] : "extend"
+        var externals = []
+        var lines = String(text || "").split("\n")
+        for (var i = 0; i < lines.length; i++) {
+          var external = lines[i].match(/^external=([A-Za-z0-9._-]+)\s*$/)
+          if (external && externals.indexOf(external[1]) < 0) externals.push(external[1])
+        }
+        root.savedExternals = externals
         root.pendingLayout = ""
       }
     }
@@ -1003,6 +1064,53 @@ Panel {
               }
             }
 
+            Column {
+              id: externalSelector
+              width: parent.width
+              spacing: Style.space(8)
+              visible: root.externalOpen
+
+              PanelSectionHeader {
+                text: "EXTERNAL DISPLAYS · SELECT AT LEAST ONE"
+                foreground: root.bar.foreground
+                fontFamily: root.bar.fontFamily
+              }
+
+              Repeater {
+                model: root.externalDisplays
+
+                MonitorRow {
+                  required property var modelData
+                  required property int index
+                  width: externalSelector.width
+                  display: modelData
+                  rowIndex: index
+                  selectionMode: true
+                }
+              }
+
+              Button {
+                id: externalApply
+                anchors.right: parent.right
+                text: "Apply"
+                fontSize: Style.font.caption
+                foreground: root.bar.foreground
+                fontFamily: root.bar.fontFamily
+                bordered: true
+                active: true
+                enabled: root.connectedSelection.length > 0 && !actionProc.running
+                hasCursor: root.cursorActive && root.focusSection === "externalApply"
+                onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(externalApply)
+                onClicked: root.applyExternals()
+                onHovered: function(isHovered) {
+                  if (!isHovered) return
+                  root.cursorActive = true
+                  root.focusSection = "externalApply"
+                  root.selectedIndex = 0
+                }
+              }
+            }
+
             // Windows-style arrangement: drag the numbered displays, drop
             // snaps them flush against a neighbour, Apply saves and extends.
             Column {
@@ -1225,11 +1333,16 @@ Panel {
     id: monitorRow
     required property var display
     required property int rowIndex
+    property bool selectionMode: false
 
-    readonly property bool isFocused: display && display.focused
-    readonly property bool canToggle: display && (!display.enabled || root.enabledDisplayCount > 1)
+    readonly property bool checked: display && (selectionMode
+      ? root.connectedSelection.indexOf(display.name) >= 0 : display.enabled)
+    readonly property bool isFocused: selectionMode ? checked : display && display.focused
+    readonly property bool canToggle: display && (selectionMode
+      ? !actionProc.running && (!checked || root.connectedSelection.length > 1)
+      : !display.enabled || root.enabledDisplayCount > 1)
 
-    hasCursor: root.cursorActive && root.focusSection === "monitors" && root.selectedIndex === rowIndex
+    hasCursor: root.cursorActive && root.focusSection === (selectionMode ? "externals" : "monitors") && root.selectedIndex === rowIndex
     onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(monitorRow)
     current: isFocused
     foreground: root.bar.foreground
@@ -1258,7 +1371,7 @@ Panel {
       }
 
       Text {
-        text: monitorRow.display.name + (monitorRow.display.focused ? " · focused" : "")
+        text: monitorRow.display.name + (!monitorRow.selectionMode && monitorRow.display.focused ? " · focused" : "")
         color: root.bar.foreground
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.body
@@ -1268,7 +1381,7 @@ Panel {
       }
 
       Text {
-        text: monitorRow.display.enabled ? "󰄬" : ""
+        text: monitorRow.checked ? "󰄬" : ""
         color: root.bar.foreground
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.subtitle
@@ -1284,10 +1397,13 @@ Panel {
       cursorShape: monitorRow.canToggle ? Qt.PointingHandCursor : Qt.ArrowCursor
       onContainsMouseChanged: if (containsMouse) {
         root.cursorActive = true
-        root.focusSection = "monitors"
+        root.focusSection = monitorRow.selectionMode ? "externals" : "monitors"
         root.selectedIndex = monitorRow.rowIndex
       }
-      onClicked: if (monitorRow.canToggle) root.toggleDisplay(monitorRow.display.name, monitorRow.display.enabled)
+      onClicked: if (monitorRow.canToggle) {
+        if (monitorRow.selectionMode) root.toggleExternal(monitorRow.display.name)
+        else root.toggleDisplay(monitorRow.display.name, monitorRow.display.enabled)
+      }
     }
   }
 }

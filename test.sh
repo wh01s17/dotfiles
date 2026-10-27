@@ -89,6 +89,13 @@ else
   need luac
 fi
 need node && run "JavaScript (${#js[@]})" check_js "${js[@]}"
+need node && run "External display selection" node tests/monitor-external.js
+lua_runtime=$(command -v lua || command -v lua5.4 || true)
+if [[ -n $lua_runtime ]]; then
+  run "External display layout" "$lua_runtime" tests/monitor-external.lua
+else
+  need lua
+fi
 need python3 && run "Python (${#py[@]})" check_python "${py[@]}"
 run "Bash -n (${#bash_scripts[@]})" check_bash "${bash_scripts[@]}"
 need zsh && run "Zsh -n (${#zshfiles[@]})" check_zsh "${zshfiles[@]}"

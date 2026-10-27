@@ -1,6 +1,6 @@
 -- Display layout picked in the shell's Display panel: extend, mirror, internal
 -- (laptop panel only) or external (external outputs only). The panel writes
--- `layout=NAME` and `internal=OUTPUT` lines to the state file below and reloads
+-- `layout=NAME`, `internal=OUTPUT` and optional `external=OUTPUT` lines and reloads
 -- Hyprland; monitors.lua applies the layout on top of the profile's own rules.
 -- Extend (also a missing file) keeps the profile's placement unless the panel's
 -- arrangement editor saved one.
@@ -30,11 +30,16 @@ function M.read(path)
 	for line in file:lines() do
 		local layout = line:match("^layout=(%a+)%s*$")
 		local internal = line:match("^internal=([%w._-]+)%s*$")
+		local external = line:match("^external=([%w._-]+)%s*$")
 		if layout and layouts[layout] then
 			state.layout = layout
 		end
 		if internal then
 			state.internal = internal
+		end
+		if external then
+			state.externals = state.externals or {}
+			state.externals[external] = true
 		end
 	end
 
@@ -157,7 +162,47 @@ function M.apply(state, rules, mode_for, scale_for)
 	-- internal-monitor-disable toggle (set by the Display panel), which the
 	-- clamshell watcher honours rather than re-enabling it every 2s.
 	if layout == "extend" or layout == "external" then
-		M.arrange(M.load_arrangement(), rules, mode_for, scale_for)
+		local arrangement_rules = M.capture(function()
+			M.arrange(M.load_arrangement(), rules, mode_for, scale_for)
+		end)
+		-- Legacy external layouts without a selection still enable all outputs.
+		if layout == "extend" or not state.externals or not internal then
+			return
+		end
+
+		local by_output = {}
+		for _, rule in ipairs(rules) do
+			by_output[rule.output] = rule
+		end
+		for _, rule in ipairs(arrangement_rules) do
+			by_output[rule.output] = rule
+		end
+
+		-- Disable every unselected output, including outputs absent from the
+		-- machine profile. Keep the laptop available until the shell's guarded
+		-- internal-monitor toggle switches it off after an external is active.
+		hl.monitor({ output = "", disabled = true })
+		for output in pairs(by_output) do
+			if output ~= "" and output ~= internal and not state.externals[output] then
+				hl.monitor({ output = output, disabled = true })
+			end
+		end
+		local function enable(output)
+			local rule = by_output[output]
+			hl.monitor({
+				output = output,
+				disabled = false,
+				mode = rule and rule.mode or mode_for(output, "preferred"),
+				position = rule and rule.position or "auto",
+				scale = rule and rule.scale or scale_for(output, 1),
+			})
+		end
+		enable(internal)
+		for output in pairs(state.externals) do
+			if output ~= internal then
+				enable(output)
+			end
+		end
 		return
 	end
 	if not internal then

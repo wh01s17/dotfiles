@@ -206,6 +206,23 @@ function parseDisplays(raw) {
   }
 }
 
+function externalDisplays(displays, internal) {
+  return (displays || []).filter(function(display) {
+    return display && /^[A-Za-z0-9._-]+$/.test(display.name)
+      && display.name !== internal && !/^(eDP|LVDS|DSI)-/.test(display.name)
+  })
+}
+
+function externalSelection(displays, internal, saved) {
+  var available = externalDisplays(displays, internal)
+  var selected = available.filter(function(display) {
+    return (saved || []).indexOf(display.name) >= 0
+  })
+  if (selected.length === 0) selected = available.filter(function(display) { return display.enabled })
+  if (selected.length === 0) selected = available.slice(0, 1)
+  return selected.map(function(display) { return display.name })
+}
+
 // ---- Display arrangement (extend layout) ----
 // Rects live in Hyprland's logical space: position as reported, size is the
 // mode divided by scale (swapped for 90/270 degree transforms).
@@ -397,6 +414,8 @@ if (typeof module !== "undefined") {
     parseMonitorModes: parseMonitorModes,
     brightnessName: brightnessName,
     parseDisplays: parseDisplays,
+    externalDisplays: externalDisplays,
+    externalSelection: externalSelection,
     parseGeometry: parseGeometry,
     initialArrangement: initialArrangement,
     snapPosition: snapPosition,
