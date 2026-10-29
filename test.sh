@@ -99,6 +99,9 @@ fi
 need python3 && run "Python (${#py[@]})" check_python "${py[@]}"
 run "Bash -n (${#bash_scripts[@]})" check_bash "${bash_scripts[@]}"
 need zsh && run "Zsh -n (${#zshfiles[@]})" check_zsh "${zshfiles[@]}"
+if need zsh && need git && need python3; then
+  run "Git update all (repositorios locales)" python3 tests/git-update-all.py
+fi
 need shellcheck && run "ShellCheck (${#bash_scripts[@]})" shellcheck "${bash_scripts[@]}"
 
 check_platform() {
