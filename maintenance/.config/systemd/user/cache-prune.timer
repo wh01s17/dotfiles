@@ -1,0 +1,9 @@
+[Unit]
+Description=Poda semanal de cachés de usuario
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

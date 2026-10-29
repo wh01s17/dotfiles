@@ -932,6 +932,7 @@ Tareas de usuario (paquete `maintenance`):
 | `btrfs-space-check` | Cada hora | Notifica si quedan menos de 15 GiB libres o menos de 5 GiB sin asignar. Lee `/sys`, no necesita root |
 | `codex-staging-clean` | Diaria | Borra de `~/.codex/.tmp/marketplaces/.staging` las copias de actualizaciones de plugins con más de un día |
 | `mise-prune` | Semanal | `mise prune --yes`: elimina versiones que ninguna configuración usa y conserva las que están en ejecución |
+| `cache-prune` | Semanal | Poda con su propia herramienta las cachés que crecen sin control: `mise cache prune` (sin acceso en 30 días), `yay -Sc --aur` y `pnpm store prune`. El resto de `~/.cache` no se toca |
 
 Los umbrales del aviso se cambian con `WARN_FREE_GIB` y `WARN_UNALLOC_GIB`.
 
@@ -940,7 +941,7 @@ Stow sólo crea los enlaces; los timers se activan aparte:
 ```bash
 systemctl --user daemon-reload
 systemctl --user enable --now \
-  btrfs-space-check.timer codex-staging-clean.timer mise-prune.timer
+  btrfs-space-check.timer codex-staging-clean.timer mise-prune.timer cache-prune.timer
 ```
 
 Tareas de sistema (`system/btrfs/`, requiere que `/` sea btrfs):
@@ -1055,7 +1056,7 @@ stow --delete --target="$HOME" desktop terminal maintenance
 ```
 
 Antes de retirar `maintenance`, desactiva sus timers con
-`systemctl --user disable --now btrfs-space-check.timer codex-staging-clean.timer mise-prune.timer`.
+`systemctl --user disable --now btrfs-space-check.timer codex-staging-clean.timer mise-prune.timer cache-prune.timer`.
 La parte de sistema se retira con
 `sudo systemctl disable --now btrfs-balance-auto.timer` y borrando los
 archivos que copió `install.sh`.

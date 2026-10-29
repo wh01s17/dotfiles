@@ -1,0 +1,6 @@
+[Unit]
+Description=Poda las cachés de mise, yay y pnpm
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/cache-prune

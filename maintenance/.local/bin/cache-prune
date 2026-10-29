@@ -1,0 +1,26 @@
+#!/bin/bash
+# Poda las cachés de ~/.cache que crecen sin control, cada una con su propia herramienta.
+# El resto de ~/.cache (navegadores, índices, Playwright) no se toca.
+set -u
+status=0
+
+# Cache de descargas de mise: borra lo no usado en `cache_prune_age` (30 días por defecto).
+if command -v mise >/dev/null; then
+    echo "== mise cache prune"
+    mise cache prune || status=1
+fi
+
+# Compilaciones de AUR de paquetes que ya no están instalados; --aur evita tocar pacman (root).
+if command -v yay >/dev/null; then
+    echo "== yay -Sc --aur"
+    yay -Sc --aur --noconfirm || status=1
+fi
+
+# pnpm vive en la versión de Node de nvm, que no está en el PATH del servicio.
+pnpm=$(command -v pnpm || ls -d "${NVM_DIR:-$HOME/.config/nvm}"/versions/node/*/bin/pnpm 2>/dev/null | sort -V | tail -1)
+if [ -n "$pnpm" ]; then
+    echo "== pnpm store prune"
+    "$pnpm" store prune || status=1
+fi
+
+exit "$status"
