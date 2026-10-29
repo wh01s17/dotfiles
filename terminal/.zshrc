@@ -305,6 +305,84 @@ function ipinfo() {
 
 # --- git -------------------------------------------------------------------
 
+# Update Git repositories directly inside a directory (including hidden ones).
+# Only clean worktrees on a branch with an upstream are eligible; never stash,
+# rebase, reset or create merge commits. Return nonzero if anything is skipped
+# or fails, but keep processing the remaining repositories.
+function git_update_all() {
+    emulate -L zsh
+
+    if [[ "$1" == (-h|--help) ]]; then
+        print -r -- 'Uso: git_update_all [carpeta]'
+        print -r -- 'Actualiza los repositorios hijos directos (por defecto: carpeta actual).'
+        return 0
+    fi
+    if (( $# > 1 )) || [[ ! -d "${1:-.}" ]]; then
+        print -u2 -r -- 'Uso: git_update_all [carpeta existente]'
+        return 1
+    fi
+    _require_cmd git || return 1
+
+    local base="${1:-.}" repo git_dir marker branch upstream changes
+    local -i total=0 updated=0 skipped=0 failed=0 busy=0
+    base="${base:A}"
+
+    for repo in "$base"/*(ND/); do
+        # A .git file also covers linked worktrees and submodules. Checking
+        # the marker prevents Git from treating ordinary folders as the parent repo.
+        [[ -e "$repo/.git" ]] || continue
+        (( total += 1 ))
+        print -r -- "[*] $repo"
+        if ! git_dir=$(command git -C "$repo" rev-parse --absolute-git-dir); then
+            print -u2 -r -- '[!] No se pudo abrir el repositorio.'
+            (( failed += 1 ))
+            continue
+        fi
+
+        busy=0
+        for marker in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply sequencer BISECT_LOG; do
+            [[ -e "$git_dir/$marker" ]] && busy=1
+        done
+        if (( busy )); then
+            print -r -- '[-] Omitido: hay una operación Git en curso.'
+            (( skipped += 1 ))
+            continue
+        fi
+        if ! changes=$(command git -C "$repo" status --porcelain --untracked-files=all --ignore-submodules=none); then
+            print -u2 -r -- '[!] No se pudo comprobar el estado.'
+            (( failed += 1 ))
+            continue
+        fi
+        if [[ -n "$changes" ]]; then
+            print -r -- '[-] Omitido: hay cambios locales o archivos sin seguimiento.'
+            (( skipped += 1 ))
+            continue
+        fi
+        if ! branch=$(command git -C "$repo" symbolic-ref --quiet --short HEAD); then
+            print -r -- '[-] Omitido: HEAD separado (sin rama activa).'
+            (( skipped += 1 ))
+            continue
+        fi
+        if ! upstream=$(command git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
+            print -r -- "[-] Omitido: $branch no tiene upstream disponible."
+            (( skipped += 1 ))
+            continue
+        fi
+
+        print -r -- "[*] $branch <- $upstream (solo fast-forward)"
+        if command git -C "$repo" -c submodule.recurse=false pull \
+                --ff-only --no-rebase --no-autostash --no-recurse-submodules; then
+            (( updated += 1 ))
+        else
+            print -u2 -r -- '[!] Falló la actualización; revisa el mensaje de Git.'
+            (( failed += 1 ))
+        fi
+    done
+
+    print -r -- "Repositorios: $total | Al día/actualizados: $updated | Omitidos: $skipped | Errores: $failed"
+    (( skipped == 0 && failed == 0 ))
+}
+
 # Configure global git identity and editor; GitHub credentials come from gh.
 function git_config() {
     emulate -L zsh

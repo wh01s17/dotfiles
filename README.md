@@ -888,9 +888,17 @@ Funciones propias:
 | `extractPorts <archivo-nmap>` | Extrae puertos abiertos y la primera IPv4; copia los puertos mediante `xclip` |
 | `mkt` | Crea `nmap/`, `content/`, `exploits/` y archivos de notas/flags en el directorio actual |
 | `git_config <usuario> <email>` | Configura identidad y editor globales de Git, y las credenciales de GitHub mediante `gh` |
+| `git_update_all [carpeta]` | Actualiza los repositorios hijos directos (incluidos ocultos), por defecto en la carpeta actual, usando solo fast-forward |
 | `ipinfo <IP> [--whois\|--geo\|--info]` | Consulta WHOIS o servicios externos de geolocalización/IP |
 | `subdomain_enum <dominio>` | Combina resultados pasivos de Subfinder y Amass y elimina duplicados |
 | `target`, `myip`, `ctfcopy`, `ctfclear` | Controlan el estado compartido del panel CTF |
+
+`git_update_all "$HOME/workspace"` omite repositorios con cambios locales
+(incluidos archivos sin seguimiento), operaciones Git en curso, HEAD separado
+o sin upstream disponible. Conserva los commits locales y rechaza historias
+divergentes. Continúa tras cada error, muestra un resumen y devuelve un estado
+distinto de cero si hubo errores u omisiones. No recorre subcarpetas de forma
+recursiva.
 
 Aliases destacados: `ls`, `ll`, `la`, `l` y `lla` usan Eza; `cat` usa Bat;
 `icat` usa `kitten icat`; `cd` usa Zoxide y `fastfetch` agrega el wordmark ANSI
