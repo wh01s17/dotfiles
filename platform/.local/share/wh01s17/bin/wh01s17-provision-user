@@ -103,7 +103,13 @@ for skill in "$WH01S17_PATH"/default/agents/skills/*/; do
   fi
 done
 
-mkdir -p ~/Downloads ~/Pictures ~/Videos ~/.config/gtk-3.0
+mkdir -p ~/Downloads ~/Documents ~/Music ~/Pictures ~/Videos ~/Projects ~/.config/gtk-3.0
+# English folder names whatever LANG says, so a non-English locale doesn't
+# create a second, translated set next to them.
+for entry in DOWNLOAD:Downloads DOCUMENTS:Documents MUSIC:Music PICTURES:Pictures VIDEOS:Videos PROJECTS:Projects; do
+  xdg-user-dirs-update --set "${entry%%:*}" "$HOME/${entry#*:}"
+done
+echo en_US >~/.config/user-dirs.locale
 xdg-user-dirs-update --set TEMPLATES "$HOME"
 xdg-user-dirs-update --set PUBLICSHARE "$HOME"
 xdg-user-dirs-update --set DESKTOP "$HOME"
