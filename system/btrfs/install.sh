@@ -10,8 +10,15 @@ install -Dm755 btrfs-balance-auto /usr/local/bin/btrfs-balance-auto
 install -Dm644 btrfs-balance-auto.service /etc/systemd/system/btrfs-balance-auto.service
 install -Dm644 btrfs-balance-auto.timer /etc/systemd/system/btrfs-balance-auto.timer
 
+install -Dm644 paccache.conf /etc/systemd/system/paccache.service.d/wh01s17.conf
+
 systemctl daemon-reload
 systemctl enable --now btrfs-balance-auto.timer
+if [ -f /usr/lib/systemd/system/paccache.timer ]; then
+    systemctl enable --now paccache.timer
+else
+    echo "Falta pacman-contrib: la caché de pacman no se podará (pacman -S pacman-contrib)" >&2
+fi
 
 # Reclamo automático de chunks de datos por el kernel; la ruta depende del UUID de cada equipo.
 # Sólo los ajustes que este kernel tiene: escribir uno inexistente hace fallar tmpfiles.
