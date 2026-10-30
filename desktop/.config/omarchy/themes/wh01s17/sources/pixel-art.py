@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the theme's 8-bit pixel-art wallpapers.
 
-Moons (03, 04): renders the Moon's real near side, full (03) and at first quarter (04): the
+Moons (06, 07): renders the Moon's real near side, full (06) and at first quarter (07), on pure black: the
 major maria and craters are placed by selenographic latitude/longitude,
 projected orthographically, lit from the Sun's direction, and quantized to the
 theme greens with 2x2 ordered dithering (dark maria dither down to the void,
@@ -29,6 +29,7 @@ DITHER = 0.6  # 0 = flat bands, 1 = full ordered dithering
 DITHER_FULL = 0.2  # the full moon reads best as near-flat shapes
 
 VOID = (0x0A, 0x0E, 0x0F)
+BLACK = (0x00, 0x00, 0x00)  # backdrop for the black moon variants (06, 07)
 FOREGROUND = (0xCB, 0xD5, 0xCE)
 SIGNAL = (0x84, 0xC9, 0x59)  # wordmark digits, as in 02-outline-mark
 TONES = [VOID, (0x4F, 0x7F, 0x34), (0x84, 0xC9, 0x59), (0xC6, 0xEC, 0x96)]
@@ -313,9 +314,9 @@ def sprite_colors(sprite, colors):
     }
 
 
-def compose(art, height, word=None):
+def compose(art, height, word=None, background=VOID):
     """Center `art` ({(col, row): rgb}, `height` rows tall) above `word`."""
-    grid = [[VOID] * GRID_W for _ in range(GRID_H)]
+    grid = [[background] * GRID_W for _ in range(GRID_H)]
     cols = [c for c, _ in art]
     art_w = max(cols) - min(cols) + 1
     text, text_w, text_h = wordmark(word) if word else ({}, 0, 0)
@@ -344,14 +345,17 @@ def write_png(grid, path):
 
 def main():
     out = Path(__file__).resolve().parent.parent / "backgrounds"
-    write_png(compose(moon_colors(render_moon(full=True)), 2 * R), out / "03-pixel-moon.png")
-    write_png(
-        compose(moon_colors(render_moon()), 2 * R, "wh01s17"),
-        out / "04-pixel-moon-wordmark.png",
-    )
     write_png(
         compose(sprite_colors(GENGAR, GENGAR_COLORS), len(GENGAR), "wh01s17"),
         out / "05-pixel-gengar-wordmark.png",
+    )
+    write_png(
+        compose(moon_colors(render_moon(full=True)), 2 * R, background=BLACK),
+        out / "06-pixel-moon-black.png",
+    )
+    write_png(
+        compose(moon_colors(render_moon()), 2 * R, "wh01s17", background=BLACK),
+        out / "07-pixel-moon-wordmark-black.png",
     )
 
 
