@@ -1,19 +1,25 @@
 # Actualizar el escritorio wh01s17
 
-El código y el instalador viven juntos en `~/dotfiles`:
+Ejecuta:
 
 ```bash
-cd ~/dotfiles
-git pull --ff-only
+~/dotfiles/update.sh
 ```
 
-Con `dotfiles-sync.timer` activo se actualizan los enlaces automáticamente.
-Para forzar la aplicación y verificar:
+El actualizador pausa el timer, hace `git pull --ff-only`, aplica los enlaces,
+ejecuta las comprobaciones y activa `dotfiles-sync.timer`. Si todavía existe
+`.arch-build`, redirige sus enlaces a los originales y la elimina al terminar
+correctamente. Los perfiles locales y los archivos ajenos se conservan.
+
+Para obtener el script por primera vez en un equipo con la configuración anterior:
 
 ```bash
-dotfiles-sync --force
-./test.sh
+git -C ~/dotfiles pull --ff-only && ~/dotfiles/update.sh --local
 ```
+
+`--local` aplica el checkout actual sin descargar cambios. Si falla el pull,
+se detiene sin descartar ni guardar automáticamente los cambios locales.
+Después de una actualización correcta, cierra sesión y vuelve a entrar.
 
 Los cambios de paquetes o configuración del sistema requieren ejecutar las
 etapas correspondientes de `installer/install.sh`; el sincronizador sólo

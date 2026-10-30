@@ -50,6 +50,8 @@ def main():
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
+            if args.force:
+                raise RuntimeError("Ya hay una sincronización en curso; vuelve a intentarlo.")
             return
         # Let editors and Git finish a batch before publishing it.
         before = snapshot(root, packages)
@@ -59,6 +61,8 @@ def main():
         time.sleep(1)
         git_dir = subprocess.check_output(['git', '-C', str(root), 'rev-parse', '--absolute-git-dir'], text=True).strip()
         if (Path(git_dir) / 'index.lock').exists() or snapshot(root, packages) != before:
+            if args.force:
+                raise RuntimeError('El checkout está cambiando; vuelve a intentarlo al terminar.')
             return
         commands = [
             ['stow', '--restow', '--dir', root, '--target', Path.home(),

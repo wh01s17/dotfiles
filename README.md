@@ -33,6 +33,24 @@ Para instalar también el sistema base desde el ISO, consulta
 [la guía de instalación](installer/INSTALL.md). El instalador elige el perfil
 del equipo y configura paquetes, servicios y archivos de sistema.
 
+## Actualizar con un comando
+
+```bash
+~/dotfiles/update.sh
+```
+
+Actualiza Git con `--ff-only`, aplica los enlaces, comprueba la configuración
+y activa la sincronización automática. En instalaciones anteriores también
+redirige los enlaces de `.arch-build` y elimina esa copia tras completar las
+comprobaciones. Conserva los perfiles locales y no ejecuta etapas de disco,
+cifrado ni instalación de paquetes.
+
+La primera vez, para obtener el actualizador en otro equipo:
+
+```bash
+git -C ~/dotfiles pull --ff-only && ~/dotfiles/update.sh --local
+```
+
 ## Sincronización automática
 
 Edita los originales de este repo. Como las aplicaciones leen esos archivos
