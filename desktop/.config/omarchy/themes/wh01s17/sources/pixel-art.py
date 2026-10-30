@@ -7,8 +7,8 @@ projected orthographically, lit from the Sun's direction, and quantized to the
 theme greens with 2x2 ordered dithering (dark maria dither down to black,
 like a Game Boy sprite).
 
-Gengar (08): the Gen 1 sprite traced from ~/.config/fastfetch/gengar.png, in
-its original colors, on pure black.
+Gengar (08 with the wordmark, 09 alone): the Gen 1 sprite traced from
+~/.config/fastfetch/gengar.png, in its original colors, on pure black.
 
 Everything lives on a 240x135 grid that ImageMagick scales 16x to
 3840x2160 with nearest-neighbour sampling.
@@ -353,6 +353,10 @@ def main():
     write_png(
         compose(sprite_colors(GENGAR, GENGAR_COLORS), len(GENGAR), "wh01s17"),
         out / "08-pixel-gengar-wordmark-black.png",
+    )
+    write_png(
+        compose(sprite_colors(GENGAR, GENGAR_COLORS), len(GENGAR)),
+        out / "09-pixel-gengar-black.png",
     )
 
 
