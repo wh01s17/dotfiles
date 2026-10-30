@@ -39,9 +39,9 @@ composición. Los fondos son:
 | --- | --- | --- |
 | `01-solid-mark.png` | Marca W sólida y `wh01s17` | `sources/01-solid-mark.svg` |
 | `02-outline-mark.png` | Marca W contorneada y `wh01s17` | `sources/02-outline-mark.svg` |
-| `05-pixel-gengar-wordmark.png` | Gengar de Fastfetch con sus colores originales y `wh01s17` | `sources/pixel-art.py` |
 | `06-pixel-moon-black.png` | Luna llena 8-bit con los verdes del tema sobre negro `#000000` | `sources/pixel-art.py` |
 | `07-pixel-moon-wordmark-black.png` | Cuarto creciente 8-bit con `wh01s17` en pixel art sobre negro `#000000` | `sources/pixel-art.py` |
+| `08-pixel-gengar-wordmark-black.png` | Gengar de Fastfetch con sus colores originales y `wh01s17` sobre negro `#000000` | `sources/pixel-art.py` |
 
 Las lunas reproducen la cara visible real: los mares y cráteres principales se
 ubican por latitud y longitud selenográficas y se iluminan según la fase. El

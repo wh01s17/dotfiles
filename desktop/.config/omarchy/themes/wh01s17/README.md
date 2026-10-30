@@ -19,9 +19,9 @@ An Omarchy theme derived from the visual system of [wh01s17.com](https://www.wh0
 
 - `01-solid-mark.png`: solid brand mark and `wh01s17`, 3840×2160.
 - `02-outline-mark.png`: outlined brand mark and `wh01s17`, 3840×2160.
-- `05-pixel-gengar-wordmark.png`: the fastfetch Gengar sprite in its original colors with a pixel `wh01s17` below (letters light, digits green), 3840×2160.
 - `06-pixel-moon-black.png`: 8-bit full moon in the signal greens on pure black `#000000`, 3840×2160.
 - `07-pixel-moon-wordmark-black.png`: 8-bit first-quarter moon on pure black `#000000` with a pixel `wh01s17` below (letters light, digits green), 3840×2160.
+- `08-pixel-gengar-wordmark-black.png`: the fastfetch Gengar sprite in its original colors on pure black `#000000` with a pixel `wh01s17` below (letters light, digits green), 3840×2160.
 
 Both are deterministic vector compositions rendered to exact 4K PNGs. They contain no slogans, terminal prompts, location data, system references, CRT effects, raster noise, glow, gradients, or 3D imagery. Editable masters live in `sources/`; the design rationale is preserved in `DESIGN.md`.
 
