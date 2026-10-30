@@ -569,6 +569,33 @@ su calendario y controles, pero usa precisión de segundos para que el formato
 
 Los indicadores nativos agrupan dictado, grabación, recordatorios, luz nocturna, silencio de notificaciones y bloqueo de idle.
 
+### Estilo
+
+Con `"islands": true` en `shell.json`, la superficie de la barra queda
+transparente y cada zona (izquierda, centro y derecha) queda enmarcada por su
+propio contorno, sin fondo: redondeado como las ventanas y con el borde
+`[bar] border`, que el tema apunta al degradado verde/cian del borde activo de
+Hyprland. El contorno crece y se encoge con una animación corta cuando la zona
+cambia de ancho (indicadores que aparecen, módulos que se ocultan) y, a la
+derecha, empieza donde están los widgets visibles y acompaña al cajón de la
+bandeja mientras se despliega. El resto del estilo sigue la estética del tema:
+
+- **Escritorios:** sólo números; el activo en `accent` sobre una barra corta,
+  los ocupados en el color de la barra y los vacíos atenuados.
+- **CPU y RAM:** `system-usage.sh` dibuja dos medidores de cinco bloques (`C■■■■■
+  M■■■■■`), verdes, ámbar desde 60 % y rojos desde 85 %.
+- **Segmentos de terminal:** los módulos con `"brackets": true` se enmarcan como
+  una statusline de tmux (`[ … ]`); reemplazan a los antiguos separadores `|`.
+- **Cursor:** mientras hay notificaciones en pantalla, un cursor de terminal
+  parpadea junto a la W del menú.
+- **Tooltips:** todo módulo describe qué es al pasar el ratón. Si el widget no
+  trae tooltip propio, `wh01s17.bar` muestra el nombre de `moduleLabels` (o el
+  `"label"` de la entrada en `shell.json`); cada escritorio indica cuántas
+  ventanas tiene.
+- **Colores:** los `classColors` de `shell.json` y los colores de
+  `ctf-ip.sh` y `services-monitor.sh` usan la paleta wh01s17 (`#84c959`,
+  `#e8b53f`, `#ff6b66`, `#45d9ea`, `#748178`).
+
 ### Módulos propios y clones
 
 Los clones conservan la integración de Omarchy con sus paneles originales,
@@ -583,9 +610,9 @@ distribución. Todos se declaran en `shell.json` y sus metadatos viven en el
 | `wh01s17.bluetooth` | `omarchy.bluetooth` | Conexión, olvido de dispositivos, reescaneo manual (botón o `r`) y selección de salida Bluetooth |
 | `wh01s17.network` | `omarchy.network` | Wi-Fi, reescaneo manual de redes, DNS, bandas, QR, prueba de velocidad y métricas de enlace |
 | `wh01s17.monitor` | `omarchy.monitor` | Escala persistente por salida y tooltip con resolución/escala |
-| `wh01s17.power` | `omarchy.power` | Batería, perfiles de energía y estadísticas del sistema |
+| `wh01s17.power` | `omarchy.power` | Batería como cinco corazones 8-bit (medios incluidos; rojos en batería, verdes enchufado), perfiles de energía y estadísticas del sistema |
 | `wh01s17.metronome` | Propio | Click track con dial de tempo, tap tempo, subdivisiones y acento |
-| `wh01s17.bar` | `omarchy.bar` | Estado de hover por monitor: revelar los indicadores en una pantalla no redistribuye las barras de las demás |
+| `wh01s17.bar` | `omarchy.bar` | Estado de hover por monitor (revelar los indicadores en una pantalla no redistribuye las barras de las demás) e islas flotantes |
 | `wh01s17.indicators` | `omarchy.indicators` | Lee ese estado por monitor desde `wh01s17.bar` y carga sus propios indicadores desde `indicators/` |
 
 `wh01s17.bar` reemplaza la barra completa (`bar.id` en `shell.json`), así que
