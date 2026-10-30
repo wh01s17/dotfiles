@@ -4,5 +4,8 @@ background-alpha = 0.96
 text             = "#cbd5ce"
 active           = "#ff6b66"
 scale-with-font  = true
-size-horizontal  = 30
+size-horizontal  = 36
 size-vertical    = 32
+# Island outlines (shell.json bar.islands) take the windows' active border.
+border           = "hyprland.active-border-foreground"
+border-alpha     = 0.55

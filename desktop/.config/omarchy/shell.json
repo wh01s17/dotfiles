@@ -7,6 +7,7 @@
   "bar": {
     "position": "top",
     "transparent": true,
+    "islands": true,
     "centerAnchor": "wh01s17.clock",
     "layout": {
       "left": [
@@ -17,16 +18,6 @@
           "id": "omarchy.workspaces"
         },
         {
-          "id": "workspace-separator",
-          "type": "qml",
-          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
-          "text": "|",
-          "horizontalMargin": 7.5,
-          "classColors": {
-            "default": "#666666"
-          }
-        },
-        {
           "id": "git-branch",
           "type": "qml",
           "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
@@ -35,20 +26,11 @@
           "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/git-branch.sh copy",
           "classColors": {
-            "clean": "#5fd75f",
-            "dirty": "#ffaf5f",
-            "conflict": "#ff5f5f"
-          }
-        },
-        {
-          "id": "ctf-separator",
-          "type": "qml",
-          "source": "~/.config/omarchy/bar/modules/StatusModule.qml",
-          "text": "|",
-          "horizontalMargin": 7.5,
-          "classColors": {
-            "default": "#666666"
-          }
+            "clean": "#84c959",
+            "dirty": "#e8b53f",
+            "conflict": "#ff6b66"
+          },
+          "brackets": true
         },
         {
           "id": "ctf",
@@ -60,12 +42,13 @@
           "onClick": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh copy-target",
           "onRightClick": "$HOME/.config/omarchy/bar/scripts/ctf-ip.sh clear",
           "classColors": {
-            "active": "#5fd75f",
-            "no-vpn": "#ffaf5f",
-            "missing-me": "#ff5f5f",
-            "missing-target": "#33ccff",
-            "inactive": "#777777"
-          }
+            "active": "#84c959",
+            "no-vpn": "#e8b53f",
+            "missing-me": "#ff6b66",
+            "missing-target": "#45d9ea",
+            "inactive": "#748178"
+          },
+          "brackets": true
         }
       ],
       "center": [
@@ -101,9 +84,9 @@
           "onScrollUp": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh add",
           "onScrollDown": "$HOME/.config/omarchy/bar/scripts/pomodoro.sh subtract",
           "classColors": {
-            "work-running": "#ff5f5f",
-            "short-break-running": "#5fd75f",
-            "long-break-running": "#33ccff"
+            "work-running": "#ff6b66",
+            "short-break-running": "#84c959",
+            "long-break-running": "#45d9ea"
           },
           "dimClasses": [
             "work-paused",
@@ -133,10 +116,10 @@
           "panel": true,
           "onRightClick": "$HOME/.config/omarchy/bar/scripts/firewall-status.sh notify",
           "classColors": {
-            "active": "#5fd75f",
-            "permissive": "#ffaf5f",
-            "inactive": "#ff5f5f",
-            "unknown": "#777777"
+            "active": "#84c959",
+            "permissive": "#e8b53f",
+            "inactive": "#ff6b66",
+            "unknown": "#748178"
           }
         },
         {
@@ -148,9 +131,9 @@
           "panel": true,
           "onClick": "$HOME/.config/omarchy/bar/scripts/mounted-devices.sh open",
           "classColors": {
-            "new": "#33ccff",
-            "active": "#5fd75f",
-            "inactive": "#777777"
+            "new": "#45d9ea",
+            "active": "#84c959",
+            "inactive": "#748178"
           }
         },
         {
@@ -172,10 +155,10 @@
           "onMiddleClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh copy",
           "onRightClick": "$HOME/.config/omarchy/bar/scripts/services-monitor.sh notify",
           "classColors": {
-            "active": "#5fd75f",
-            "exposed": "#ffaf5f",
-            "reverse": "#ff5f5f",
-            "inactive": "#777777"
+            "active": "#84c959",
+            "exposed": "#e8b53f",
+            "reverse": "#ff6b66",
+            "inactive": "#748178"
           }
         },
         {
@@ -204,8 +187,8 @@
           "onClick": "omarchy launch tui btop",
           "onRightClick": "alacritty",
           "classColors": {
-            "critical": "#ff5f5f",
-            "busy": "#ffaf5f"
+            "critical": "#ff6b66",
+            "busy": "#e8b53f"
           }
         },
         {

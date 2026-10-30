@@ -32,6 +32,9 @@ BarWidget {
   readonly property int animationDuration: 600
   property real revealProgress: expanded ? 1 : 0
   readonly property real revealExtent: drawerExtent * revealProgress
+  // Room the collapsed drawer keeps empty at the inner edge; the bar's
+  // island outline starts after it and follows the drawer as it opens.
+  readonly property real leadingSlack: root.vertical ? 0 : drawerExtent - revealExtent
 
   // Submenu drill-down state. QsMenuEntry.display() renders a *platform* menu,
   // which Quickshell refuses unless the shell root sets `//@ pragma

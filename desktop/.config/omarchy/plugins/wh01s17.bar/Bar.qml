@@ -53,6 +53,10 @@ Item {
   property bool requestedTransparent: false
   property bool useTransparentForeground: false
   property bool transparent: false
+  // Islands: the bar surface stays clear and each section (left, center,
+  // right) is outlined by its own rounded border that grows and shrinks with
+  // the section. Set by shell.json's `bar.islands`.
+  property bool islands: false
   // Compatibility value for widgets using the old global API. The actual
   // hover reveal state lives on each BarPanel so one monitor never relayouts
   // the bars on the other outputs.
@@ -391,6 +395,44 @@ Item {
     return !!left.screen && !!right.screen && !!left.screen.name && !!right.screen.name && left.screen.name === right.screen.name
   }
 
+  // Fallback tooltips: what each bar module is, for widgets that do not
+  // describe themselves. A module's own tooltip always wins, and an entry's
+  // "label" in shell.json overrides these names.
+  readonly property var moduleLabels: ({
+    "omarchy.menu": "Menú",
+    "omarchy.workspaces": "Escritorios",
+    "omarchy.tray": "Bandeja del sistema",
+    "omarchy.keyboard-layout": "Distribución de teclado",
+    "omarchy.weather": "Clima",
+    "omarchy.system-update": "Actualizaciones del sistema",
+    "omarchy.agents": "Agentes de IA",
+    "omarchy.media": "Reproducción",
+    "omarchy.microphone": "Micrófono",
+    "wh01s17.indicators": "Indicadores",
+    "wh01s17.clock": "Reloj y calendario",
+    "wh01s17.metronome": "Metrónomo",
+    "wh01s17.bluetooth": "Bluetooth",
+    "wh01s17.network": "Red",
+    "wh01s17.audio": "Audio",
+    "wh01s17.monitor": "Pantallas",
+    "wh01s17.power": "Energía",
+    "git-branch": "Rama de git del repositorio activo",
+    "ctf": "Panel CTF: objetivo, VPN e IP local",
+    "pomodoro": "Pomodoro",
+    "firewall-status": "Firewall",
+    "mounted-devices": "Unidades montadas",
+    "clipboard-history": "Historial del portapapeles",
+    "services-monitor": "Servicios y reverse shells",
+    "cpu-shortcut": "Actividad del sistema"
+  })
+
+  function moduleLabel(entry) {
+    var settings = entrySettings(entry) || {}
+    if (settings.label) return String(settings.label)
+    var id = entryId(entry)
+    return moduleLabels[id] || moduleLabels[canonicalWidgetId(id)] || ""
+  }
+
   function targetTooltipHovered(target) {
     return !!target && target.visible !== false && target.opacity !== 0 && target.tooltipHovered === true
   }
@@ -578,6 +620,7 @@ Item {
 
     position = normalizePosition(config.position)
     setRequestedTransparency(config.transparent === true)
+    islands = config.islands === true
     centerAnchor = Util.canonicalWidgetId(config.centerAnchor || "")
 
     // layoutEntries feeds plain JS arrays to the module Repeaters, and QML
@@ -1236,7 +1279,9 @@ Item {
       id: centerSectionRevealTimer
       interval: 120
       onTriggered: {
-        if (!barWindow.centerSectionHovered && !barWindow.barHovered)
+        // Islands collapse as soon as the pointer leaves the center island;
+        // without them the reveal holds while it stays anywhere on the bar.
+        if (!barWindow.centerSectionHovered && (root.islands || !barWindow.barHovered))
           barWindow.centerSectionRevealHeld = false
       }
     }
@@ -1270,7 +1315,7 @@ Item {
 
     implicitWidth: root.vertical ? root.barSize : 0
     implicitHeight: root.vertical ? 0 : root.barSize
-    color: root.transparent ? "transparent" : root.background
+    color: root.transparent || root.islands ? "transparent" : root.background
     surfaceFormat.opaque: false
     WlrLayershell.namespace: "omarchy-bar"
     WlrLayershell.layer: WlrLayer.Top
@@ -1360,21 +1405,48 @@ Item {
       Item {
         anchors.fill: parent
 
+        BarIsland {
+          id: leftIsland
+          visible: root.islands && leftModules.width > 0
+          targetX: leftModules.x - root.islandPadding
+          targetWidth: leftModules.width + root.islandPadding * 2
+        }
+
+        // The tray reserves room for its collapsed drawer at the inner edge;
+        // the island starts where the visible widgets do and follows the
+        // drawer as it slides open.
+        BarIsland {
+          id: rightIsland
+          visible: root.islands && rightModules.width > rightModules.leadingSlack
+          targetX: rightModules.x + rightModules.leadingSlack - root.islandPadding
+          targetWidth: rightModules.width - rightModules.leadingSlack + root.islandPadding * 2
+        }
+
         CenterModules {
           anchors.fill: parent
           surfaceWindow: barWindow
         }
 
-        LeftModules {
-          anchors.left: parent.left
-          anchors.leftMargin: Style.space(8)
-          anchors.verticalCenter: parent.verticalCenter
+        IslandClip {
+          island: leftIsland
+
+          LeftModules {
+            id: leftModules
+            anchors.left: parent.left
+            anchors.leftMargin: root.islands ? root.islandGap + root.islandPadding : Style.space(8)
+            anchors.verticalCenter: parent.verticalCenter
+          }
         }
 
-        RightModules {
-          anchors.right: parent.right
-          anchors.rightMargin: Style.space(8)
-          anchors.verticalCenter: parent.verticalCenter
+        IslandClip {
+          island: rightIsland
+
+          RightModules {
+            id: rightModules
+            anchors.right: parent.right
+            anchors.rightMargin: root.islands ? root.islandGap + root.islandPadding : Style.space(8)
+            anchors.verticalCenter: parent.verticalCenter
+          }
         }
       }
     }
@@ -1534,6 +1606,74 @@ Item {
     return idx === -1 ? null : entries[idx]
   }
 
+  // Island outline around one horizontal bar section: inset from the bar
+  // edges, rounded like the windows, bordered with [bar] border (the theme
+  // points it at Hyprland's active border gradient), and easing to the
+  // section's new extent whenever widgets appear, hide or expand.
+  readonly property int islandInset: Style.space(3)
+  readonly property int islandPadding: Style.space(6)
+  readonly property int islandGap: Style.space(6)
+  readonly property int islandSnap: Style.space(12)
+
+  component BarIsland: BorderSurface {
+    id: island
+    y: root.islandInset
+    height: root.barSize - root.islandInset * 2
+    radius: Style.cornerRadius
+    color: "transparent"
+    borderSpec: Border.surfaceSpec("bar", "border", Util.alpha(Color.accent, 0.5), 1)
+
+    // Where the section says the outline should be. A jump (a widget shown
+    // or hidden) eases there; small steps, such as the tray drawer already
+    // animating itself, are followed frame by frame so nothing lags behind.
+    property real targetX: 0
+    property real targetWidth: 0
+
+    function follow() {
+      var jump = Math.abs(targetX - x) > root.islandSnap || Math.abs(targetWidth - width) > root.islandSnap
+      if (visible && (jump || islandMotion.running)) {
+        islandX.to = targetX
+        islandWidth.to = targetWidth
+        islandMotion.restart()
+      } else {
+        islandMotion.stop()
+        x = targetX
+        width = targetWidth
+      }
+    }
+
+    onTargetXChanged: follow()
+    onTargetWidthChanged: follow()
+    Component.onCompleted: { x = targetX; width = targetWidth }
+
+    ParallelAnimation {
+      id: islandMotion
+      NumberAnimation { id: islandX; target: island; property: "x"; duration: 220; easing.type: Easing.OutCubic }
+      NumberAnimation { id: islandWidth; target: island; property: "width"; duration: 220; easing.type: Easing.OutCubic }
+    }
+  }
+
+  // Shows a section's widgets only inside its island's current outline, so
+  // while the outline eases open the widgets are revealed with it instead of
+  // spilling past it. Children keep full-bar coordinates.
+  component IslandClip: Item {
+    id: clipRoot
+    required property var island
+    default property alias content: clipInner.data
+
+    x: root.islands ? island.x : 0
+    width: root.islands ? island.width : parent.width
+    height: parent.height
+    clip: root.islands
+
+    Item {
+      id: clipInner
+      x: -clipRoot.x
+      width: clipRoot.parent ? clipRoot.parent.width : 0
+      height: clipRoot.height
+    }
+  }
+
   component LeftModules: ModuleList {
     entries: root.layoutEntries("left")
     region: "left"
@@ -1565,12 +1705,45 @@ Item {
 
         CenterGestureArea { anchors.fill: parent }
 
+        // Without islands the whole center band reveals the indicators; with
+        // them, only the center island does.
         HoverHandler {
+          enabled: !root.islands
           onHoveredChanged: centerRoot.surfaceWindow.setCenterSectionHovered(hovered)
           Component.onDestruction: if (hovered) centerRoot.surfaceWindow.setCenterSectionHovered(false)
         }
 
+        Item {
+          x: centerIsland.x
+          width: centerIsland.width
+          height: parent.height
+          visible: root.islands
+
+          HoverHandler {
+            enabled: root.islands
+            onHoveredChanged: centerRoot.surfaceWindow.setCenterSectionHovered(hovered)
+            Component.onDestruction: if (hovered) centerRoot.surfaceWindow.setCenterSectionHovered(false)
+          }
+        }
+
+        BarIsland {
+          id: centerIsland
+          readonly property real spanStart: centerRoot.hasAnchor
+            ? (centerBefore.width > 0 ? centerBefore.x : centerAnchorModule.x)
+            : centerAll.x
+          readonly property real spanEnd: centerRoot.hasAnchor
+            ? (centerAfter.width > 0 ? centerAfter.x + centerAfter.width : centerAnchorModule.x + centerAnchorModule.width)
+            : centerAll.x + centerAll.width
+          visible: root.islands && spanEnd > spanStart
+          targetX: spanStart - root.islandPadding
+          targetWidth: spanEnd - spanStart + root.islandPadding * 2
+        }
+
+        IslandClip {
+          island: centerIsland
+
         ModuleList {
+          id: centerAll
           visible: !centerRoot.hasAnchor
           entries: centerRoot.entries
           region: "center"
@@ -1578,6 +1751,7 @@ Item {
         }
 
         ModuleList {
+          id: centerBefore
           visible: centerRoot.hasAnchor
           entries: root.entriesBefore(centerRoot.entries, root.centerAnchor)
           region: "center"
@@ -1594,11 +1768,13 @@ Item {
         }
 
         ModuleList {
+          id: centerAfter
           visible: centerRoot.hasAnchor
           entries: root.entriesAfter(centerRoot.entries, root.centerAnchor)
           region: "center"
           anchors.left: centerAnchorModule.right
           anchors.verticalCenter: centerAnchorModule.verticalCenter
+        }
         }
       }
     }
@@ -1737,6 +1913,17 @@ Item {
 
     property var entries: []
     property string region: ""
+    // Empty room the first visible widget keeps at its leading edge (the
+    // tray's collapsed drawer), so an island can skip it.
+    readonly property real leadingSlack: {
+      var kids = item ? item.children : []
+      for (var i = 0; i < kids.length; i++) {
+        var kid = kids[i]
+        if (kid.leadingSlack === undefined || !kid.visible || kid.width <= 0) continue
+        return kid.leadingSlack
+      }
+      return 0
+    }
 
     visible: entries.length > 0
     // A hidden list must not build its modules. The center section declares
@@ -1815,6 +2002,7 @@ Item {
       return componentLoader.item
     }
     readonly property bool hovered: moduleHover.hovered
+    readonly property real leadingSlack: activeItem && activeItem.leadingSlack !== undefined ? activeItem.leadingSlack : 0
     readonly property bool dragSource: root.barDragSource === slot
     readonly property bool panelOpen: root.activePopout === slot.activeItem
     // Modules bigger than the mark they want (a text label in a padded slot,
@@ -1839,7 +2027,28 @@ Item {
       root.unregisterModuleSlot(slot)
     }
 
-    HoverHandler { id: moduleHover }
+    HoverHandler {
+      id: moduleHover
+      onHoveredChanged: {
+        if (hovered) fallbackTooltipTimer.restart()
+        else { fallbackTooltipTimer.stop(); root.hideTooltip(slot) }
+      }
+    }
+
+    // Shown only when the widget under the pointer raised no tooltip of its
+    // own within a moment of the pointer arriving.
+    readonly property bool tooltipHovered: moduleHover.hovered
+    readonly property string fallbackTooltip: root.moduleLabel(entry)
+
+    Timer {
+      id: fallbackTooltipTimer
+      interval: 60
+      onTriggered: {
+        if (!slot.fallbackTooltip || !moduleHover.hovered) return
+        if (root.tooltipTarget !== null || root.pendingTooltipTarget !== null) return
+        root.showTooltip(slot, slot.fallbackTooltip)
+      }
+    }
 
     BorderSurface {
       visible: slot.dragSource
