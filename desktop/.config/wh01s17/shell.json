@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "idle": {
+    "screensaver": 150,
+    "lock": 300
+  },
+  "bar": {
+    "position": "top",
+    "transparent": true,
+    "outline": false,
+    "centerAnchor": "wh01s17.clock",
+    "layout": {
+      "left": [
+        {
+          "id": "core.menu"
+        },
+        {
+          "id": "core.workspaces"
+        },
+        {
+          "id": "git-branch",
+          "type": "qml",
+          "source": "~/.config/wh01s17/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/wh01s17/bar/scripts/git-branch.sh print",
+          "interval": 30,
+          "panel": true,
+          "onClick": "$HOME/.config/wh01s17/bar/scripts/git-branch.sh copy",
+          "classColors": {
+            "clean": "#84c959",
+            "dirty": "#e8b53f",
+            "conflict": "#ff6b66"
+          },
+          "brackets": true
+        },
+        {
+          "id": "ctf",
+          "type": "qml",
+          "source": "~/.config/wh01s17/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/wh01s17/bar/scripts/ctf-ip.sh print",
+          "interval": 20,
+          "panel": true,
+          "onClick": "$HOME/.config/wh01s17/bar/scripts/ctf-ip.sh copy-target",
+          "onRightClick": "$HOME/.config/wh01s17/bar/scripts/ctf-ip.sh clear",
+          "classColors": {
+            "active": "#84c959",
+            "no-vpn": "#e8b53f",
+            "missing-me": "#ff6b66",
+            "missing-target": "#45d9ea",
+            "inactive": "#748178"
+          },
+          "brackets": true
+        }
+      ],
+      "center": [
+        {
+          "id": "wh01s17.indicators"
+        },
+        {
+          "id": "wh01s17.clock",
+          "format": "ddd d MMM HH:mm:ss",
+          "formatAlt": "d MMMM 'W'ww yyyy",
+          "verticalFormat": "HH\n—\nmm",
+          "weekStartDay": "monday"
+        },
+        {
+          "id": "core.keyboard-layout"
+        },
+        {
+          "id": "core.weather"
+        },
+        {
+          "id": "core.system-update"
+        },
+        {
+          "id": "pomodoro",
+          "type": "qml",
+          "source": "~/.config/wh01s17/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/wh01s17/bar/scripts/pomodoro.sh print",
+          "interval": 1,
+          "panel": true,
+          "onClick": "$HOME/.config/wh01s17/bar/scripts/pomodoro.sh toggle",
+          "onMiddleClick": "$HOME/.config/wh01s17/bar/scripts/pomodoro.sh skip",
+          "onRightClick": "$HOME/.config/wh01s17/bar/scripts/pomodoro.sh menu",
+          "onScrollUp": "$HOME/.config/wh01s17/bar/scripts/pomodoro.sh add",
+          "onScrollDown": "$HOME/.config/wh01s17/bar/scripts/pomodoro.sh subtract",
+          "classColors": {
+            "work-running": "#ff6b66",
+            "short-break-running": "#84c959",
+            "long-break-running": "#45d9ea"
+          },
+          "dimClasses": [
+            "work-paused",
+            "short-break-paused",
+            "long-break-paused"
+          ]
+        }
+      ],
+      "right": [
+        {
+          "id": "core.tray"
+        },
+        {
+          "id": "wh01s17.metronome",
+          "accent": false,
+          "beats": 1,
+          "bpm": 80,
+          "subdivision": "1/4",
+          "volume": 0.7
+        },
+        {
+          "id": "firewall-status",
+          "type": "qml",
+          "source": "~/.config/wh01s17/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/wh01s17/bar/scripts/firewall-status.sh print",
+          "interval": 10,
+          "panel": true,
+          "onRightClick": "$HOME/.config/wh01s17/bar/scripts/firewall-status.sh notify",
+          "classColors": {
+            "active": "#84c959",
+            "permissive": "#e8b53f",
+            "inactive": "#ff6b66",
+            "unknown": "#748178"
+          }
+        },
+        {
+          "id": "mounted-devices",
+          "type": "qml",
+          "source": "~/.config/wh01s17/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/wh01s17/bar/scripts/mounted-devices.sh print",
+          "interval": 20,
+          "panel": true,
+          "onClick": "$HOME/.config/wh01s17/bar/scripts/mounted-devices.sh open",
+          "classColors": {
+            "new": "#45d9ea",
+            "active": "#84c959",
+            "inactive": "#748178"
+          }
+        },
+        {
+          "id": "clipboard-history",
+          "type": "qml",
+          "source": "~/.config/wh01s17/bar/modules/StatusModule.qml",
+          "text": "󰅍",
+          "tooltip": "Historial del portapapeles\n\nSuper + Ctrl + V",
+          "onClick": "wh01s17 menu clipboard"
+        },
+        {
+          "id": "services-monitor",
+          "type": "qml",
+          "source": "~/.config/wh01s17/bar/modules/StatusModule.qml",
+          "exec": "$HOME/.config/wh01s17/bar/scripts/services-monitor.sh print",
+          "interval": 15,
+          "panel": true,
+          "onClick": "$HOME/.config/wh01s17/bar/scripts/services-monitor.sh open",
+          "onMiddleClick": "$HOME/.config/wh01s17/bar/scripts/services-monitor.sh copy",
+          "onRightClick": "$HOME/.config/wh01s17/bar/scripts/services-monitor.sh notify",
+          "classColors": {
+            "active": "#84c959",
+            "exposed": "#e8b53f",
+            "reverse": "#ff6b66",
+            "inactive": "#748178"
+          }
+        },
+        {
+          "id": "core.agents"
+        },
+        {
+          "id": "wh01s17.bluetooth"
+        },
+        {
+          "id": "wh01s17.network"
+        },
+        {
+          "id": "wh01s17.audio"
+        },
+        {
+          "id": "wh01s17.monitor"
+        },
+        {
+          "id": "cpu-shortcut",
+          "type": "qml",
+          "source": "~/.config/wh01s17/bar/modules/StatusModule.qml",
+          "text": "󰍛",
+          "tooltip": "Actividad del sistema",
+          "exec": "$HOME/.config/wh01s17/bar/scripts/system-usage.sh print",
+          "interval": 3,
+          "onClick": "wh01s17 launch tui btop",
+          "onRightClick": "alacritty",
+          "classColors": {
+            "critical": "#ff6b66",
+            "busy": "#e8b53f"
+          }
+        },
+        {
+          "id": "wh01s17.power"
+        }
+      ]
+    },
+    "id": "wh01s17.bar"
+  },
+  "plugins": [
+    {
+      "id": "io.github.sirjul1337.lock-explorer",
+      "design": "neon"
+    }
+  ],
+  "disabledPlugins": [
+    "core.lock"
+  ],
+  "cloneSourceRestores": [
+    "io.github.sirjul1337.lock-explorer"
+  ]
+}

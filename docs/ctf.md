@@ -1,6 +1,6 @@
 # Panel CTF
 
-[`ctf-ip.sh`](../desktop/.config/omarchy/bar/scripts/ctf-ip.sh) muestra:
+[`ctf-ip.sh`](../desktop/.config/wh01s17/bar/scripts/ctf-ip.sh) muestra:
 
 | Segmento | Origen | Color |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ ctfcopy
 ctfclear
 ```
 
-Estado: `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/bar/ctf`.
+Estado: `${XDG_STATE_HOME:-$HOME/.local/state}/wh01s17/bar/ctf`.
 
 Configuración opcional por entorno:
 

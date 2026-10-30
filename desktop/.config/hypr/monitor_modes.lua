@@ -7,11 +7,11 @@ local M = {}
 local function state_file()
 	local state_home = os.getenv("XDG_STATE_HOME")
 	if state_home then
-		return state_home .. "/omarchy/monitor-modes.conf"
+		return state_home .. "/wh01s17/monitor-modes.conf"
 	end
 
 	local home = os.getenv("HOME")
-	return home and (home .. "/.local/state/omarchy/monitor-modes.conf") or nil
+	return home and (home .. "/.local/state/wh01s17/monitor-modes.conf") or nil
 end
 
 function M.read(path)

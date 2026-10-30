@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Keep native wh01s17 Stow links in sync with the source checkout."""
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+
+PACKAGES = ('desktop', 'terminal', 'maintenance', 'platform', 'apps')
+SKIP = {'.git', '__pycache__', '.pytest_cache', '.mypy_cache', '.ruff_cache'}
+
+
+def snapshot(root, packages):
+    entries = []
+    for package in packages:
+        for directory, dirs, files in os.walk(root / package):
+            dirs[:] = sorted(d for d in dirs if d not in SKIP)
+            for name in sorted(dirs + files):
+                if name.endswith(('.pyc', '~', '.swp', '.swo')) or '.bak' in name:
+                    continue
+                path = Path(directory) / name
+                stat = path.lstat()
+                entries.append((str(path.relative_to(root)), stat.st_mtime_ns,
+                                stat.st_size, stat.st_mode,
+                                os.readlink(path) if path.is_symlink() else None))
+    return hashlib.sha256(json.dumps(entries).encode()).hexdigest()
+
+
+def run(*args):
+    subprocess.run([str(arg) for arg in args], check=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--force', action='store_true', help='sync even without changes')
+    parser.add_argument('--dotfiles', type=Path,
+                        default=Path(os.environ.get('DOTFILES_DIR', Path(__file__).resolve().parents[3])))
+    args = parser.parse_args()
+    root = args.dotfiles.expanduser().resolve()
+    packages = PACKAGES
+    for package in packages:
+        if not (root / package).is_dir():
+            parser.error(f'Falta el paquete Stow: {root / package}')
+    state = Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local/state')) / 'dotfiles-sync'
+    state.mkdir(parents=True, exist_ok=True)
+    with (state / 'lock').open('w') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        # Let editors and Git finish a batch before publishing it.
+        before = snapshot(root, packages)
+        marker = state / (hashlib.sha256(str(root).encode()).hexdigest() + '.stamp')
+        if not args.force and marker.exists() and marker.read_text() == 'direct-v1:' + before:
+            return
+        time.sleep(1)
+        git_dir = subprocess.check_output(['git', '-C', str(root), 'rev-parse', '--absolute-git-dir'], text=True).strip()
+        if (Path(git_dir) / 'index.lock').exists() or snapshot(root, packages) != before:
+            return
+        commands = [
+            ['stow', '--restow', '--dir', root, '--target', Path.home(),
+             'platform', 'maintenance', 'desktop', 'terminal'],
+            ['stow', '--restow', '--no-folding', '--dir', root,
+             '--target', Path.home(), 'apps'],
+        ]
+        for command in commands:
+            run(*command, '--simulate')
+        for command in commands:
+            run(*command)
+        run('systemctl', '--user', 'daemon-reload')
+        # If sources changed during Stow, the next invocation picks them up.
+        temporary = marker.with_suffix('.tmp')
+        temporary.write_text('direct-v1:' + before)
+        temporary.replace(marker)
+        print(f'Dotfiles sincronizados: {root}', flush=True)
+
+
+if __name__ == '__main__':
+    main()

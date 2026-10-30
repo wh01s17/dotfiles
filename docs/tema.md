@@ -1,38 +1,38 @@
 # Tema `wh01s17`
 
-[`themes/wh01s17`](../desktop/.config/omarchy/themes/wh01s17/) implementa una
+[`themes/wh01s17`](../desktop/.config/wh01s17/themes/wh01s17/) implementa una
 variante oscura inspirada en `wh01s17.com`: superficies casi negras, tipografía
 monoespaciada y acentos verde fósforo, cian, ámbar, rojo y púrpura.
 
 Actívala y recorre sus cinco fondos con:
 
 ```bash
-omarchy theme set wh01s17
-omarchy theme current
-omarchy theme bg next
+wh01s17 theme set wh01s17
+wh01s17 theme current
+wh01s17 theme bg next
 ```
 
 Sus piezas son:
 
 | Ruta | Responsabilidad |
 | --- | --- |
-| [`colors.toml`](../desktop/.config/omarchy/themes/wh01s17/colors.toml) | Paleta usada para generar configuraciones de aplicaciones |
-| [`hyprland.lua`](../desktop/.config/omarchy/themes/wh01s17/hyprland.lua) | Bordes verde/cian, radio de 10 px y sombras del tema |
-| [`icons.theme`](../desktop/.config/omarchy/themes/wh01s17/icons.theme) | Selecciona `Yaru-prussiangreen-dark` |
-| [`shell.*.toml`](../desktop/.config/omarchy/themes/wh01s17/) | Barra, controles, tipografía (Departure Mono), menús, lock, notificaciones, popups, polkit, espaciado y tooltips |
-| [`backgrounds/`](../desktop/.config/omarchy/themes/wh01s17/backgrounds/) | Cinco wallpapers PNG 4K listos para usar |
-| [`sources/`](../desktop/.config/omarchy/themes/wh01s17/sources/) | Maestros SVG, generador de los wallpapers pixel art y de los iconos pixel del shell |
-| [`brand/logo.svg`](../desktop/.config/omarchy/themes/wh01s17/brand/logo.svg) | Geometría oficial de la marca |
+| [`colors.toml`](../desktop/.config/wh01s17/themes/wh01s17/colors.toml) | Paleta usada para generar configuraciones de aplicaciones |
+| [`hyprland.lua`](../desktop/.config/wh01s17/themes/wh01s17/hyprland.lua) | Bordes verde/cian, radio de 10 px y sombras del tema |
+| [`icons.theme`](../desktop/.config/wh01s17/themes/wh01s17/icons.theme) | Selecciona `Yaru-prussiangreen-dark` |
+| [`shell.*.toml`](../desktop/.config/wh01s17/themes/wh01s17/) | Barra, controles, tipografía (Departure Mono), menús, lock, notificaciones, popups, polkit, espaciado y tooltips |
+| [`backgrounds/`](../desktop/.config/wh01s17/themes/wh01s17/backgrounds/) | Cinco wallpapers PNG 4K listos para usar |
+| [`sources/`](../desktop/.config/wh01s17/themes/wh01s17/sources/) | Maestros SVG, generador de los wallpapers pixel art y de los iconos pixel del shell |
+| [`brand/logo.svg`](../desktop/.config/wh01s17/themes/wh01s17/brand/logo.svg) | Geometría oficial de la marca |
 
 El tema se carga con los valores predeterminados y después se aplican las
 preferencias personales de `~/.config/hypr`. Ambos fijan el mismo radio de
 10 px; si difieren, el de `looknfeel.lua` prevalece sobre el del tema, mientras
 sus colores de borde y sombras se conservan. Tras editar un archivo del tema,
-vuelve a aplicarlo con `omarchy theme set wh01s17`.
+vuelve a aplicarlo con `wh01s17 theme set wh01s17`.
 
-[`themes/wh01s17/README.md`](../desktop/.config/omarchy/themes/wh01s17/README.md)
+[`themes/wh01s17/README.md`](../desktop/.config/wh01s17/themes/wh01s17/README.md)
 documenta la paleta y
-[`DESIGN.md`](../desktop/.config/omarchy/themes/wh01s17/DESIGN.md) las reglas de
+[`DESIGN.md`](../desktop/.config/wh01s17/themes/wh01s17/DESIGN.md) las reglas de
 composición. Los fondos son:
 
 | Fondo | Contenido | Fuente |
@@ -52,13 +52,13 @@ dibuja en una cuadrícula de 240×135 que se escala 16× sin interpolación.
 Para regenerar los PNG:
 
 ```bash
-cd ~/.config/omarchy/themes/wh01s17
+cd ~/.config/wh01s17/themes/wh01s17
 rsvg-convert --width 3840 --height 2160 \
   --output backgrounds/01-solid-mark.png sources/01-solid-mark.svg
 rsvg-convert --width 3840 --height 2160 \
   --output backgrounds/02-outline-mark.png sources/02-outline-mark.svg
 python3 sources/pixel-art.py
-omarchy theme set wh01s17
+wh01s17 theme set wh01s17
 ```
 
 El último comando copia los fondos regenerados al tema activo.
@@ -78,7 +78,7 @@ Nerd Font que ya usan el menú, sus extensiones, la barra y sus scripts. Así,
 cada icono con equivalente se vuelve 8-bit sin tocar QML ni JSONC, y los que no
 lo tienen (la huella del lock, logos propios) siguen con su glifo Nerd Font. La
 tabla de equivalencias y los iconos dibujados a mano (Bluetooth) están en
-[`sources/pixel-icons.py`](../desktop/.config/omarchy/themes/wh01s17/sources/pixel-icons.py).
+[`sources/pixel-icons.py`](../desktop/.config/wh01s17/themes/wh01s17/sources/pixel-icons.py).
 Ambas fuentes se instalan desde
 [`apps/.local/share/fonts/wh01s17/`](../apps/.local/share/fonts/wh01s17/) con
 sus licencias.
@@ -87,8 +87,8 @@ Para mapear otro icono, añádelo a `ICONS` y regenera la fuente (necesita
 `python-fonttools`):
 
 ```bash
-cd ~/dotfiles/desktop/.config/omarchy/themes/wh01s17
+cd ~/dotfiles/desktop/.config/wh01s17/themes/wh01s17
 python3 sources/pixel-icons.py
 fc-cache -f
-omarchy restart shell
+wh01s17 restart shell
 ```

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "core.system-update",
+  "name": "wh01s17 update",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Indicates available wh01s17 updates",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "SystemUpdate.qml"
+  },
+  "barWidget": {
+    "displayName": "wh01s17 update",
+    "description": "Indicates available wh01s17 updates",
+    "category": "System",
+    "allowMultiple": false
+  }
+}

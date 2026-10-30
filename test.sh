@@ -43,16 +43,27 @@ local_only() { # local_only TOOL: succeeds outside CI when TOOL is installed
 
 # platform/ is a frozen copy of Omarchy (MIT): checked separately below, not
 # held to this repo's ShellCheck and style rules.
-own=(':!:platform/**')
-mapfile -t json < <(git ls-files -- '*.json' '*.jsonc' "${own[@]}")
-mapfile -t lua < <(git ls-files -- '*.lua' "${own[@]}")
-mapfile -t js < <(git ls-files -- '*.js' "${own[@]}")
-mapfile -t py < <(git ls-files -- '*.py' "${own[@]}")
-mapfile -t zshfiles < <(git ls-files -- '*.zsh' '.zshrc' '*/.zshrc' "${own[@]}")
-bash_scripts=()
-while IFS= read -r f; do
-  [[ $f == *.sh ]] || head -n 1 "$f" | grep -qE '^#!.*\bbash\b' && bash_scripts+=("$f")
-done < <(git ls-files -- "${own[@]}")
+files=()
+while IFS= read -r -d '' f; do
+  [[ -f $f && $f != platform/* ]] && files+=("$f")
+done < <(git ls-files --cached --others --exclude-standard --deduplicate -z)
+json=() lua=() js=() py=() zshfiles=() bash_scripts=()
+for f in "${files[@]}"; do
+  case "$f" in
+    *.json|*.jsonc) json+=("$f") ;;
+    *.lua) lua+=("$f") ;;
+    *.js) js+=("$f") ;;
+    *.py) py+=("$f") ;;
+    *.zsh|*/.zshrc) zshfiles+=("$f") ;;
+    *.sh) bash_scripts+=("$f") ;;
+    *)
+      if head -n 1 "$f" | grep -qE '^#!.*\bbash\b'; then
+        bash_scripts+=("$f")
+      elif head -n 1 "$f" | grep -qE '^#!.*\bpython3?\b'; then
+        py+=("$f")
+      fi ;;
+  esac
+done
 
 check_json() { for f in "$@"; do jq empty "$f" || return; done; }
 check_bash() { for f in "$@"; do bash -n "$f" || return; done; }
@@ -72,13 +83,8 @@ check_js() {
 }
 
 check_stow() {
-  # On plain Arch, desktop and terminal are stowed from the renamed build.
-  if [[ -d .arch-build ]]; then
-    stow --simulate --target="$HOME" platform maintenance &&
-      stow --simulate --dir=.arch-build --target="$HOME" desktop terminal
-  else
-    stow --simulate --target="$HOME" desktop terminal maintenance
-  fi
+  stow --simulate --target="$HOME" platform desktop terminal maintenance &&
+    stow --simulate --no-folding --target="$HOME" apps
 }
 need stow && run "stow (simulación)" check_stow
 need jq && run "JSON (${#json[@]})" check_json "${json[@]}"
@@ -97,6 +103,8 @@ else
   need lua
 fi
 need python3 && run "Python (${#py[@]})" check_python "${py[@]}"
+need python3 && run "Enlaces y sincronizador" python3 -B tests/dotfiles-sync.py
+need python3 && run "Instalador y backports" env TEST_DOTFILES="$PWD" python3 -B -m unittest discover -s installer/tests -v
 run "Bash -n (${#bash_scripts[@]})" check_bash "${bash_scripts[@]}"
 need zsh && run "Zsh -n (${#zshfiles[@]})" check_zsh "${zshfiles[@]}"
 if need zsh && need git && need python3; then
@@ -113,7 +121,7 @@ check_platform() {
   done < <(find "$root/bin" -type f -print0)
   [[ -z $luac ]] || "$luac" -p "${platform_lua[@]}" || return
   check_bash "${platform_bash[@]}" || return
-  # The Arch adaptations from arch-desktop/tools/vendor-omarchy.py.
+  # Runtime must use its user-owned installation and no upstream package repository.
   grep -q 'local/share/wh01s17' "$root/default/bash/env-bootstrap" || return
   ! grep -q 'pacman.conf$' "$root/install/post-install/pacman.sh"
 }
@@ -127,14 +135,17 @@ fi
 if local_only qmllint; then
   # Only files qmllint can resolve: on most widgets (and on Omarchy's own
   # originals) it exits 255 without printing a diagnostic.
-  run "QML" qmllint -I "${OMARCHY_PATH:-/usr/share/omarchy}/shell" \
-    desktop/.config/omarchy/bar/modules/StatusModule.qml \
-    desktop/.config/omarchy/plugins/wh01s17.clock/Panel.qml \
-    desktop/.config/omarchy/plugins/wh01s17.monitor/Panel.qml \
-    desktop/.config/omarchy/plugins/wh01s17.metronome/MetronomeCore.qml
+  run "QML" qmllint -I "${WH01S17_PATH:-$PWD/platform/.local/share/wh01s17}/shell" \
+    desktop/.config/wh01s17/bar/modules/StatusModule.qml \
+    desktop/.config/wh01s17/plugins/wh01s17.clock/Panel.qml \
+    desktop/.config/wh01s17/plugins/wh01s17.monitor/Panel.qml \
+    desktop/.config/wh01s17/plugins/wh01s17.metronome/MetronomeCore.qml
 fi
 if local_only systemd-analyze; then
-  mapfile -t units < <(git ls-files 'maintenance/.config/systemd/user/*')
+  units=()
+  for file in "${files[@]}"; do
+    [[ $file == maintenance/.config/systemd/user/* ]] && units+=("$file")
+  done
   run "systemd (${#units[@]})" systemd-analyze verify --user "${units[@]}"
 fi
 

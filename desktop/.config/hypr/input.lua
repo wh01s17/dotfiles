@@ -18,4 +18,4 @@ hl.config({
 	},
 })
 
--- Terminal touchpad rules are already supplied by Omarchy's defaults.
+-- Terminal touchpad rules are already supplied by wh01s17's defaults.

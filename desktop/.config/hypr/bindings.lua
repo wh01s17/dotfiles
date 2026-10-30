@@ -1,9 +1,9 @@
--- Personal media keys. These do not replace any Omarchy default binding.
-o.bind("CTRL + ALT + A", "Volume up", "omarchy audio output volume raise", { repeating = true })
-o.bind("CTRL + ALT + Z", "Volume down", "omarchy audio output volume lower", { repeating = true })
-o.bind("CTRL + ALT + O", "Play/pause", "omarchy shell media playPause")
-o.bind("CTRL + ALT + P", "Next track", "omarchy shell media next")
-o.bind("CTRL + ALT + I", "Previous track", "omarchy shell media previous")
+-- Personal media keys. These do not replace any wh01s17 default binding.
+o.bind("CTRL + ALT + A", "Volume up", "wh01s17 audio output volume raise", { repeating = true })
+o.bind("CTRL + ALT + Z", "Volume down", "wh01s17 audio output volume lower", { repeating = true })
+o.bind("CTRL + ALT + O", "Play/pause", "wh01s17 shell media playPause")
+o.bind("CTRL + ALT + P", "Next track", "wh01s17 shell media next")
+o.bind("CTRL + ALT + I", "Previous track", "wh01s17 shell media previous")
 
 -- WayScriber annotation controls.
 o.bind("SUPER + ALT + A", "WayScriber - Show/hide", "wayscriber --daemon-toggle")

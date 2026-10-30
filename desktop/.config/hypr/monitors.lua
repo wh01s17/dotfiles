@@ -47,7 +47,7 @@ elseif not tostring(machine_profile):find("module 'hypr.machine-profile' not fou
 else
 	hl.env("GDK_SCALE", tostring(default_gdk_scale))
 	rules = monitor_layout.capture(function()
-		-- Kept multi-line on purpose: omarchy-hyprland-monitor-clamshell greps
+		-- Kept multi-line on purpose: wh01s17-hyprland-monitor-clamshell greps
 		-- one-line `hl.monitor({ output = "" ... scale = ... })` rules and, while an
 		-- external monitor is active, forces the laptop panel back to that scale
 		-- every 2s, overriding the per-output scales set by profiles.

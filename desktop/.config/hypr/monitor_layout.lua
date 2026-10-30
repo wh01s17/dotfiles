@@ -13,11 +13,11 @@ local layouts = { extend = true, mirror = true, internal = true, external = true
 local function state_file(name)
 	local state_home = os.getenv("XDG_STATE_HOME")
 	if state_home then
-		return state_home .. "/omarchy/" .. name
+		return state_home .. "/wh01s17/" .. name
 	end
 
 	local home = os.getenv("HOME")
-	return home and (home .. "/.local/state/omarchy/" .. name) or nil
+	return home and (home .. "/.local/state/wh01s17/" .. name) or nil
 end
 
 function M.read(path)
@@ -158,7 +158,7 @@ end
 -- (a projector on a port nobody planned for).
 function M.apply(state, rules, mode_for, scale_for)
 	local layout, internal = state.layout or "extend", state.internal
-	-- External-only switches the panel off through Omarchy's
+	-- External-only switches the panel off through wh01s17's
 	-- internal-monitor-disable toggle (set by the Display panel), which the
 	-- clamshell watcher honours rather than re-enabling it every 2s.
 	if layout == "extend" or layout == "external" then

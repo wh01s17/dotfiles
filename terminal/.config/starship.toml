@@ -24,7 +24,7 @@ style = "bold red"
 [git_metrics]
 disabled = false
 
-# Git status icons from the Omarchy default config; $ahead_behind is
+# Git status icons from the wh01s17 default config; $ahead_behind is
 # added because $all_status leaves it out.
 [git_status]
 format     = '[$all_status$ahead_behind]($style)'

@@ -1,392 +1,68 @@
-# Dotfiles para Omarchy Quattro
+# Escritorio wh01s17 para Arch Linux
 
-Configuración personal para **Omarchy 4 (Quattro)**, **Hyprland 0.56+**, **Omarchy Shell/Quickshell**, **Kitty** y **Zsh**, administrada con [GNU Stow](https://www.gnu.org/software/stow/).
-
-Stow trata cada directorio de primer nivel como un paquete y crea enlaces simbólicos dentro de `$HOME`. La fuente real continúa versionada en este repositorio.
-
-## Índice
-
-1. [Estructura](#estructura)
-2. [Requisitos](#requisitos)
-3. [Instalación desde cero](#instalación-desde-cero)
-4. [Instalación en un sistema existente](#instalación-en-un-sistema-existente)
-5. [Hyprland en Lua](#hyprland-en-lua)
-   - [Perfiles por equipo](#perfiles-por-equipo)
-   - [Entrada y atajos personales](#entrada-y-atajos-personales)
-   - [Blur y transparencia](#blur-y-transparencia)
-   - [Luz nocturna y pantalla compartida](#luz-nocturna-y-pantalla-compartida)
-6. [Omarchy Shell](#omarchy-shell)
-   - [Distribución](#distribución)
-   - [Módulos propios y clones](#módulos-propios-y-clones)
-   - [Metrónomo](#metrónomo)
-   - [Git, firewall, unidades y actividad](#git-firewall-unidades-y-actividad)
-   - [Idle, salvapantallas y bloqueo](#idle-salvapantallas-y-bloqueo)
-   - [Reloj y calendario](#reloj-y-calendario)
-   - [Componente de estado](#componente-de-estado)
-7. [Panel CTF](#panel-ctf)
-8. [Pomodoro](#pomodoro)
-9. [Clima](#clima)
-10. [Servicios y reverse shells](#servicios-y-reverse-shells)
-11. [Accesos auxiliares de la barra](#accesos-auxiliares-de-la-barra)
-12. [Tema `wh01s17`](#tema-wh01s17)
-13. [Fastfetch](#fastfetch)
-14. [Kitty](#kitty)
-15. [Zsh y utilidades de terminal](#zsh-y-utilidades-de-terminal)
-16. [Mantenimiento del disco](#mantenimiento-del-disco)
-17. [Mapa de implementación](#mapa-de-implementación)
-18. [Pruebas](#pruebas)
-19. [Actualizar o retirar](#actualizar-o-retirar)
-20. [Licencia](#licencia)
+Escritorio propio con Hyprland, shell QML, plugins, tema, Kitty y Zsh.
+El instalador y la configuración se mantienen juntos en este repositorio.
+Los paquetes se enlazan directamente con GNU Stow: no hay compilación ni
+renombrado intermedio.
 
 ## Estructura
 
-```text
-dotfiles/
-├── desktop/
-│   └── .config/
-│       ├── fastfetch/                  # Informe y W 3D animada en ASCII
-│       ├── hypr/                       # Configuración Lua de Hyprland
-│       │   └── profiles/              # Monitores por equipo
-│       └── omarchy/
-│           ├── shell.json              # Barra, widgets e idle de Omarchy Shell
-│           ├── bar/
-│           │   ├── modules/            # Componente QML reutilizable
-│           │   └── scripts/            # CTF, Pomodoro y servicios
-│           ├── branding/               # Marca ASCII para el salvapantallas
-│           ├── plugins/
-│           │   ├── wh01s17.audio/      # Mezclador, entradas y salidas de audio
-│           │   ├── wh01s17.bar/        # Barra con hover por monitor
-│           │   ├── wh01s17.bluetooth/  # Dispositivos Bluetooth y salida de audio
-│           │   ├── wh01s17.clock/      # Reloj y calendario propios
-│           │   ├── wh01s17.indicators/ # Indicadores que respetan el hover por monitor
-│           │   ├── wh01s17.metronome/  # Metrónomo con motor de audio local
-│           │   ├── wh01s17.monitor/    # Escala independiente por monitor
-│           │   ├── wh01s17.network/    # Wi-Fi, DNS, QR y diagnóstico de red
-│           │   └── wh01s17.power/      # Batería, perfiles y estadísticas
-│           └── themes/
-│               └── wh01s17/            # Tema, wallpapers, maestros SVG y generador pixel art
-├── terminal/
-│   ├── .config/kitty/
-│   │   ├── kitty.conf             # Base común y tema dinámico
-│   │   └── profiles/              # Tamaño de fuente por equipo
-│   ├── .config/starship.toml      # Prompt de Starship
-│   └── .zshrc
-├── maintenance/
-│   ├── .config/systemd/user/      # Timers de usuario: aviso de espacio, Codex y mise
-│   └── .local/bin/btrfs-space-check
-├── system/btrfs/                  # Balance semanal y snapper; se instala con sudo, no con Stow
-├── docs/                          # CTF, Pomodoro y tema en detalle
-├── .github/workflows/test.yml     # CI: ejecuta test.sh
-├── test.sh                        # Validación estática
-└── README.md
-```
+| Directorio | Responsabilidad |
+| --- | --- |
+| `desktop/` | Hyprland, `~/.config/wh01s17`, plugins, tema y Fastfetch |
+| `terminal/` | Zsh, Kitty y Starship |
+| `maintenance/` | Sincronizador de dotfiles y timers de mantenimiento |
+| `platform/` | Runtime independiente: shell, comandos `wh01s17-*`, sesión y valores por defecto |
+| `apps/` | Aplicaciones, mise, fuentes y lanzadores |
+| `installer/` | Instalación, paquetes, hardware, parches y pruebas de integración |
+| `system/` | Configuración del sistema que se instala con sudo |
+| `docs/` | Documentación de tema, CTF y Pomodoro |
 
-Los paquetes Stow son:
+## Instalación
 
-| Paquete | Destino | Contenido |
-| --- | --- | --- |
-| `desktop` | `~/.config/` | Fastfetch, Hyprland y Omarchy Shell |
-| `terminal` | `$HOME` y `~/.config/` | Zsh, Starship y Kitty |
-| `maintenance` | `~/.config/systemd/user/` y `~/.local/bin/` | Timers de limpieza y aviso de espacio en disco |
-| `platform` | `~/.local/share/wh01s17/`, `~/.config/uwsm/` y `~/.config/systemd/user/` | **Sólo Arch puro.** Runtime del escritorio wh01s17 (copia congelada y renombrada de Omarchy 4.0.4, MIT); ver `platform/README.md` |
-| `apps` | `~/.config/` y `~/.local/share/` | **Sólo Arch puro.** Herramientas de mise, apps predeterminadas y webapps propias. Se enlaza con `stow --no-folding` |
-
-En Omarchy se enlazan `desktop terminal maintenance`. En Arch puro,
-[`arch-desktop`](https://github.com/wh01s17/arch-desktop) (`install.sh`) genera una versión renombrada a wh01s17 de `desktop` y `terminal` (en `.arch-build/`, ignorado por Git), enlaza además `platform` y `apps`, y
-aplica el resto de la configuración del sistema.
-
-`system/` no es un paquete Stow: sus archivos van a `/etc` y `/usr/local` y se
-copian con su propio instalador (ver [Mantenimiento del disco](#mantenimiento-del-disco)).
-
-## Requisitos
-
-La configuración está pensada para Omarchy Quattro. Además de Git y GNU
-Stow, los módulos propios necesitan estas herramientas:
+En un Arch ya instalado, como usuario normal:
 
 ```bash
-sudo pacman -S --needed \
-  git stow curl jq iproute2 wl-clipboard libnotify util-linux xdg-utils
+git clone https://github.com/wh01s17/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+./installer/install.sh --dry-run
+./installer/install.sh
 ```
 
-Cada comando cubre una dependencia concreta: `ip` y `ss` provienen de
-`iproute2`, `wl-copy` de `wl-clipboard`, `notify-send` de `libnotify`, `flock`
-de `util-linux` y `xdg-open` de `xdg-utils`.
+Para instalar también el sistema base desde el ISO, consulta
+[la guía de instalación](installer/INSTALL.md). El instalador elige el perfil
+del equipo y configura paquetes, servicios y archivos de sistema.
 
-La sesión de terminal espera además:
+## Sincronización automática
 
-- Oh My Zsh, Starship y los plugins `zsh-syntax-highlighting`,
-  `zsh-autosuggestions` y `zsh-sudo`;
-- `eza`, `bat`, `zoxide`, `xclip`, `host` y `whois` para los aliases y
-  funciones de `~/.zshrc`;
-- NVM con un Node predeterminado instalado: `.zshrc` agrega su `bin` al
-  `PATH` al iniciar;
-- MesloLGS Nerd Font Mono para Kitty y los glifos de la barra;
-- Fastfetch para el informe visual del sistema.
-
-Omarchy ya instala Starship; en otro sistema, instálalo con `sudo pacman -S starship`.
-
-WayScriber es opcional, pero su entrada de autostart y sus atajos
-sólo funcionarán cuando esté instalado. `subfinder` y `amass` también son
-opcionales y sólo afectan las funciones de Zsh que los nombran.
-
-Para habilitar WayScriber en Arch/Omarchy:
+Edita los originales de este repo. Como las aplicaciones leen esos archivos
+mediante enlaces, los cambios no necesitan generar copias. El timer
+`dotfiles-sync.timer` revisa cambios cada cinco segundos y actualiza los
+enlaces para incorporar archivos nuevos o eliminados. También funciona
+después de `git pull`; no descarga cambios por su cuenta ni instala paquetes.
+Las aplicaciones que no recargan su configuración necesitan reiniciarse.
 
 ```bash
-omarchy pkg aur add wayscriber-bin
+dotfiles-sync --force
+journalctl --user -u dotfiles-sync.service -n 40
+systemctl --user disable --now dotfiles-sync.timer  # desactivar
 ```
 
-El autostart lo inicia en modo daemon al entrar en la sesión. Si lo instalas
-con la sesión ya abierta, ejecuta
-`hyprctl dispatch 'hl.dsp.exec_cmd("wayscriber --daemon")'`.
-Después usa `Super+Alt+A` para mostrarlo
-u ocultarlo. Los atajos `Super+Alt+P` y `Super+Alt+D` controlan passthrough y
-dibujo/interacción. No hace falta habilitar además `wayscriber.service`:
-esta configuración ya inicia el daemon desde Hyprland.
-
-Para regenerar los wallpapers SVG se necesita `rsvg-convert` (`librsvg`); los
-wallpapers pixel art necesitan `python3` e ImageMagick (`magick`). La W animada
-de Fastfetch también necesita `python3`. Para ejecutar `qmllint` durante el desarrollo se
-necesita Qt Declarative.
-
-El metrónomo necesita `python3` y un reproductor PCM: usa `pw-cat` cuando
-está disponible y `aplay` como alternativa. El módulo de unidades montadas
-usa `udisksctl` para expulsar dispositivos; el acceso rápido de actividad abre
-`btop`. Los indicadores de firewall muestran `ufw`, `nftables` o `iptables`
-cuando alguno está configurado, pero no instalan ni modifican reglas.
-
-Waybar, Walker, Mako, hypridle e hyprlock no son necesarios: Quattro reemplaza esos componentes con Omarchy Shell/Quickshell.
-
-## Instalación desde cero
-
-Estos pasos parten de un equipo recién instalado con Omarchy Quattro, sin
-configuración previa. Ejecútalos en orden desde la terminal de la sesión
-gráfica (`Super+Enter`).
-
-### 1. Actualizar el sistema
+El instalador habilita el timer. Para activarlo en una instalación existente,
+tras enlazar `maintenance`:
 
 ```bash
-omarchy update
+systemctl --user daemon-reload
+systemctl --user enable --now dotfiles-sync.timer
 ```
-
-Reinicia si la actualización lo solicita.
-
-### 2. Instalar dependencias
-
-```bash
-sudo pacman -S --needed \
-  git stow curl jq iproute2 wl-clipboard libnotify util-linux xdg-utils \
-  zsh starship fzf eza bat zoxide xclip bind whois nvm ttf-meslo-nerd \
-  fastfetch imagemagick python btop udisks2
-```
-
-Las herramientas opcionales (WayScriber, `subfinder`, `amass`, etc.)
-se describen en [Requisitos](#requisitos) y pueden instalarse más adelante.
-
-### 3. Usar Kitty como terminal
-
-```bash
-omarchy install terminal kitty
-```
-
-El comando instala Kitty y lo deja como terminal predeterminada de Omarchy.
-
-### 4. Clonar el repositorio
-
-```bash
-git clone https://github.com/wh01s17/dotfiles.git "$HOME/dotfiles"
-cd "$HOME/dotfiles"
-```
-
-### 5. Elegir el perfil del equipo
-
-Si el equipo es uno de los perfiles versionados, créale sus selectores locales
-(ver [Perfiles por equipo](#perfiles-por-equipo)):
-
-```bash
-printf 'return "hp-gray"\n' > desktop/.config/hypr/machine-profile.lua
-printf 'include profiles/hp-gray.conf\n' > terminal/.config/kitty/machine-profile.conf
-```
-
-En otro equipo, omite este paso: Hyprland usará la resolución preferida de
-cada monitor y Kitty sus valores predeterminados.
-
-### 6. Respaldar la configuración predeterminada
-
-Una instalación limpia ya trae archivos reales que Stow no reemplaza, como
-`~/.config/hypr/`, `~/.config/kitty/kitty.conf` y
-`~/.config/omarchy/shell.json`. El directorio de Hyprland se aparta completo
-para que Stow lo enlace entero; el resto de los conflictos se renombra con el
-sufijo `.before-dotfiles`:
-
-```bash
-cd "$HOME/dotfiles"
-[ -d "$HOME/.config/hypr" ] && [ ! -L "$HOME/.config/hypr" ] &&
-  mv -n "$HOME/.config/hypr" "$HOME/.config/hypr.before-dotfiles"
-
-stow --simulate --target="$HOME" desktop terminal maintenance 2>&1 \
-  | sed -nE 's/^  \* cannot stow .* over existing target (.+) since neither a link nor a directory.*/\1/p' \
-  | while IFS= read -r conflict; do
-      mv -n -- "$HOME/$conflict" "$HOME/$conflict.before-dotfiles"
-    done
-
-stow --simulate --target="$HOME" desktop terminal maintenance
-```
-
-La última simulación debe terminar sin el aviso `would cause conflicts`.
-`mv -n` nunca sobrescribe una copia `.before-dotfiles` existente. La variable
-se llama `conflict` y no `path` porque en Zsh `path` está ligada a `PATH`.
-
-### 7. Crear los enlaces
-
-```bash
-stow --target="$HOME" desktop terminal maintenance
-```
-
-### 8. Configurar Zsh
-
-Cambia la shell de inicio e instala Oh My Zsh conservando el `.zshrc` ya
-enlazado:
-
-```bash
-chsh -s /usr/bin/zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
-  "" --unattended --keep-zshrc
-```
-
-Instala los plugins que carga `.zshrc`. `zsh-sudo` reutiliza el plugin `sudo`
-de Oh My Zsh con el nombre que espera la configuración:
-
-```bash
-ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git \
-  "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-git clone https://github.com/zsh-users/zsh-autosuggestions.git \
-  "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-mkdir -p "$ZSH_CUSTOM/plugins/zsh-sudo"
-ln -s "$HOME/.oh-my-zsh/plugins/sudo/sudo.plugin.zsh" \
-  "$ZSH_CUSTOM/plugins/zsh-sudo/zsh-sudo.plugin.zsh"
-```
-
-### 9. Instalar Node con NVM
-
-`.zshrc` usa `~/.config/nvm` y agrega al `PATH` la versión del alias
-`default`, por lo que necesita un Node predeterminado:
-
-```bash
-export NVM_DIR="$HOME/.config/nvm"
-source /usr/share/nvm/init-nvm.sh
-nvm install --lts
-nvm alias default 'lts/*'
-```
-
-### 10. Instalar el plugin de bloqueo
-
-`shell.json` reemplaza el lock nativo por Lock Explorer. Clónalo sin volver a
-habilitarlo, porque `shell.json` ya lo declara:
-
-```bash
-omarchy plugin add https://github.com/SirJul1337/omarchy-lock-explorer.git --yes
-```
-
-### 11. Aplicar el tema y recargar
-
-```bash
-omarchy theme set wh01s17
-hyprctl reload
-hyprctl configerrors
-omarchy restart shell
-```
-
-Cierra la sesión y vuelve a entrar para que Zsh pase a ser la shell de inicio.
-En la nueva terminal, `fastfetch` debe mostrar la W girando con los colores del
-tema y el prompt de Starship.
-
-### 12. Revisar y ajustar
-
-- Comprueba los enlaces con los `readlink` del
-  [paso 3 de la instalación en un sistema existente](#3-crear-los-enlaces) y
-  ejecuta las [pruebas](#pruebas).
-- Compara cada `.before-dotfiles` con su reemplazo y elimina las copias que
-  ya no necesites.
-- Activa los timers de mantenimiento y, si `/` es btrfs, instala la parte de
-  sistema (ver [Mantenimiento del disco](#mantenimiento-del-disco)).
-- Guarda las credenciales opcionales, como la de `ipinfo`, en
-  `~/.config/zsh/secrets.zsh`; `.zshrc` lo carga si existe y no se versiona.
-
-## Instalación en un sistema existente
-
-Usa estos pasos si el equipo ya tiene Zsh, Oh My Zsh y las demás dependencias
-de [Requisitos](#requisitos), por ejemplo para reinstalar los enlaces o
-sincronizar otro equipo ya configurado.
-
-### 1. Clonar
-
-```bash
-git clone https://github.com/wh01s17/dotfiles.git "$HOME/dotfiles"
-cd "$HOME/dotfiles"
-```
-
-### 2. Simular y resolver conflictos
-
-```bash
-stow --simulate --verbose=2 --target="$HOME" desktop terminal maintenance
-```
-
-Si Stow informa un conflicto, respalda únicamente la ruta indicada. En una
-instalación existente de Quattro, los conflictos más habituales son
-`shell.json` y el branding del salvapantallas:
-
-```bash
-mv "$HOME/.config/omarchy/shell.json" \
-  "$HOME/.config/omarchy/shell.json.before-dotfiles"
-mv "$HOME/.config/omarchy/branding/screensaver.txt" \
-  "$HOME/.config/omarchy/branding/screensaver.txt.before-dotfiles"
-```
-
-Ejecuta sólo el `mv` correspondiente a una ruta que Stow haya marcado como
-conflicto. No sobrescribas una copia `.before-dotfiles` existente.
-
-No uses `stow --adopt` sin revisar sus efectos: puede incorporar archivos locales dentro del repositorio.
-
-### 3. Crear los enlaces
-
-```bash
-stow --restow --target="$HOME" desktop terminal maintenance
-```
-
-Comprueba los destinos importantes:
-
-```bash
-readlink -f "$HOME/.config/hypr"
-readlink -f "$HOME/.config/fastfetch/config.jsonc"
-readlink -f "$HOME/.config/omarchy/shell.json"
-readlink -f "$HOME/.config/omarchy/bar"
-readlink -f "$HOME/.config/omarchy/branding/screensaver.txt"
-readlink -f "$HOME/.config/omarchy/themes/wh01s17"
-readlink -f "$HOME/.config/kitty"
-readlink -f "$HOME/.zshrc"
-readlink -f "$HOME/.config/starship.toml"
-```
-
-### 4. Aplicar y validar
-
-```bash
-hyprctl reload
-hyprctl configerrors
-omarchy restart shell
-omarchy restart terminal
-exec zsh
-```
-
-`shell.json` y los módulos QML se recargan automáticamente al guardarse. El reinicio explícito del shell resulta útil después de instalar por primera vez todos los enlaces.
 
 ## Hyprland en Lua
 
-[`hyprland.lua`](desktop/.config/hypr/hyprland.lua) carga primero los valores predeterminados de Omarchy y después estas personalizaciones:
+[`hyprland.lua`](desktop/.config/hypr/hyprland.lua) carga primero los valores predeterminados de wh01s17 y después estas personalizaciones:
 
 | Archivo | Personalización |
 | --- | --- |
-| [`monitors.lua`](desktop/.config/hypr/monitors.lua) | Escala gestionada por Quattro y carga del perfil local de monitores |
+| [`monitors.lua`](desktop/.config/hypr/monitors.lua) | Escala gestionada por el runtime y carga del perfil local de monitores |
 | [`input.lua`](desktop/.config/hypr/input.lua) | Teclado US `altgr-intl`, Caps Lock, repetición y salida de tableta |
 | [`bindings.lua`](desktop/.config/hypr/bindings.lua) | Multimedia y controles de WayScriber |
 | [`looknfeel.lua`](desktop/.config/hypr/looknfeel.lua) | Gaps, bordes, radio, blur y transición de escritorios |
@@ -395,7 +71,7 @@ exec zsh
 | [`xdph.conf`](desktop/.config/hypr/xdph.conf) | Selector de pantalla para `xdg-desktop-portal-hyprland` |
 | [`.luarc.json`](desktop/.config/hypr/.luarc.json) | Stubs y globales `hl`/`o` para el servidor de lenguaje Lua |
 
-Los controladores NVIDIA ya los detecta Omarchy Quattro, por lo que no se duplican variables específicas de GPU en la configuración personal.
+Los controladores NVIDIA ya los detecta wh01s17, por lo que no se duplican variables específicas de GPU en la configuración personal.
 
 ### Perfiles por equipo
 
@@ -424,8 +100,8 @@ elección. Stow sí los enlaza cuando existen, porque trabaja con el árbol del
 sistema de archivos y no con el índice de Git.
 
 El panel **Display** usa el clon local `wh01s17.monitor`. La acción de escala
-delega en el comando original de Quattro, que registra la salida enfocada y su
-nueva escala en `~/.local/state/omarchy/monitor-scaling.log`, y después recarga
+delega en el comando original del runtime, que registra la salida enfocada y su
+nueva escala en `~/.local/state/wh01s17/monitor-scaling.log`, y después recarga
 Hyprland. [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) toma
 el último valor de cada conector y los perfiles lo aplican individualmente. De
 este modo `DP-1` puede permanecer a 2× mientras `eDP-1` y `HDMI-A-1` siguen a
@@ -436,7 +112,7 @@ monitor que determina cada desplazamiento.
 
 `GDK_SCALE` se mantiene en 1 para los perfiles mixtos porque es una variable
 global; el escalado por salida queda a cargo de Hyprland. Los valores dinámicos
-viven en el estado local de Omarchy y no ensucian el repositorio al usar el
+viven en el estado local de wh01s17 y no ensucian el repositorio al usar el
 panel.
 
 ### Entrada y atajos personales
@@ -446,7 +122,7 @@ de 40 caracteres por segundo tras 600 ms, reduce el scroll del touchpad a
 `0.4` y dirige la tableta a `DP-1`. Cambia `tablet.output` si el monitor de
 dibujo tiene otro nombre; obtén los nombres con `hyprctl monitors all`.
 
-Los atajos adicionales no sustituyen los predeterminados de Omarchy:
+Los atajos adicionales no sustituyen los predeterminados de wh01s17:
 
 | Atajo | Acción |
 | --- | --- |
@@ -494,7 +170,7 @@ Los valores significan:
 `8/2` equilibrado y `12/3` fuerte. El blur sólo difumina lo que está detrás:
 no vuelve transparente una ventana ni desenfoca su texto.
 
-Omarchy aplica por defecto una opacidad muy leve a las ventanas etiquetadas
+wh01s17 aplica por defecto una opacidad muy leve a las ventanas etiquetadas
 como `default-opacity`: `0.985` activas y `0.96` inactivas. Para definir
 valores exactos sin multiplicarlos por otras reglas, agrega al final de
 [`hyprland.lua`](desktop/.config/hypr/hyprland.lua):
@@ -507,7 +183,7 @@ o.window({ tag = "default-opacity" }, {
 
 Los tres valores son opacidad activa, inactiva y a pantalla completa. Por
 ejemplo, `0.94` equivale a 94 % opaco y 6 % transparente. `override` evita que
-Hyprland multiplique esta regla por la opacidad predeterminada de Omarchy.
+Hyprland multiplique esta regla por la opacidad predeterminada de wh01s17.
 Algunas aplicaciones de video o pantalla completa eliminan deliberadamente
 la etiqueta y permanecen opacas. Kitty tiene además una transparencia interna
 propia, descrita más abajo.
@@ -543,7 +219,7 @@ profile {
 }
 ```
 
-Aplica cambios de temperatura con `omarchy restart hyprsunset`; `hyprctl`
+Aplica cambios de temperatura con `wh01s17 restart hyprsunset`; `hyprctl`
 no valida este archivo.
 
 [`xdph.conf`](desktop/.config/hypr/xdph.conf) permite tokens de captura por
@@ -551,15 +227,15 @@ defecto y usa `hyprland-preview-share-picker` para elegir la pantalla al
 compartir. Sus cambios se aplican al reiniciar el portal o en el siguiente
 inicio de sesión.
 
-## Omarchy Shell
+## wh01s17 Shell
 
-La barra se define en [`shell.json`](desktop/.config/omarchy/shell.json). Usa widgets nativos para las funciones integradas y un módulo QML reutilizable para los scripts personales.
+La barra se define en [`shell.json`](desktop/.config/wh01s17/shell.json). Usa widgets nativos para las funciones integradas y un módulo QML reutilizable para los scripts personales.
 
 ### Distribución
 
 | Zona | Módulos |
 | --- | --- |
-| Izquierda | Menú Omarchy, escritorios, rama del repositorio activo y panel CTF |
+| Izquierda | Menú wh01s17, escritorios, rama del repositorio activo y panel CTF |
 | Centro | Indicadores, reloj con segundos, distribución de teclado, clima, Pomodoro y actualizaciones |
 | Derecha | Bandeja, metrónomo, firewall, unidades montadas, portapapeles, agentes, servicios, Bluetooth, red, audio, monitores, CPU y energía |
 
@@ -601,31 +277,31 @@ estética del tema:
 
 ### Módulos propios y clones
 
-Los clones conservan la integración de Omarchy con sus paneles originales,
+Los clones conservan la integración de wh01s17 con sus paneles originales,
 pero permiten añadir comportamiento sin editar los archivos de la
 distribución. Todos se declaran en `shell.json` y sus metadatos viven en el
 `manifest.json` de cada directorio.
 
 | Módulo | Base o función | Adición destacada |
 | --- | --- | --- |
-| `wh01s17.clock` | `omarchy.clock` | Segundos, semana ISO y progreso anual/vital persistente |
-| `wh01s17.audio` | `omarchy.audio` | Salidas, entradas y mezclador por aplicación navegables |
-| `wh01s17.bluetooth` | `omarchy.bluetooth` | Conexión, olvido de dispositivos, reescaneo manual (botón o `r`) y selección de salida Bluetooth |
-| `wh01s17.network` | `omarchy.network` | Wi-Fi, reescaneo manual de redes, DNS, bandas, QR, prueba de velocidad y métricas de enlace |
-| `wh01s17.monitor` | `omarchy.monitor` | Escala persistente por salida y tooltip con resolución/escala |
-| `wh01s17.power` | `omarchy.power` | Batería como cinco corazones 8-bit (medios incluidos; rojos en batería, verdes enchufado), perfiles de energía y estadísticas del sistema |
+| `wh01s17.clock` | `core.clock` | Segundos, semana ISO y progreso anual/vital persistente |
+| `wh01s17.audio` | `core.audio` | Salidas, entradas y mezclador por aplicación navegables |
+| `wh01s17.bluetooth` | `core.bluetooth` | Conexión, olvido de dispositivos, reescaneo manual (botón o `r`) y selección de salida Bluetooth |
+| `wh01s17.network` | `core.network` | Wi-Fi, reescaneo manual de redes, DNS, bandas, QR, prueba de velocidad y métricas de enlace |
+| `wh01s17.monitor` | `core.monitor` | Escala persistente por salida y tooltip con resolución/escala |
+| `wh01s17.power` | `core.power` | Batería como cinco corazones 8-bit (medios incluidos; rojos en batería, verdes enchufado), perfiles de energía y estadísticas del sistema |
 | `wh01s17.metronome` | Propio | Click track con dial de tempo, tap tempo, subdivisiones y acento |
-| `wh01s17.bar` | `omarchy.bar` | Estado de hover por monitor (revelar los indicadores en una pantalla no redistribuye las barras de las demás) e islas flotantes |
-| `wh01s17.indicators` | `omarchy.indicators` | Lee ese estado por monitor desde `wh01s17.bar` y carga sus propios indicadores desde `indicators/` |
+| `wh01s17.bar` | `core.bar` | Estado de hover por monitor (revelar los indicadores en una pantalla no redistribuye las barras de las demás) e islas flotantes |
+| `wh01s17.indicators` | `core.indicators` | Lee ese estado por monitor desde `wh01s17.bar` y carga sus propios indicadores desde `indicators/` |
 
 `wh01s17.bar` reemplaza la barra completa (`bar.id` en `shell.json`), así que
-no recibe las mejoras posteriores de `Bar.qml` en Omarchy. Al actualizar
-Omarchy, compara con `diff -u /usr/share/omarchy/shell/plugins/bar/Bar.qml
-desktop/.config/omarchy/plugins/wh01s17.bar/Bar.qml`.
+no recibe las mejoras posteriores de `Bar.qml` en wh01s17. Al actualizar
+wh01s17, compara con `diff -u ~/.local/share/wh01s17/shell/plugins/bar/Bar.qml
+desktop/.config/wh01s17/plugins/wh01s17.bar/Bar.qml`.
 
 ### Metrónomo
 
-[`wh01s17.metronome`](desktop/.config/omarchy/plugins/wh01s17.metronome/) usa
+[`wh01s17.metronome`](desktop/.config/wh01s17/plugins/wh01s17.metronome/) usa
 un proceso Python único para sintetizar el click en PCM y sincroniza el pulso
 visual cuando el sonido llega a la salida. Así evita que los temporizadores de
 QML acumulen deriva bajo carga. Su entrada en `shell.json` persiste BPM,
@@ -642,7 +318,7 @@ acepta IPC bajo `wh01s17.metronome`: `play`, `pause`, `togglePlay`, `tap` y
 ### Git, firewall, unidades y actividad
 
 La parte izquierda muestra la rama del repositorio del directorio activo. El
-hook [`git-branch-hook.zsh`](desktop/.config/omarchy/bar/scripts/git-branch-hook.zsh)
+hook [`git-branch-hook.zsh`](desktop/.config/wh01s17/bar/scripts/git-branch-hook.zsh)
 actualiza ese directorio al cambiar con `cd`; el panel informa la rama, cambios
 sin commit y desfase con el remoto, y permite copiar la rama con un clic.
 
@@ -656,12 +332,12 @@ automáticos:
 | Actividad | CPU, RAM, swap y lectura/escritura de disco | Clic: abre btop; clic derecho: abre Alacritty |
 
 Los scripts guardan sus muestras o el último dispositivo visto en
-`${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/bar/`; se puede redirigir cada
+`${XDG_STATE_HOME:-$HOME/.local/state}/wh01s17/bar/`; se puede redirigir cada
 uno con `GIT_BRANCH_STATE_DIR`, `MOUNTS_STATE_DIR` o `SYSTEM_USAGE_STATE_DIR`.
 
 ### Idle, salvapantallas y bloqueo
 
-En [`shell.json`](desktop/.config/omarchy/shell.json), `idle.screensaver` está
+En [`shell.json`](desktop/.config/wh01s17/shell.json), `idle.screensaver` está
 en `150` segundos y `idle.lock` en `300`: el salvapantallas aparece tras 2:30
 minutos y la sesión se bloquea tras 5 minutos. Ambos valores cuentan desde la
 última actividad:
@@ -674,20 +350,20 @@ minutos y la sesión se bloquea tras 5 minutos. Ambos valores cuentan desde la
 ```
 
 El arte ASCII mostrado por el salvapantallas vive en
-[`branding/screensaver.txt`](desktop/.config/omarchy/branding/screensaver.txt).
+[`branding/screensaver.txt`](desktop/.config/wh01s17/branding/screensaver.txt).
 Los cambios de `shell.json` se recargan al guardar; si no se reflejan, ejecuta
-`omarchy restart shell`.
+`wh01s17 restart shell`.
 
-El lock nativo `omarchy.lock` está deshabilitado y lo reemplaza
+El lock nativo `core.lock` está deshabilitado y lo reemplaza
 `io.github.sirjul1337.lock-explorer` con diseño `neon`. La entrada
-`cloneSourceRestores` en `shell.json` hace que Omarchy restaure su fuente
+`cloneSourceRestores` en `shell.json` hace que wh01s17 restaure su fuente
 clonada al reconstruir los plugins; no se versiona una copia del plugin de
 terceros en este repositorio.
 
 ### Reloj y calendario
 
-[`wh01s17.clock`](desktop/.config/omarchy/plugins/wh01s17.clock/) es un clon
-de `omarchy.clock` con precisión de segundos, semana ISO y preferencias
+[`wh01s17.clock`](desktop/.config/wh01s17/plugins/wh01s17.clock/) es un clon
+de `core.clock` con precisión de segundos, semana ISO y preferencias
 persistentes dentro de su entrada de `shell.json`.
 
 Controles de la barra:
@@ -709,7 +385,7 @@ etiqueta y sus controles, y `Panel.qml` el calendario emergente.
 
 ### Componente de estado
 
-[`StatusModule.qml`](desktop/.config/omarchy/bar/modules/StatusModule.qml) ejecuta scripts mediante `bash`, interpreta JSON compatible con Waybar y ofrece:
+[`StatusModule.qml`](desktop/.config/wh01s17/bar/modules/StatusModule.qml) ejecuta scripts mediante `bash`, interpreta JSON compatible con Waybar y ofrece:
 
 - actualización periódica;
 - tooltip;
@@ -730,30 +406,30 @@ Se usa `bash -c` y no `bash -lc` a propósito: un shell de login sourcea
 llamada sin aportar nada, ya que el `PATH` que hereda Quickshell ya resuelve
 todos los comandos que la barra necesita.
 
-Omarchy instancia la barra completa una vez por monitor, así que cada
+wh01s17 instancia la barra completa una vez por monitor, así que cada
 `interval` se multiplica por el número de pantallas. Conviene elegir el
 intervalo más alto que el módulo tolere, y que los scripts con estado
 compartido serialicen sus escrituras (ver `system-usage.sh`).
 
 ## Panel CTF
 
-[`ctf-ip.sh`](desktop/.config/omarchy/bar/scripts/ctf-ip.sh) muestra en la
+[`ctf-ip.sh`](desktop/.config/wh01s17/bar/scripts/ctf-ip.sh) muestra en la
 barra la IP de la víctima, la VPN y la red local. Segmentos, controles y
 comandos de Zsh en [`docs/ctf.md`](docs/ctf.md).
 
 ## Pomodoro
 
-[`pomodoro.sh`](desktop/.config/omarchy/bar/scripts/pomodoro.sh) ofrece cuatro
+[`pomodoro.sh`](desktop/.config/wh01s17/bar/scripts/pomodoro.sh) ofrece cuatro
 sistemas de trabajo y descanso (equilibrado, clásico, enfoque profundo y
 ultradiano). Controles y estado en [`docs/pomodoro.md`](docs/pomodoro.md).
 
 ## Clima
 
-El clima usa el componente oficial `omarchy.weather` de Quattro, incluida su vista detallada y la configuración de ubicación integrada.
+El clima usa el componente oficial `core.weather` del runtime, incluida su vista detallada y la configuración de ubicación integrada.
 
 ## Servicios y reverse shells
 
-[`services-monitor.sh`](desktop/.config/omarchy/bar/scripts/services-monitor.sh) inspecciona sockets TCP y clasifica:
+[`services-monitor.sh`](desktop/.config/wh01s17/bar/scripts/services-monitor.sh) inspecciona sockets TCP y clasifica:
 
 | Color | Estado |
 | --- | --- |
@@ -768,7 +444,7 @@ Controles:
 - clic derecho: mostrar el resumen.
 
 El panel incluye botones para abrir un servicio HTTP, copiar un endpoint o
-mostrar el resumen. Si hay varias opciones, usa `omarchy menu select`; los
+mostrar el resumen. Si hay varias opciones, usa `wh01s17 menu select`; los
 servicios enlazados a `0.0.0.0` o `::` se abren mediante loopback.
 
 Las variables `SERVICES_DEV_PORTS`, `SERVICES_HTTP_PORTS` y `SERVICES_REVERSE_PORTS` permiten reemplazar las listas predeterminadas.
@@ -781,22 +457,22 @@ debe interpretarse como aviso, no como prueba concluyente.
 
 ## Accesos auxiliares de la barra
 
-- Portapapeles: clic en `󰅍` abre `omarchy menu clipboard`; el tooltip recuerda
+- Portapapeles: clic en `󰅍` abre `wh01s17 menu clipboard`; el tooltip recuerda
   el atajo `Super+Ctrl+V`.
 - CPU: clic en `󰍛` abre btop y clic derecho abre Alacritty. Como la barra
-  corre una copia por monitor, [`system-usage.sh`](desktop/.config/omarchy/bar/scripts/system-usage.sh)
+  corre una copia por monitor, [`system-usage.sh`](desktop/.config/wh01s17/bar/scripts/system-usage.sh)
   toma un `flock` y comparte el resultado en
-  `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/bar/system-usage`: la primera
+  `${XDG_STATE_HOME:-$HOME/.local/state}/wh01s17/bar/system-usage`: la primera
   copia calcula el delta de CPU y disco, y las demás reutilizan esa respuesta
   durante `SYSTEM_USAGE_MIN_REFRESH_US` (1,5 s por omisión). Sin eso las copias
   se pisaban el archivo de muestras y dos de cada tres informaban 0 %.
 - Agentes y actualizaciones siguen siendo widgets nativos. Red, audio,
   monitores, Bluetooth y energía usan los clones `wh01s17.*` descritos arriba;
-  mantienen los paneles y acciones de Omarchy y añaden los controles propios.
+  mantienen los paneles y acciones de wh01s17 y añaden los controles propios.
 
 ## Tema `wh01s17`
 
-[`themes/wh01s17`](desktop/.config/omarchy/themes/wh01s17/) es una variante
+[`themes/wh01s17`](desktop/.config/wh01s17/themes/wh01s17/) es una variante
 oscura inspirada en `wh01s17.com`, con acentos verde fósforo, cian, ámbar, rojo
 y púrpura. Paleta, wallpapers y regeneración en [`docs/tema.md`](docs/tema.md).
 
@@ -805,20 +481,19 @@ y púrpura. Paleta, wallpapers y regeneración en [`docs/tema.md`](docs/tema.md)
 [`config.jsonc`](desktop/.config/fastfetch/config.jsonc) presenta tres bloques:
 
 - hardware: equipo, CPU, GPU, pantallas, discos, RAM y swap;
-- software: versión, rama y canal de Omarchy, kernel, escritorio, terminal,
+- software: versión, rama y canal de wh01s17, kernel, escritorio, terminal,
   paquetes, tema y fuente;
 - estado: antigüedad de la instalación, uptime y última actualización.
 
-El logo es la W de [`brand/logo.svg`](desktop/.config/omarchy/themes/wh01s17/brand/logo.svg)
+El logo es la W de [`brand/logo.svg`](desktop/.config/wh01s17/themes/wh01s17/brand/logo.svg)
 renderizada en 3D con caracteres ASCII por
 [`w-spin.py`](desktop/.config/fastfetch/w-spin.py), al estilo del logo animado
 de Codex. Las tres barras y los dos pies de la W se extruyen como cajas; cada
-celda de 40×20 lanza un rayo en perspectiva, ilumina la cara más cercana con
-una luz puntual, la oscurece según su profundidad y la traduce a la
-rampa ` .:-=+*#%@` teñida con el `accent` del tema activo (frente claro,
-costado en sombra). La W va inclinada hacia la izquierda; el borde superior de
-su frente se pinta en blanco y un brillo blanco recorre cada cara cuando pasa
-por el reflejo de la luz. Debajo va `wh01s17 OS` con los glifos pixelados de 5×7
+celda del lienzo de 40×20 combina cuatro rayos en perspectiva para suavizar
+los bordes. La iluminación y la profundidad se traducen a una rampa ASCII
+de 23 tonos teñida con el `accent` del tema activo (frente claro,
+costado en sombra). La W va inclinada hacia la izquierda y un reflejo suave
+recorre las caras al girar. Debajo va `wh01s17 OS` con los glifos pixelados de 5×7
 de los wallpapers pixel art (letras claras, números en `accent`), dibujado con
 octantes Unicode: cada celda son 2×4 píxeles cuadrados, así que el rótulo cabe
 en 28 columnas. Kitty dibuja los octantes por sí mismo; en otros terminales
@@ -829,7 +504,7 @@ opciones.
 El lanzador [`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) centra la W
 y el rótulo verticalmente junto a los paneles de información. Cuando el informe ya está en
 pantalla, `w-spin.py --play` hace girar la W una vuelta en su sitio durante
-2,4 s (`WH01S17_SPIN_SECONDS` lo cambia) y la deja en la misma pose de reposo;
+2,4 s (`WH01S17_SPIN_SECONDS` lo cambia), con aceleración y frenado suaves, y la deja en la misma pose de reposo;
 Ctrl-C salta al final. En una redirección o cuando se entregan opciones a
 `fastfetch`, el lanzador omite la animación y delega directamente al binario
 para no introducir movimientos de cursor.
@@ -845,13 +520,13 @@ animación puntualmente, ejecuta `/usr/bin/fastfetch` de forma directa.
 
 ## Kitty
 
-Kitty incluye directamente el tema generado por Quattro:
+Kitty incluye directamente el tema generado por el runtime:
 
 ```text
-~/.local/state/omarchy/current/theme/kitty.conf
+~/.local/state/wh01s17/current/theme/kitty.conf
 ```
 
-Esto permite que `omarchy theme set <tema>` cambie sus colores. La
+Esto permite que `wh01s17 theme set <tema>` cambie sus colores. La
 configuración personal en
 [`kitty.conf`](terminal/.config/kitty/kitty.conf) establece:
 
@@ -863,7 +538,7 @@ configuración personal en
 - `Ctrl`+flechas para redimensionar paneles;
 - secuencias CSI-u distintas para `Shift+Enter` y `Alt+Shift+Enter`;
 - Zsh como shell, control remoto y socket por proceso para la integración de
-  Omarchy.
+  wh01s17.
 
 La opacidad `0.85` pertenece al fondo que dibuja Kitty. Si además se aplica
 una regla de opacidad de Hyprland, ambos efectos intervienen visualmente; ajusta
@@ -873,7 +548,7 @@ El selector local carga 11 pt en `hp-gray` y 14 pt en `omen`. Después de
 cambiar `kitty.conf` o el perfil, aplica la configuración con:
 
 ```bash
-omarchy restart terminal
+wh01s17 restart terminal
 ```
 
 ## Zsh y utilidades de terminal
@@ -894,7 +569,7 @@ vez que se ejecuta. Los shims de mise se quitan del `PATH` para que `node` y
 el prompt de Starship. Parte de la configuración por defecto y sólo agrega lo
 necesario: el usuario siempre visible, el código de salida al final de la línea
 de información, las líneas agregadas y borradas sin commit (`git_metrics`) y
-los iconos de estado Git de Omarchy con contadores de stash, modificados,
+los iconos de estado Git de wh01s17 con contadores de stash, modificados,
 staged y untracked. El resto del archivo son los iconos del preset
 `nerd-font-symbols`.
 
@@ -1004,21 +679,21 @@ el uso diario:
 
 | Ruta | Propósito |
 | --- | --- |
-| [`.gitignore`](.gitignore) | Ignora backups de Omarchy, bytecode/cachés de Python y los dos selectores locales de equipo |
+| [`.gitignore`](.gitignore) | Ignora backups de wh01s17, bytecode/cachés de Python y los dos selectores locales de equipo |
 | [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) | Recupera la última escala registrada por cada salida |
 | `hypr/profiles/*.lua` | Reglas versionadas de monitores para `hp-gray` y `omen` |
 | `kitty/profiles/*.conf` | Tamaños de fuente versionados para los mismos perfiles |
 | [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Giro de la W 3D y delegación al binario real de Fastfetch |
-| [`ctf-aliases.zsh`](desktop/.config/omarchy/bar/scripts/ctf-aliases.zsh) | Puente entre `.zshrc` y `ctf-ip.sh` |
-| [`manifest.json`](desktop/.config/omarchy/plugins/wh01s17.clock/manifest.json) | Declara el reloj como plugin de barra clonado de `omarchy.clock` |
+| [`ctf-aliases.zsh`](desktop/.config/wh01s17/bar/scripts/ctf-aliases.zsh) | Puente entre `.zshrc` y `ctf-ip.sh` |
+| [`manifest.json`](desktop/.config/wh01s17/plugins/wh01s17.clock/manifest.json) | Declara el reloj como plugin de barra clonado de `core.clock` |
 | `wh01s17.{audio,bluetooth,network,power}/` | Clones de los paneles oficiales con sus modelos y controles ampliados |
-| [`wh01s17.metronome/`](desktop/.config/omarchy/plugins/wh01s17.metronome/) | Widget, núcleo compartido, dial, modelo y motor PCM del metrónomo |
+| [`wh01s17.metronome/`](desktop/.config/wh01s17/plugins/wh01s17.metronome/) | Widget, núcleo compartido, dial, modelo y motor PCM del metrónomo |
 | `bar/scripts/{firewall-status,git-branch,mounted-devices,system-usage}.sh` | Indicadores de seguridad, repositorio, medios extraíbles y actividad |
-| `wh01s17.monitor/Panel.qml` | Clon de `omarchy.monitor` que recarga el perfil tras cambiar una escala |
+| `wh01s17.monitor/Panel.qml` | Clon de `core.monitor` que recarga el perfil tras cambiar una escala |
 | `wh01s17.clock/BarWidget.qml` | Etiqueta, precisión por segundo, clics e IPC del reloj |
 | `wh01s17.clock/Model.js` | Fechas, semanas ISO, formatos y progreso anual/vital |
 | `wh01s17.clock/Panel.qml` | Calendario, navegación y controles persistentes |
-| `themes/wh01s17/shell.*.toml` | Fragmentos visuales que Omarchy combina al aplicar el tema |
+| `themes/wh01s17/shell.*.toml` | Fragmentos visuales que wh01s17 combina al aplicar el tema |
 | `themes/wh01s17/backgrounds/*.png` | Salidas 4K; `01`–`02` se regeneran desde `sources/*.svg` y `03`–`05` con `sources/pixel-art.py` |
 
 ## Pruebas
@@ -1033,17 +708,17 @@ Validación estática:
 
 | Comprobación | Alcance |
 | --- | --- |
-| Stow | Simula `desktop`, `terminal` y `maintenance` sin modificar archivos |
+| Stow | Simula los cinco paquetes, sin modificar archivos |
 | `jq`, `luac`, `node --check`, `ast` de Python | Todos los JSON, Lua, JavaScript y Python versionados; a los modelos QML se les quita `.pragma library` |
 | `bash -n` y ShellCheck | Cada `*.sh` y cada script con shebang de Bash |
 | `zsh -n` | `.zshrc` y los `*.zsh` |
 | Hyprland, `qmllint`, `systemd-analyze` | Sólo en la sesión local y si están instalados |
 
 `qmllint` revisa sólo los archivos cuyos imports resuelve: en la mayoría de los
-widgets, incluidos los originales de Omarchy, termina con código 255 sin
+widgets, termina con código 255 sin
 mostrar ningún diagnóstico.
 
-ShellCheck no viene con Omarchy; instálalo con `sudo pacman -S shellcheck`.
+Instala ShellCheck con `sudo pacman -S shellcheck`.
 Sin él, `test.sh` omite esa comprobación localmente.
 
 El workflow [`test.yml`](.github/workflows/test.yml) ejecuta el mismo script
@@ -1056,8 +731,8 @@ Validación de la sesión:
 ```bash
 hyprctl reload
 hyprctl configerrors
-omarchy restart shell
-omarchy restart terminal
+wh01s17 restart shell
+wh01s17 restart terminal
 fastfetch
 ```
 
@@ -1066,20 +741,21 @@ fastfetch
 ```bash
 cd "$HOME/dotfiles"
 git pull --ff-only
-stow --restow --target="$HOME" desktop terminal maintenance
-omarchy restart shell
-omarchy restart terminal
+dotfiles-sync --force
+wh01s17 restart shell
+wh01s17 restart terminal
 ```
 
 Para retirar únicamente los enlaces:
 
 ```bash
 cd "$HOME/dotfiles"
-stow --delete --target="$HOME" desktop terminal maintenance
+stow --delete --target="$HOME" platform desktop terminal maintenance
+stow --delete --no-folding --target="$HOME" apps
 ```
 
 Antes de retirar `maintenance`, desactiva sus timers con
-`systemctl --user disable --now btrfs-space-check.timer codex-staging-clean.timer mise-prune.timer cache-prune.timer`.
+`systemctl --user disable --now dotfiles-sync.timer btrfs-space-check.timer codex-staging-clean.timer mise-prune.timer cache-prune.timer`.
 La parte de sistema se retira con
 `sudo systemctl disable --now btrfs-balance-auto.timer` y borrando los
 archivos que copió `install.sh`.
@@ -1090,6 +766,6 @@ repositorio, los selectores locales, el estado de CTF/Pomodoro ni las copias
 
 ## Licencia
 
-[MIT](LICENSE). Los clones `wh01s17.*` de plugins oficiales (indicados como
-clones en [Módulos propios y clones](#módulos-propios-y-clones)) derivan del
-código de Omarchy y siguen sujetos a la licencia de Omarchy.
+[MIT](LICENSE). El runtime y algunos plugins derivan de Omarchy; se conservan
+su licencia MIT y los avisos de origen en [platform](platform/README.md).
+El escritorio se instala sobre Arch y no necesita Omarchy ni sus repositorios.

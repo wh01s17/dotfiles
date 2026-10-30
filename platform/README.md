@@ -1,27 +1,15 @@
-# platform
+# Runtime wh01s17
 
-Paquete Stow sólo para Arch puro: el runtime del escritorio wh01s17
-(shell, comandos y valores por defecto). Es una copia congelada de Omarchy
-4.0.4-1 (licencia MIT, ver `.local/share/wh01s17/LICENSE` y `UPSTREAM`),
-renombrada a wh01s17: comandos `wh01s17-*`, variables `WH01S17_*`,
-`~/.config/wh01s17` y plugins internos `core.*`.
+Shell, comandos, sesión y valores por defecto del escritorio. Este paquete
+se enlaza directamente desde el repo con Stow, al igual que `desktop`,
+`terminal`, `maintenance` y `apps`.
 
-| Ruta | Contenido |
-| --- | --- |
-| `.local/share/wh01s17/` | Runtime (`WH01S17_PATH`): shell, `bin/`, `default/`, `config/`, `install/` |
-| `.local/share/wh01s17/system/` | Archivos de sistema; `install.sh` de arch-desktop elige cuáles aplicar |
-| `.local/share/wh01s17/nvim/config/` | Configuración LazyVim; se copia a `~/.config/nvim` si falta |
-| `.config/uwsm/env.d/10-wh01s17` | Entorno de la sesión: `WH01S17_PATH` y `PATH` |
-| `.config/systemd/user/` | Servicios de usuario |
+El runtime vive en `~/.local/share/wh01s17`; `WH01S17_PATH` y los comandos
+`wh01s17-*` se configuran mediante `~/.config/uwsm/env.d/10-wh01s17`.
+Los archivos de sistema se instalan desde `installer/install.sh`.
 
-Los paquetes `desktop` y `terminal` de estos dotfiles siguen usando los
-nombres de Omarchy (los usa tu Omarchy actual); en Arch, arch-desktop genera
-una versión renombrada con `tools/arch-dotfiles.py`.
-
-Regenerar desde un equipo con Omarchy (necesita fontTools):
-
-```bash
-~/workspace/arch-desktop/tools/vendor-omarchy.py --force
-```
-
-Los cambios hechos a mano dentro de la copia se pierden al regenerarla.
+La base histórica se importó de Omarchy 4.0.4 y recibió correcciones
+seleccionadas. No requiere ese sistema ni sus repositorios para instalarse o
+actualizarse. Se mantiene aquí como código fuente del escritorio.
+La licencia MIT y la procedencia se conservan en
+[LICENSE](.local/share/wh01s17/LICENSE) y [UPSTREAM](.local/share/wh01s17/UPSTREAM).

@@ -445,11 +445,11 @@ eval "$(zoxide init zsh)"
 export PATH="$HOME/.local/bin:$PATH"
 export EDITOR=nvim
 
-[[ -r "$HOME/.config/omarchy/bar/scripts/ctf-aliases.zsh" ]] && \
-  source "$HOME/.config/omarchy/bar/scripts/ctf-aliases.zsh"
+[[ -r "$HOME/.config/wh01s17/bar/scripts/ctf-aliases.zsh" ]] && \
+  source "$HOME/.config/wh01s17/bar/scripts/ctf-aliases.zsh"
 
-[[ -r "$HOME/.config/omarchy/bar/scripts/git-branch-hook.zsh" ]] && \
-  source "$HOME/.config/omarchy/bar/scripts/git-branch-hook.zsh"
+[[ -r "$HOME/.config/wh01s17/bar/scripts/git-branch-hook.zsh" ]] && \
+  source "$HOME/.config/wh01s17/bar/scripts/git-branch-hook.zsh"
 
 export PATH="$(echo "$PATH" | tr ':' '\n' | grep -v "$HOME/.local/share/mise/shims" | paste -sd ':' -)"
 

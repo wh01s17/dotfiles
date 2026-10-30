@@ -1,7 +1,7 @@
 *.bak.*
 *.omarchy-upgrade-to-quattro.*.bak
 
-# Python bytecode and tool caches produced by Omarchy plugins.
+# Python bytecode and tool caches produced by plugins.
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -11,6 +11,3 @@ __pycache__/
 # Stable per-machine selectors. The named profiles themselves are versioned.
 /desktop/.config/hypr/machine-profile.lua
 /terminal/.config/kitty/machine-profile.conf
-
-# Built by arch-desktop/tools/arch-dotfiles.py on plain Arch (renamed desktop/terminal).
-/.arch-build/

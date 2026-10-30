@@ -2,7 +2,7 @@
 """Spin the wh01s17 W as a 3D ASCII render, in the spirit of Codex's logo.
 
 The W from brand/logo.svg (three bars joined by two feet) is extruded into
-five boxes. Each frame casts one perspective ray per character cell, lights
+five boxes. Each frame supersamples perspective rays per character cell, lights
 the nearest face with a point light, fades it with depth, and maps the light
 to an ASCII ramp tinted with the theme accent.
 
@@ -15,7 +15,7 @@ Usage:
         is ROWS_UP rows above the cursor, at COLUMN (1-based), then come to
         rest on the --static frame. Ctrl-C skips to the resting frame.
 
-The accent defaults to the active Omarchy theme's, then to the wh01s17 green.
+The accent defaults to the active wh01s17 theme's, then to the wh01s17 green.
 WH01S17_SPIN_SECONDS sets the length of the spin (2.4 s by default).
 """
 
@@ -27,7 +27,7 @@ import time
 
 WIDTH, HEIGHT = 40, 20  # character cells left of Fastfetch's report
 CELL_ASPECT = 2.0  # a terminal cell is about twice as tall as it is wide
-RAMP = " .:-=+*#%@"
+RAMP = " .,:;irsXA253hMHGS#9B&@"
 
 # logo.svg geometry (512 units): (x0, y0, x1, y1) of each bar and foot.
 BOXES_2D = [
@@ -45,13 +45,13 @@ LEAN = math.radians(8)  # roll about the view axis: the W leans left, a backslan
 TURNS = 1
 DURATION = float(os.environ.get("WH01S17_SPIN_SECONDS", "2.4"))
 FPS = 30
+SAMPLES = ((-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25))
 
 CAMERA = 2.6  # distance from the centre, in W extents: lower is more perspective
 LIGHT = (-1.6, 1.8, -2.4)  # view-space point light, in W extents: upper left, in front
 FOG = 0.35  # how much the far side of the W darkens
 DEFAULT_ACCENT = "84c959"
 WHITE = (0xF3, 0xFB, 0xEE)  # wh01s17 bright foreground, for rims and sheen
-SHEEN = (0.80, 0.92)  # Blinn-Phong cosines where a face starts to and fully shines
 
 
 def normalized(v):
@@ -153,58 +153,74 @@ def hit(origin, direction):
     return tuple(origin[i] + best[0] * direction[i] for i in range(3)), best[1]
 
 
-def inside(point):
-    return any(all(lo[i] <= point[i] <= hi[i] for i in range(3)) for lo, hi in BOXES)
-
-
-def on_rim(point):
-    """Whether a front-face point lies within a row of an exposed top edge."""
-    above = (point[0], point[1] + SCALE * CELL_ASPECT, point[2] + 1e-6)
-    return not inside(above)
+# Cache view-space rays: only the object's transform changes between frames.
+RAYS = [
+    [
+        [normalized(((col + 0.5 + dx - WIDTH / 2) * SCALE,
+                     (HEIGHT / 2 - row - 0.5 - dy) * SCALE * CELL_ASPECT,
+                     -EYE[2])) for dx, dy in SAMPLES]
+        for col in range(WIDTH)
+    ]
+    for row in range(HEIGHT)
+]
 
 
 def render(yaw, accent):
-    """Return the frame as HEIGHT strings of truecolor ASCII."""
+    """Supersample silhouettes and lighting, retaining a true ASCII surface."""
     m = rotation(yaw)
     origin = to_object(m, EYE)
-    lamp = tuple(c * EXTENT for c in LIGHT)
-    cells = []
-    for row in range(HEIGHT):
-        vy = (HEIGHT / 2 - row - 0.5) * SCALE * CELL_ASPECT
-        line = []
-        for col in range(WIDTH):
-            vx = (col + 0.5 - WIDTH / 2) * SCALE
-            direction = to_object(m, normalized((vx, vy, -EYE[2])))
-            line.append(hit(origin, direction))
-        cells.append(line)
-
-    front = (0.0, 0.0, -1.0)
+    lamp = to_object(m, tuple(c * EXTENT for c in LIGHT))
+    # Project each box once to reject empty cells before tracing four rays.
+    bounds = []
+    for lo, hi in BOXES:
+        projected = []
+        for x in (lo[0], hi[0]):
+            for y in (lo[1], hi[1]):
+                for z in (lo[2], hi[2]):
+                    vx, vy, vz = to_view(m, (x, y, z))
+                    k = -EYE[2] / (vz - EYE[2])
+                    projected.append((vx * k / SCALE + WIDTH / 2,
+                                      HEIGHT / 2 - vy * k / (SCALE * CELL_ASPECT)))
+        bounds.append((min(p[0] for p in projected) - 1,
+                       max(p[0] for p in projected),
+                       min(p[1] for p in projected) - 1,
+                       max(p[1] for p in projected)))
     lines = []
-    for row in range(HEIGHT):
+    for row_index, row in enumerate(RAYS):
         out, last = [], None
-        for col in range(WIDTH):
-            if cells[row][col] is None:
+        for col, rays in enumerate(row):
+            if not any(x0 <= col <= x1 and y0 <= row_index <= y1
+                       for x0, x1, y0, y1 in bounds):
                 out.append(" ")
                 continue
-            point, n = cells[row][col]
-            at = to_view(m, point)
-            view_n = to_view(m, n)
-            light = normalized(tuple(lamp[i] - at[i] for i in range(3)))
-            eye = normalized(tuple(EYE[i] - at[i] for i in range(3)))
-            lambert = max(0.0, sum(view_n[i] * light[i] for i in range(3)))
-            far = min(1.0, max(0.0, (at[2] + EXTENT) / (2 * EXTENT)))
-            v = min(1.0, 0.2 + 1.0 * lambert) * (1 - FOG * far)
-            ch = RAMP[min(len(RAMP) - 1, max(1, int(v * (len(RAMP) - 1) + 0.5)))]
-            color = shade(accent, v)
-            # White details: the top rim of the front face, and a sheen that
-            # slides over each face as it turns through the light's reflection.
-            if n == front and on_rim(point):
-                color = WHITE
-            else:
+            values, colors = [], []
+            for ray in rays:
+                sample = hit(origin, to_object(m, ray))
+                if sample is None:
+                    continue
+                point, normal = sample
+                light = normalized(tuple(lamp[i] - point[i] for i in range(3)))
+                eye = normalized(tuple(origin[i] - point[i] for i in range(3)))
+                diffuse = max(0.0, sum(normal[i] * light[i] for i in range(3)))
+                depth = sum(m[2][i] * point[i] for i in range(3))
+                far = min(1.0, max(0.0, (depth + EXTENT) / (2 * EXTENT)))
+                value = (0.22 + 0.72 * diffuse) * (1 - FOG * far)
                 half = normalized(tuple(light[i] + eye[i] for i in range(3)))
-                spec = sum(view_n[i] * half[i] for i in range(3))
-                k = 0.6 * min(1.0, max(0.0, (spec - SHEEN[0]) / (SHEEN[1] - SHEEN[0]))) ** 2
-                color = tuple(int(c + (w - c) * k) for c, w in zip(color, WHITE))
+                spec = max(0.0, sum(normal[i] * half[i] for i in range(3))) ** 24
+                # A broad silver reflection follows the light without hard white rims.
+                sheen = min(0.85, spec * 0.8)
+                base = shade(accent, value)
+                colors.append(tuple(c + (w - c) * sheen for c, w in zip(base, WHITE)))
+                values.append(min(1.0, value + spec * 0.3))
+            if not values:
+                out.append(" ")
+                continue
+            coverage = len(values) / len(SAMPLES)
+            value = sum(values) / len(values) * coverage
+            ch = RAMP[max(1, min(len(RAMP) - 1, round(value * (len(RAMP) - 1))))]
+            # Partial cells fade in rather than popping into a full bright glyph.
+            color = tuple(round(sum(c[i] for c in colors) / len(colors)
+                                * math.sqrt(coverage)) for i in range(3))
             if color != last:
                 out.append("\x1b[38;2;%d;%d;%dm" % color)
                 last = color
@@ -310,10 +326,10 @@ def wordmark(accent):
 
 
 def theme_accent():
-    """The accent declared by the active Omarchy theme, or None."""
+    """The accent declared by the active wh01s17 theme, or None."""
     state = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
     try:
-        with open(os.path.join(state, "omarchy/current/theme/colors.toml")) as colors:
+        with open(os.path.join(state, "wh01s17/current/theme/colors.toml")) as colors:
             for line in colors:
                 key, _, value = line.partition("=")
                 if key.strip() == "accent":
@@ -332,11 +348,11 @@ def parse_hex(value):
 
 
 def ease_out(t):
-    return 1 - (1 - t) ** 3
+    return t * t * t * (10 + t * (-15 + 6 * t))
 
 
 def play(rows_up, column, accent):
-    frames = max(1, int(DURATION * FPS))
+    duration = DURATION if math.isfinite(DURATION) and DURATION > 0 else 2.4
     try:
         rows = os.get_terminal_size(sys.stdout.fileno()).lines
     except OSError:
@@ -363,12 +379,19 @@ def play(rows_up, column, accent):
 
     try:
         start = time.monotonic()
-        for i in range(1, frames + 1):
-            t = ease_out(i / frames)
+        deadline = start
+        while True:
+            progress = min(1.0, (time.monotonic() - start) / duration)
+            t = ease_out(progress)
             draw(render(REST_YAW - 2 * math.pi * TURNS * (1 - t), accent))
-            delay = start + i / FPS - time.monotonic()
-            if delay > 0:
-                time.sleep(delay)
+            if progress >= 1.0:
+                break
+            # Drop missed frames instead of stretching the animation on slower CPUs.
+            deadline += 1 / FPS
+            now = time.monotonic()
+            if deadline < now:
+                deadline = now
+            time.sleep(max(0.0, deadline - now))
     except KeyboardInterrupt:
         pass
     finally:

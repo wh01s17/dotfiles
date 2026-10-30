@@ -1,0 +1,10 @@
+[Unit]
+Description=Comprueba cambios locales o recibidos en los dotfiles
+
+[Timer]
+OnStartupSec=15s
+OnUnitInactiveSec=5s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=Actualiza los enlaces de los dotfiles modificados
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/dotfiles-sync

@@ -1,6 +1,6 @@
 # Pomodoro
 
-[`pomodoro.sh`](../desktop/.config/omarchy/bar/scripts/pomodoro.sh) conserva cuatro sistemas:
+[`pomodoro.sh`](../desktop/.config/wh01s17/bar/scripts/pomodoro.sh) conserva cuatro sistemas:
 
 | Sistema | Trabajo | Descanso | Descanso largo |
 | --- | ---: | ---: | ---: |
@@ -20,10 +20,10 @@ El panel permite iniciar/pausar, saltar, reiniciar y elegir sistema. Las mismas
 acciones están disponibles desde terminal:
 
 ```bash
-~/.config/omarchy/bar/scripts/pomodoro.sh toggle
-~/.config/omarchy/bar/scripts/pomodoro.sh reset
-~/.config/omarchy/bar/scripts/pomodoro.sh skip
-~/.config/omarchy/bar/scripts/pomodoro.sh preset balanced
+~/.config/wh01s17/bar/scripts/pomodoro.sh toggle
+~/.config/wh01s17/bar/scripts/pomodoro.sh reset
+~/.config/wh01s17/bar/scripts/pomodoro.sh skip
+~/.config/wh01s17/bar/scripts/pomodoro.sh preset balanced
 ```
 
 Los identificadores de preset son `balanced`, `classic`, `deep` y
@@ -31,4 +31,4 @@ Los identificadores de preset son `balanced`, `classic`, `deep` y
 `POMODORO_STATE_DIR` permite mover el estado. Los ajustes manuales están
 limitados al rango de 1 minuto a 4 horas.
 
-Durante una fase de enfoque activa, el script usa el servicio de notificaciones de Omarchy para activar DND. El estado vive en `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/bar/pomodoro`.
+Durante una fase de enfoque activa, el script usa el servicio de notificaciones de wh01s17 para activar DND. El estado vive en `${XDG_STATE_HOME:-$HOME/.local/state}/wh01s17/bar/pomodoro`.

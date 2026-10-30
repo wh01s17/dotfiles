@@ -3,11 +3,11 @@ local M = {}
 local function state_file()
 	local state_home = os.getenv("XDG_STATE_HOME")
 	if state_home then
-		return state_home .. "/omarchy/monitor-scaling.log"
+		return state_home .. "/wh01s17/monitor-scaling.log"
 	end
 
 	local home = os.getenv("HOME")
-	return home and (home .. "/.local/state/omarchy/monitor-scaling.log") or nil
+	return home and (home .. "/.local/state/wh01s17/monitor-scaling.log") or nil
 end
 
 function M.read(path)
