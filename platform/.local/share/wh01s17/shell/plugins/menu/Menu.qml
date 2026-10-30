@@ -80,6 +80,14 @@ Item {
   readonly property var appLibrary: root.shell ? root.shell.appLibrary : null
   property bool deleteConfirmOpen: false
   property var deleteTarget: null
+
+  // Opening intro: the card pops in and its rows print one after another,
+  // like terminal output. Rows created while it lasts (the first fill of the
+  // list) reveal themselves on a per-row delay; later ones appear at once.
+  readonly property int introRowDelay: 22
+  readonly property int introRowDuration: 120
+  property bool rowsIntro: false
+  signal introStarted()
   onOpenedChanged: if (!opened) { deleteConfirmOpen = false; deleteTarget = null }
   // Bound to the central [menu] section in shell.toml via Colors.qml.
   // Each color already includes its alpha companion (composed in the
@@ -1040,9 +1048,35 @@ Item {
         maxRowsHeight = root.visibleRowsHeight
       }
     }
-    onVisibleChanged: if (!visible) { cardTop = -1; maxRowsHeight = -1 }
+    onVisibleChanged: {
+      if (visible) {
+        root.rowsIntro = true
+        introRowsEnd.restart()
+        cardIntro.restart()
+        root.introStarted()
+      } else {
+        cardTop = -1
+        maxRowsHeight = -1
+        cardIntro.stop()
+        root.rowsIntro = false
+      }
+    }
+
+    ParallelAnimation {
+      id: cardIntro
+      NumberAnimation { target: scrimFill; property: "opacity"; from: 0; to: 1; duration: 140; easing.type: Easing.OutCubic }
+      NumberAnimation { target: card; property: "opacity"; from: 0; to: 1; duration: 140; easing.type: Easing.OutCubic }
+      NumberAnimation { target: card; property: "scale"; from: 0.94; to: 1; duration: 180; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
+    }
+
+    Timer {
+      id: introRowsEnd
+      interval: 300
+      onTriggered: root.rowsIntro = false
+    }
 
     Rectangle {
+      id: scrimFill
       anchors.fill: parent
       color: root.scrim
     }
@@ -1222,6 +1256,27 @@ Item {
               radius: root.cornerRadius
               color: row.hasCursor ? root.selectedBackground : "transparent"
               borderSpec: row.hasCursor ? root.selectedBorderSpec : Border.none()
+
+              // Intro: fade in while sliding a few pixels from the left.
+              property real reveal: 1
+              opacity: row.reveal
+              transform: Translate { x: (1 - row.reveal) * -Style.space(10) }
+              function playIntro() {
+                rowIntro.stop()
+                row.reveal = 0
+                rowIntroDelay.duration = Math.min(row.index, 12) * root.introRowDelay
+                rowIntro.start()
+              }
+              Component.onCompleted: if (root.rowsIntro) row.playIntro()
+              Connections {
+                target: root
+                function onIntroStarted() { row.playIntro() }
+              }
+              SequentialAnimation {
+                id: rowIntro
+                PauseAnimation { id: rowIntroDelay }
+                NumberAnimation { target: row; property: "reveal"; to: 1; duration: root.introRowDuration; easing.type: Easing.OutCubic }
+              }
 
               Rectangle {
                 visible: false
