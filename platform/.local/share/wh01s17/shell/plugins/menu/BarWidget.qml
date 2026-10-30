@@ -11,6 +11,11 @@ BarWidget {
   readonly property real markHeight: Math.round(Style.font.body * 1.25)
   readonly property real markWidth: Math.round(markHeight * 336 / 304)
 
+  // A terminal cursor blinks after the W while notification popups are on
+  // screen, the way a prompt waits for input.
+  readonly property var notificationService: bar?.shell?.firstPartyServiceFor("core.notifications")
+  readonly property bool notifying: !!notificationService && notificationService.popupCount > 0
+
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
@@ -43,6 +48,24 @@ BarWidget {
         joinStyle: ShapePath.MiterJoin
         scale: Qt.size(unit, unit)
         PathSvg { path: "M0 0h80v240H0zm128 0h80v240h-80zm128 0h80v240h-80zM64 240h80v64H64zm128 0h80v64h-80z" }
+      }
+    }
+
+    Rectangle {
+      id: cursor
+      visible: root.notifying && !root.vertical
+      x: (parent.width + root.markWidth) / 2 + Style.space(2)
+      anchors.verticalCenter: parent.verticalCenter
+      width: Style.space(3)
+      height: root.markHeight
+      color: Colors.accent
+
+      Timer {
+        running: cursor.visible
+        interval: 530
+        repeat: true
+        onTriggered: cursor.opacity = cursor.opacity > 0 ? 0 : 1
+        onRunningChanged: cursor.opacity = 1
       }
     }
   }

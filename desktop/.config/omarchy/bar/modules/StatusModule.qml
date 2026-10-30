@@ -17,6 +17,7 @@ WidgetButton {
   property bool panelOpen: false
 
   readonly property bool panelEnabled: setting("panel", false) === true
+  readonly property string bracketColor: String(setting("bracketColor", "#33454f"))
   readonly property var panelData: outputPanel && typeof outputPanel === "object" ? outputPanel : ({})
   readonly property var panelRows: Array.isArray(panelData.rows) ? panelData.rows : []
   readonly property var panelActions: Array.isArray(panelData.actions) ? panelData.actions : []
@@ -150,7 +151,10 @@ WidgetButton {
     id: richLabel
     visible: root.hasVisualContent
     anchors.centerIn: parent
-    text: root.text
+    // `"brackets": true` frames the label like a tmux statusline segment.
+    text: root.setting("brackets", false) === true
+      ? "<font color='" + root.bracketColor + "'>[</font> " + root.text + " <font color='" + root.bracketColor + "'>]</font>"
+      : root.text
     textFormat: Text.StyledText
     color: root.active && root.useActiveColor ? root.activeColor : root.foreground
     font.family: root.fontFamily

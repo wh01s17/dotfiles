@@ -507,6 +507,10 @@ ShellRoot {
       var target = service()
       return target ? target.doNotDisturb === true : false
     })
+    api.popupCount = Qt.binding(function() {
+      var target = service()
+      return target && target.popupModel ? target.popupModel.count : 0
+    })
     api.activePlayer = Qt.binding(function() {
       var target = service()
       return target ? target.activePlayer : null

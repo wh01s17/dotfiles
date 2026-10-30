@@ -9,6 +9,8 @@ QtObject {
   property bool stayAwake: false
   property bool enabled: false
   property bool doNotDisturb: false
+  // Notification popups currently on screen (core.notifications).
+  property int popupCount: 0
   property var activePlayer: null
   property var sourcePlayers: []
 
