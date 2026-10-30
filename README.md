@@ -44,7 +44,7 @@ Stow trata cada directorio de primer nivel como un paquete y crea enlaces simbó
 dotfiles/
 ├── desktop/
 │   └── .config/
-│       ├── fastfetch/                  # Informe, wordmark ANSI y Gengar con los colores del tema
+│       ├── fastfetch/                  # Informe y W 3D animada en ASCII
 │       ├── hypr/                       # Configuración Lua de Hyprland
 │       │   └── profiles/              # Monitores por equipo
 │       └── omarchy/
@@ -144,9 +144,8 @@ dibujo/interacción. No hace falta habilitar además `wayscriber.service`:
 esta configuración ya inicia el daemon desde Hyprland.
 
 Para regenerar los wallpapers SVG se necesita `rsvg-convert` (`librsvg`); los
-wallpapers pixel art necesitan `python3` e ImageMagick (`magick`). ImageMagick
-también recolorea el Gengar de Fastfetch con la paleta del tema activo; sin él
-se muestra el PNG original. Para ejecutar `qmllint` durante el desarrollo se
+wallpapers pixel art necesitan `python3` e ImageMagick (`magick`). La W animada
+de Fastfetch también necesita `python3`. Para ejecutar `qmllint` durante el desarrollo se
 necesita Qt Declarative.
 
 El metrónomo necesita `python3` y un reproductor PCM: usa `pw-cat` cuando
@@ -299,7 +298,7 @@ omarchy restart shell
 ```
 
 Cierra la sesión y vuelve a entrar para que Zsh pase a ser la shell de inicio.
-En la nueva terminal, `fastfetch` debe mostrar el Gengar con los colores del
+En la nueva terminal, `fastfetch` debe mostrar la W girando con los colores del
 tema y el prompt de Starship.
 
 ### 12. Revisar y ajustar
@@ -780,34 +779,26 @@ y púrpura. Paleta, wallpapers y regeneración en [`docs/tema.md`](docs/tema.md)
   paquetes, tema y fuente;
 - estado: antigüedad de la instalación, uptime y última actualización.
 
-El logo [`gengar.png`](desktop/.config/fastfetch/gengar.png) se dibuja mediante
-el protocolo gráfico directo de Kitty, a 40×20 celdas con proporción
-conservada. El lanzador lo recolorea con la paleta del tema activo de Omarchy:
-el sombreado toma `accent`, el cuerpo una mezcla oscura de `accent` (30 %) y
-`background` (70 %), los ojos `red` y los dientes `bright_foreground` (o
-`foreground`). Primero ajusta el PNG a sus cuatro colores de sprite y a una
-transparencia binaria, para que los bordes suavizados no dejen restos del color
-original. Cada paleta se genera una sola vez en
-`${XDG_CACHE_HOME:-$HOME/.cache}/fastfetch/`, así que cambiar de tema sólo
-cuesta una ejecución de ImageMagick. Si falta `magick`, el tema no define
-`accent` o se llama a `fastfetch` con opciones, se usa el PNG original. La imagen no contiene el wordmark: el lanzador
-[`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) compone
-`WH01S17` con una variante condensada del arte de seis filas usado por
-[`branding/screensaver.txt`](desktop/.config/omarchy/branding/screensaver.txt).
-Conserva sus bloques, esquinas y remates, pero reduce cada glifo a cinco
-columnas para no invadir los paneles. `W`, `H` y `S` usan el blanco brillante
-ANSI; todos los números usan el único color `accent` leído del `colors.toml`
-del tema activo. En `wh01s17` es verde fósforo y al cambiar de tema se adapta a
-su color predominante. Sigue siendo texto seleccionable del terminal, no una
-segunda imagen.
+El logo es la W de [`brand/logo.svg`](desktop/.config/omarchy/themes/wh01s17/brand/logo.svg)
+renderizada en 3D con caracteres ASCII por
+[`w-spin.py`](desktop/.config/fastfetch/w-spin.py), al estilo del logo animado
+de Codex. Las tres barras y los dos pies de la W se extruyen como cajas; cada
+celda de 40×20 lanza un rayo en perspectiva, ilumina la cara más cercana con
+una luz puntual, la oscurece según su profundidad y la traduce a la
+rampa ` .:-=+*#%@` teñida con el `accent` del tema activo (frente claro,
+costado en sombra). La W va inclinada hacia la izquierda; el borde superior de
+su frente se pinta en blanco y un brillo blanco recorre cada cara cuando pasa
+por el reflejo de la luz. `config.jsonc` la usa como logo
+`command-raw` en su pose de reposo, así que también aparece al llamar a
+`fastfetch` con opciones.
 
-El lanzador aumenta temporalmente el margen superior del logo y pinta el
-wordmark dentro de ese espacio mediante posicionamiento ANSI. De ese modo,
-texto y Gengar forman una sola columna izquierda de 28 filas, centrada con los
-paneles de información de la derecha. El rótulo no desplaza todo el informe ni
-deja un bloque vacío a su derecha o debajo. En una redirección o cuando se
-entregan opciones a `fastfetch`, el lanzador omite la composición interactiva y
-delega directamente al binario para no introducir movimientos de cursor.
+El lanzador [`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) centra la W
+verticalmente junto a los paneles de información. Cuando el informe ya está en
+pantalla, `w-spin.py --play` hace girar la W una vuelta en su sitio durante
+2,4 s (`WH01S17_SPIN_SECONDS` lo cambia) y la deja en la misma pose de reposo;
+Ctrl-C salta al final. En una redirección o cuando se entregan opciones a
+`fastfetch`, el lanzador omite la animación y delega directamente al binario
+para no introducir movimientos de cursor.
 
 El alias definido en `.zshrc` mantiene el comando habitual:
 
@@ -815,11 +806,8 @@ El alias definido en `.zshrc` mantiene el comando habitual:
 fastfetch
 ```
 
-El lanzador reenvía todas las opciones a `/usr/bin/fastfetch`. Para omitir el
-wordmark puntualmente, ejecuta `/usr/bin/fastfetch` de forma directa.
-
-En un terminal sin soporte para el protocolo gráfico de Kitty, la información
-seguirá siendo útil, pero el logo puede no mostrarse correctamente.
+El lanzador reenvía todas las opciones a `/usr/bin/fastfetch`. Para omitir la
+animación puntualmente, ejecuta `/usr/bin/fastfetch` de forma directa.
 
 ## Kitty
 
@@ -901,8 +889,8 @@ distinto de cero si hubo errores u omisiones. No recorre subcarpetas de forma
 recursiva.
 
 Aliases destacados: `ls`, `ll`, `la`, `l` y `lla` usan Eza; `cat` usa Bat;
-`icat` usa `kitten icat`; `cd` usa Zoxide y `fastfetch` agrega el wordmark ANSI
-antes del informe.
+`icat` usa `kitten icat`; `cd` usa Zoxide y `fastfetch` hace girar la W
+del logo.
 
 Advertencias de seguridad:
 
@@ -986,7 +974,7 @@ el uso diario:
 | [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) | Recupera la última escala registrada por cada salida |
 | `hypr/profiles/*.lua` | Reglas versionadas de monitores para `hp-gray` y `omen` |
 | `kitty/profiles/*.conf` | Tamaños de fuente versionados para los mismos perfiles |
-| [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Wordmark textual 8-bit, Gengar con los colores del tema y delegación al binario real de Fastfetch |
+| [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Giro de la W 3D y delegación al binario real de Fastfetch |
 | [`ctf-aliases.zsh`](desktop/.config/omarchy/bar/scripts/ctf-aliases.zsh) | Puente entre `.zshrc` y `ctf-ip.sh` |
 | [`manifest.json`](desktop/.config/omarchy/plugins/wh01s17.clock/manifest.json) | Declara el reloj como plugin de barra clonado de `omarchy.clock` |
 | `wh01s17.{audio,bluetooth,network,power}/` | Clones de los paneles oficiales con sus modelos y controles ampliados |
