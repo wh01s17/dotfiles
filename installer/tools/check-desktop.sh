@@ -35,21 +35,24 @@ MARKER="$HOME/.local/state/wh01s17/check-desktop-hibernate"
 mkdir -p "$SHOTS" "${MARKER%/*}"
 exec > >(tee "$HOME/check-desktop.txt") 2>&1
 
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
-export HYPRLAND_INSTANCE_SIGNATURE=${HYPRLAND_INSTANCE_SIGNATURE:-$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1)}
-export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-$(ls "$XDG_RUNTIME_DIR" | grep -E '^wayland-[0-9]+$' | head -1)}
+XDG_RUNTIME_DIR=/run/user/$(id -u)
+export XDG_RUNTIME_DIR
+HYPRLAND_INSTANCE_SIGNATURE=${HYPRLAND_INSTANCE_SIGNATURE:-$(find "$XDG_RUNTIME_DIR/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | cut -d' ' -f2- | head -1)}
+export HYPRLAND_INSTANCE_SIGNATURE
+WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-$(find "$XDG_RUNTIME_DIR" -mindepth 1 -maxdepth 1 -name 'wayland-*' -printf '%f\n' 2>/dev/null | sort | grep -E '^wayland-[0-9]+$' | head -1)}
+export WAYLAND_DISPLAY
 export WH01S17_PATH=${WH01S17_PATH:-$HOME/.local/share/wh01s17}
 export PATH="$WH01S17_PATH/bin:$PATH"
 
 passed=0 failed=0
-ok() { printf '  ok    %s\n' "$*"; ((passed++)); }
-bad() { printf '  FALLA %s\n' "$*"; ((failed++)); }
+ok() { printf '  ok    %s\n' "$*"; ((passed += 1)); }
+bad() { printf '  FALLA %s\n' "$*"; ((failed += 1)); }
 info() { printf '        %s\n' "$*"; }
 wants() { [[ " $TESTS " == *" $1 "* ]]; }
 
 hyprctl version >/dev/null 2>&1 || { echo "Ejecútalo dentro de la sesión de Hyprland."; exit 1; }
 
-shell_log() { ls -t "$XDG_RUNTIME_DIR"/quickshell/by-id/*/log.log 2>/dev/null | head -1; }
+shell_log() { find -L "$XDG_RUNTIME_DIR/quickshell/by-id" -mindepth 2 -maxdepth 2 -type f -name log.log -printf '%T@ %p\n' 2>/dev/null | sort -nr | cut -d' ' -f2- | head -1; }
 # Errores QML del registro del shell (se comparan antes y después de cada acción).
 qml_errors() {
   local log; log=$(shell_log)
@@ -105,11 +108,23 @@ if wants lock; then
     ok "la pantalla se bloqueó"
     # `locked` se marca al pedirlo; `secure`, cuando Hyprland confirma que cubrió todas las pantallas.
     for _ in $(seq 20); do [[ $(lock_field secure) == true ]] && break; sleep 0.5; done
-    [[ $(lock_field secure) == true ]] && ok "bloqueo seguro (ext-session-lock)" || bad "el bloqueo no es seguro tras 10 s"
-    [[ $(lock_field passwordPam) == true ]] && ok "PAM configurado para la contraseña" || bad "PAM sin configurar"
+    if [[ $(lock_field secure) == true ]]; then
+      ok "bloqueo seguro (ext-session-lock)"
+    else
+      bad "el bloqueo no es seguro tras 10 s"
+    fi
+    if [[ $(lock_field passwordPam) == true ]]; then
+      ok "PAM configurado para la contraseña"
+    else
+      bad "PAM sin configurar"
+    fi
     echo "        >>> Desbloquea con tu contraseña (tienes 2 minutos)"
     for _ in $(seq 240); do [[ $(lock_field locked) == false ]] && break; sleep 0.5; done
-    [[ $(lock_field locked) == false ]] && ok "se desbloqueó con la contraseña" || bad "no se desbloqueó en 2 minutos"
+    if [[ $(lock_field locked) == false ]]; then
+      ok "se desbloqueó con la contraseña"
+    else
+      bad "no se desbloqueó en 2 minutos"
+    fi
   else
     bad "la pantalla no se bloqueó ($(wh01s17-shell lock status 2>&1 | cut -c1-120))"
   fi
@@ -124,7 +139,11 @@ if wants brightness; then
     sleep 0.3
     after=$(brightnessctl -d "$dev" get)
     brightnessctl -d "$dev" -q set "$start"
-    ((after != start)) && ok "el brillo cambia ($dev: $start → $after, restaurado)" || bad "el brillo no cambia ($dev)"
+    if ((after != start)); then
+      ok "el brillo cambia ($dev: $start → $after, restaurado)"
+    else
+      bad "el brillo no cambia ($dev)"
+    fi
   else
     info "sin control de brillo (pantalla externa o equipo de escritorio)"
   fi
@@ -140,7 +159,11 @@ if wants volume; then
     sleep 0.3
     after=$(volume)
     pactl set-sink-volume @DEFAULT_SINK@ "$start%"
-    [[ $after != "$start" ]] && ok "el volumen cambia ($start% → $after%, restaurado)" || bad "el volumen no cambia"
+    if [[ $after != "$start" ]]; then
+      ok "el volumen cambia ($start% → $after%, restaurado)"
+    else
+      bad "el volumen no cambia"
+    fi
     info "salida: $(wpctl inspect @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -m1 'node.description' | sed 's/.*= //')"
   else
     bad "no hay salida de audio por defecto"
@@ -157,11 +180,15 @@ if wants keys; then
     for _ in $(seq 40); do
       now=$($1)
       if [[ $now != "$first" ]]; then
-        case $3 in
+        if case $3 in
           up) ((now > first)) ;;
           down) ((now < first)) ;;
           *) [[ $now == "$3" ]] ;;
-        esac && ok "$2 ($first → $now)" || bad "$2: cambió al revés ($first → $now)"
+        esac; then
+          ok "$2 ($first → $now)"
+        else
+          bad "$2: cambió al revés ($first → $now)"
+        fi
         return
       fi
       sleep 0.25
@@ -256,9 +283,21 @@ sleep_test() { # sleep_test suspend|hibernate SEGUNDOS PATRÓN_DEL_KERNEL
   fi
   [[ $mode == suspend ]] && info "modo de suspensión: $(cat /sys/power/mem_sleep)"
   sleep 8
-  shell_alive && ok "el shell sigue vivo" || bad "el shell no responde tras $mode"
-  [[ $(nmcli -t -f STATE general 2>/dev/null) == connected* ]] && ok "red reconectada" || bad "sin red tras $mode ($(nmcli -t -f STATE general))"
-  [[ $locked_now == true ]] && ok "pantalla bloqueada al volver (desbloquéala)" || bad "la pantalla no estaba bloqueada al volver"
+  if shell_alive; then
+    ok "el shell sigue vivo"
+  else
+    bad "el shell no responde tras $mode"
+  fi
+  if [[ $(nmcli -t -f STATE general 2>/dev/null) == connected* ]]; then
+    ok "red reconectada"
+  else
+    bad "sin red tras $mode ($(nmcli -t -f STATE general))"
+  fi
+  if [[ $locked_now == true ]]; then
+    ok "pantalla bloqueada al volver (desbloquéala)"
+  else
+    bad "la pantalla no estaba bloqueada al volver"
+  fi
   journal_since "$start" | grep -iE 'error|fail' | grep -viE 'ACPI|firmware bug|IPv4 forwarding|dbus-monitor|pam message|ring init command' | awk '!seen[$0]++' | head -6 | cut -c1-150 | sed 's/^/        /'
 }
 

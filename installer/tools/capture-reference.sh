@@ -247,7 +247,7 @@ capture_system() {
     done
     printf 'virtualizacion: %s\n' "$(systemd-detect-virt 2>/dev/null || true)"
     printf 'bateria: %s\n' "$(compgen -G '/sys/class/power_supply/BAT*' >/dev/null && echo si || echo no)"
-    printf 'retroiluminacion: %s\n' "$(ls /sys/class/backlight 2>/dev/null | tr '\n' ' ')"
+    printf 'retroiluminacion: %s\n' "$(find /sys/class/backlight -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | sort | tr '\n' ' ')"
     section 'GPU'
     lspci -nn 2>/dev/null | grep -iE 'vga|3d|display' || echo 'lspci no disponible'
     section 'Pantallas (Hyprland)'

@@ -140,7 +140,7 @@ class MiseCleanupTests(unittest.TestCase):
         for case in ("stock", "ignored", "symlink", "failure"):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                home, mock_bin = root / "home", root / "bin"
+                home, mock_bin = root / ("home[1]" if case == "ignored" else "home"), root / "bin"
                 (home / "Work").mkdir(parents=True)
                 mock_bin.mkdir()
                 log = root / "calls"

@@ -42,7 +42,7 @@ if [[ -d $work_dir ]]; then
     for ignored_entry in "$ignored_configs_dir"/*; do
       [[ -L $ignored_entry ]] || continue
       ignored_target=$(readlink "$ignored_entry")
-      if [[ $ignored_target == $work_target || $ignored_target == $config_path_target || $ignored_target == $config_target ]]; then
+      if [[ $ignored_target == "$work_target" || $ignored_target == "$config_path_target" || $ignored_target == "$config_target" ]]; then
         was_ignored=true
         break
       fi
@@ -82,7 +82,7 @@ if [[ -d $work_dir ]]; then
 fi
 
 if [[ -f $mise_config ]]; then
-  if [[ ! -L $mise_config && $(sha256sum "$mise_config" | cut -d ' ' -f 1) == $stock_sha ]]; then
+  if [[ ! -L $mise_config && $(sha256sum "$mise_config" | cut -d ' ' -f 1) == "$stock_sha" ]]; then
     rm -f -- "$mise_config"
   else
     unsafe_env_paths=$(sed -n -E "\\%$env_section%,\\%$any_section% { \\%$unsafe_path%p; }" "$mise_config")

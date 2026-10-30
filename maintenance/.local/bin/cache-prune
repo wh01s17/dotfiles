@@ -17,7 +17,7 @@ if command -v yay >/dev/null; then
 fi
 
 # pnpm vive en la versión de Node de nvm, que no está en el PATH del servicio.
-pnpm=$(command -v pnpm || ls -d "${NVM_DIR:-$HOME/.config/nvm}"/versions/node/*/bin/pnpm 2>/dev/null | sort -V | tail -1)
+pnpm=$(command -v pnpm || find "${NVM_DIR:-$HOME/.config/nvm}/versions/node" -mindepth 3 -maxdepth 3 -path '*/bin/pnpm' -print 2>/dev/null | sort -V | tail -1)
 if [ -n "$pnpm" ]; then
     echo "== pnpm store prune"
     "$pnpm" store prune || status=1

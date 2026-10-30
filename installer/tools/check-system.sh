@@ -5,10 +5,12 @@ set -uo pipefail
 
 exec > >(tee "$HOME/check-system.txt") 2>&1
 repo="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
+XDG_RUNTIME_DIR=/run/user/$(id -u)
+export XDG_RUNTIME_DIR
 echo "Pide tu contraseña una vez para leer snapper y el firewall (Ctrl+C para omitir)."
 sudo -v 2>/dev/null || true
-export HYPRLAND_INSTANCE_SIGNATURE=${HYPRLAND_INSTANCE_SIGNATURE:-$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1)}
+HYPRLAND_INSTANCE_SIGNATURE=${HYPRLAND_INSTANCE_SIGNATURE:-$(find "$XDG_RUNTIME_DIR/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | cut -d' ' -f2- | head -1)}
+export HYPRLAND_INSTANCE_SIGNATURE
 
 ok() { printf '  ok    %s\n' "$*"; }
 bad() { printf '  FALLA %s\n' "$*"; }
@@ -28,8 +30,11 @@ echo "== Instalación"
 WH_GROUPS='' WH_GPU=''
 # shellcheck disable=SC1090
 [[ -f ~/.config/wh01s17/machine.env ]] && source ~/.config/wh01s17/machine.env
-[[ $(getent passwd "$USER" | cut -d: -f7) == */zsh ]] && ok "shell de $USER: zsh" ||
+if [[ $(getent passwd "$USER" | cut -d: -f7) == */zsh ]]; then
+  ok "shell de $USER: zsh"
+else
   bad "la shell de $USER no es zsh: chsh -s /usr/bin/zsh"
+fi
 lists=("$repo"/packages/{base,desktop,fonts,terminal}.txt "$repo/packages/core.aur.txt")
 for group in $WH_GROUPS; do
   [[ $group == pentest ]] && continue # BlackArch drops packages; install.sh already reports them
@@ -39,8 +44,11 @@ lists+=("$repo/packages/gpu-$WH_GPU.txt" "$repo/packages/gpu-$WH_GPU.aur.txt")
 mapfile -t wanted < <(cat "${lists[@]}" 2>/dev/null | sed -e 's/#.*//' -e 's/[[:space:]]*$//' | grep -v '^$' | sort -u)
 # pacman -T counts providers too: nvidia-580xx-utils satisfies nvidia-utils.
 missing=$(pacman -T "${wanted[@]}" 2>/dev/null | paste -sd' ')
-[[ -z $missing ]] && ok "los ${#wanted[@]} paquetes de las listas están instalados" ||
+if [[ -z $missing ]]; then
+  ok "los ${#wanted[@]} paquetes de las listas están instalados"
+else
   bad "faltan paquetes (./install.sh --only packages o --only aur): $missing"
+fi
 check "repositorio multilib activo" grep -qE '^\[multilib\]' /etc/pacman.conf
 
 echo "== Arranque y disco"
@@ -91,8 +99,11 @@ check "paccache.timer activo" systemctl is-enabled paccache.timer
 esp_use=$(df --output=pcent /boot 2>/dev/null | tail -1 | tr -dc 0-9)
 if [[ -n $esp_use ]]; then
   # limine-snapper-sync stops adding snapshot entries above 85 %.
-  ((esp_use < 70)) && ok "ESP al ${esp_use} % ($(df -h --output=size /boot | tail -1 | xargs))" ||
+  if ((esp_use < 70)); then
+    ok "ESP al ${esp_use} % ($(df -h --output=size /boot | tail -1 | xargs))"
+  else
     bad "ESP al ${esp_use} %: no caben snapshots en el menú de Limine (sudo du -sh /boot/*/*/*)"
+  fi
 fi
 info "zram: $(zramctl --noheadings -o NAME,DISKSIZE,ALGORITHM 2>/dev/null | paste -sd' ')"
 if [[ -f /swap/swapfile ]] || swapon --show=NAME --noheadings | grep -qv zram; then
@@ -107,13 +118,25 @@ fi
 
 echo "== Servicios"
 failed=$(systemctl --failed --no-legend --plain | awk '{print $1}' | paste -sd' ')
-[[ -z $failed ]] && ok "ningún servicio del sistema falló" || bad "fallaron: $failed"
+if [[ -z $failed ]]; then
+  ok "ningún servicio del sistema falló"
+else
+  bad "fallaron: $failed"
+fi
 ufailed=$(systemctl --user --failed --no-legend --plain | awk '{print $1}' | paste -sd' ')
-[[ -z $ufailed ]] && ok "ningún servicio de usuario falló" || bad "fallaron (usuario): $ufailed"
+if [[ -z $ufailed ]]; then
+  ok "ningún servicio de usuario falló"
+else
+  bad "fallaron (usuario): $ufailed"
+fi
 for s in NetworkManager bluetooth sddm systemd-resolved systemd-timesyncd ufw cups power-profiles-daemon; do
   systemctl list-unit-files "$s.service" >/dev/null 2>&1 || continue
   state=$(systemctl is-active "$s" 2>/dev/null)
-  [[ $state == active ]] && ok "$s" || bad "$s: $state"
+  if [[ $state == active ]]; then
+    ok "$s"
+  else
+    bad "$s: $state"
+  fi
 done
 check "hora sincronizada (NTP)" sh -c "timedatectl show -p NTPSynchronized --value | grep -qx yes"
 check "firewall activo" sh -c "sudo -n ufw status 2>/dev/null | grep -q 'Status: active' || systemctl is-active -q ufw"
@@ -136,22 +159,38 @@ for b in /sys/class/power_supply/BAT*; do [[ -e $b ]] && info "batería $(basena
 echo "== Escritorio"
 if [[ -n $HYPRLAND_INSTANCE_SIGNATURE ]] && hyprctl version >/dev/null 2>&1; then
   errors=$(hyprctl configerrors 2>/dev/null | grep -v '^$')
-  [[ -z $errors || $errors == *"no errors"* ]] && ok "Hyprland sin errores de configuración" || bad "Hyprland: $errors"
+  if [[ -z $errors || $errors == *"no errors"* ]]; then
+    ok "Hyprland sin errores de configuración"
+  else
+    bad "Hyprland: $errors"
+  fi
   hyprctl monitors -j 2>/dev/null |
     jq -r '.[] | "        monitor \(.name): \(.width)x\(.height)@\(.refreshRate | floor) escala \(.scale)"'
 else
   bad "no hay sesión de Hyprland (ejecútalo desde la terminal del escritorio)"
 fi
-log=$(ls -t "$XDG_RUNTIME_DIR"/quickshell/by-id/*/log.log 2>/dev/null | head -1)
+log=$(find -L "$XDG_RUNTIME_DIR/quickshell/by-id" -mindepth 2 -maxdepth 2 -type f -name log.log -printf '%T@ %p\n' 2>/dev/null | sort -nr | cut -d' ' -f2- | head -1)
 if [[ -n $log ]]; then
   n=$(grep -cE 'of undefined|Unable to assign|ReferenceError|is not defined' "$log")
-  ((n == 0)) && ok "shell sin errores QML" || bad "shell: $n errores QML (tools/shell-log.sh)"
-  pgrep -x quickshell >/dev/null && ok "shell corriendo" || bad "el shell no está corriendo"
+  if ((n == 0)); then
+    ok "shell sin errores QML"
+  else
+    bad "shell: $n errores QML (tools/shell-log.sh)"
+  fi
+  if pgrep -x quickshell >/dev/null; then
+    ok "shell corriendo"
+  else
+    bad "el shell no está corriendo"
+  fi
 else
   bad "no hay registro del shell"
 fi
 for cmd in kitty firefox claude yay mise stow nvim; do
-  command -v "$cmd" >/dev/null && ok "$cmd" || bad "$cmd no está en el PATH"
+  if command -v "$cmd" >/dev/null; then
+    ok "$cmd"
+  else
+    bad "$cmd no está en el PATH"
+  fi
 done
 
 echo "== Errores de este arranque (sin repetir; se omiten los avisos de la BIOS: ACPI, SGX, TDX)"

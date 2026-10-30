@@ -20,14 +20,16 @@ echo "== Runtime: $runtime"
 echo "== GPU y driver"
 lspci -k 2>/dev/null | grep -A2 -iE 'vga|3d|display' | grep -E 'VGA|3D|driver' | sed 's/^/   /'
 
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
-signature=$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1)
+XDG_RUNTIME_DIR=/run/user/$(id -u)
+export XDG_RUNTIME_DIR
+signature=$(find "$XDG_RUNTIME_DIR/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | cut -d' ' -f2- | head -1)
 if [[ -z $signature ]]; then
   echo "== No hay una sesión de Hyprland abierta; inicia sesión gráfica y vuelve a probar."
   exit 1
 fi
 export HYPRLAND_INSTANCE_SIGNATURE=$signature
-export WAYLAND_DISPLAY=$(ls "$XDG_RUNTIME_DIR" | grep -E '^wayland-[0-9]+$' | head -1)
+WAYLAND_DISPLAY=$(find "$XDG_RUNTIME_DIR" -mindepth 1 -maxdepth 1 -name 'wayland-*' -printf '%f\n' 2>/dev/null | sort | grep -E '^wayland-[0-9]+$' | head -1)
+export WAYLAND_DISPLAY
 export "${upper}_PATH=$HOME/.local/share/$runtime" PATH="$HOME/.local/share/$runtime/bin:$PATH"
 unset QT_QUICK_BACKEND LIBGL_ALWAYS_SOFTWARE
 
@@ -44,7 +46,7 @@ try_shell() { # try_shell ETIQUETA VAR=VALOR…
     echo "== Shell «$label»: falla"
     return
   fi
-  log=$(ls -t "$XDG_RUNTIME_DIR"/quickshell/by-id/*/log.log 2>/dev/null | head -1)
+  log=$(find -L "$XDG_RUNTIME_DIR/quickshell/by-id" -mindepth 2 -maxdepth 2 -type f -name log.log -printf '%T@ %p\n' 2>/dev/null | sort -nr | cut -d' ' -f2- | head -1)
   errors=$(grep -c 'TypeError: Cannot read property' "$log" 2>/dev/null)
   echo "== Shell «$label»: arranca, $errors errores de QML"
   score[$label]=$errors

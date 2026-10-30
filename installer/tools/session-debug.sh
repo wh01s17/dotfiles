@@ -5,7 +5,8 @@
 set -uo pipefail
 
 exec > >(tee "$HOME/session-debug.txt") 2>&1
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
+XDG_RUNTIME_DIR=/run/user/$(id -u)
+export XDG_RUNTIME_DIR
 
 echo "== Entorno de Hyprland (sesión real)"
 hypr_pid=$(pgrep -xo Hyprland || pgrep -o -f 'Hyprland' || true)
@@ -17,7 +18,7 @@ else
 fi
 
 echo "== Primeros avisos del shell (en orden, sin repetir)"
-log=$(ls -t "$XDG_RUNTIME_DIR"/quickshell/by-id/*/log.log 2>/dev/null | head -1)
+log=$(find -L "$XDG_RUNTIME_DIR/quickshell/by-id" -mindepth 2 -maxdepth 2 -type f -name log.log -printf '%T@ %p\n' 2>/dev/null | sort -nr | cut -d' ' -f2- | head -1)
 if [[ -n $log ]]; then
   grep -E 'WARN|ERROR|CRIT' "$log" | grep -v pluginBarApiFor |
     sed -E -e 's/^.{0,40}(WARN|ERROR|CRIT)/\1/' -e 's/0x[0-9a-f]+//g' -e 's#file://[^ ]*/(plugins|shell|Ui|Commons)/#\1/#g' |
@@ -27,8 +28,10 @@ else
 fi
 
 echo "== Terminal (lo mismo que Super+Enter)"
-export HYPRLAND_INSTANCE_SIGNATURE=$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1)
-export WAYLAND_DISPLAY=$(ls "$XDG_RUNTIME_DIR" | grep -E '^wayland-[0-9]+$' | head -1)
+HYPRLAND_INSTANCE_SIGNATURE=$(find "$XDG_RUNTIME_DIR/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | cut -d' ' -f2- | head -1)
+export HYPRLAND_INSTANCE_SIGNATURE
+WAYLAND_DISPLAY=$(find "$XDG_RUNTIME_DIR" -mindepth 1 -maxdepth 1 -name 'wayland-*' -printf '%f\n' 2>/dev/null | sort | grep -E '^wayland-[0-9]+$' | head -1)
+export WAYLAND_DISPLAY
 export WH01S17_PATH=$HOME/.local/share/wh01s17 PATH="$HOME/.local/share/wh01s17/bin:$PATH"
 echo "   xdg-terminal-exec: $(command -v xdg-terminal-exec || echo 'NO INSTALADO')"
 echo "   xdg-terminals.list: $(grep -v '^#' "$HOME/.config/xdg-terminals.list" 2>/dev/null | head -1)"

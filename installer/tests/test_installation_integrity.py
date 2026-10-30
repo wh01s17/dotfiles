@@ -16,7 +16,10 @@ class InstallationIntegrityTests(unittest.TestCase):
                 content = (INSTALLER / relative).read_bytes()
                 if relative == 'tools/iso-install.sh':
                     # Only repository locations and the continuation command changed.
-                    text = content.decode()
+                    # Lint-only annotations do not alter disk/encryption commands.
+                    text = ''.join(line for line in content.decode().splitlines(keepends=True)
+                                   if line.strip() not in {'# shellcheck disable=SC2154',
+                                                           '# shellcheck disable=SC2015'})
                     for current, original in (
                         ('https://github.com/wh01s17/dotfiles', 'https://github.com/wh01s17/arch-desktop'),
                         ('bash dotfiles/installer/tools/iso-install.sh', 'bash arch-desktop/tools/iso-install.sh'),
@@ -57,6 +60,14 @@ class InstallationIntegrityTests(unittest.TestCase):
             before = (root / 'Panel.qml').read_text()
             subprocess.run(command, check=True)
             self.assertEqual((root / 'Panel.qml').read_text(), before)
+
+    def test_diagnostic_success_counter_does_not_report_a_failure(self):
+        source = (INSTALLER / 'tools/check-desktop.sh').read_text()
+        helpers = source[source.index('passed=0 failed=0'):source.index('info()')]
+        result = subprocess.run(
+            ['bash', '-e', '-c', helpers + '\nok "first check"; test "$passed" = 1; test "$failed" = 0'],
+            capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == '__main__':

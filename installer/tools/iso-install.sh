@@ -58,11 +58,13 @@ is_windows() {
 
 resume=false
 if mountpoint -q /mnt; then
+  # shellcheck disable=SC2015
   [[ $(findmnt -no FSROOT /mnt) == /@ ]] && mountpoint -q /mnt/boot ||
     die '/mnt ya está montado y no es una instalación a medias de este script: umount -R /mnt'
   log 'Instalación a medias en /mnt'
   findmnt -R -o TARGET,SOURCE /mnt | sed 's/^/    /'
   prompt again '¿Continuar desde los paquetes, sin tocar el disco? n empieza de cero (s/n)' s
+  # shellcheck disable=SC2154
   if is_yes "$again"; then
     resume=true
   else
@@ -101,6 +103,7 @@ else
   done
   prompt mode 'Modo' "$default_mode"
   whole_disk=false
+  # shellcheck disable=SC2154
   case $mode in
     1)
       whole_disk=true
@@ -177,7 +180,9 @@ profile=$(curl -fsSL "https://raw.githubusercontent.com/$REPO/main/profiles/mach
   awk -F'\t' -v m="$model" '$1 == m {print $2}') || true
 prompt host 'Nombre del equipo' "${profile:-archlinux}"
 prompt user 'Usuario' wh01s17
+# shellcheck disable=SC2154
 [[ $host =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "Nombre de equipo no válido: $host"
+# shellcheck disable=SC2154
 [[ $user =~ ^[a-z_][a-z0-9_-]*$ ]] || die "Usuario no válido: $user"
 
 case $(awk '/^vendor_id/ {print $3; exit}' /proc/cpuinfo) in
@@ -215,6 +220,7 @@ if ! $resume; then
   printf '    Cifrado:   %s\n' "$($encrypt && echo 'LUKS2, con TRIM' || echo 'no')"
   printf '    Equipo:    %s · usuario %s · %s\n' "$host" "$user" "$ucode"
   prompt confirm 'Escribe BORRAR para continuar'
+  # shellcheck disable=SC2154
   [[ $confirm == BORRAR ]] || die 'Cancelado; no se cambió nada.'
 
   if $whole_disk; then
