@@ -1,4 +1,7 @@
 [font]
+# Pixel monospace for the shell; icons fall back to wh01s17 Pixel Icons
+# (apps/.config/fontconfig/conf.d/60-wh01s17-pixel-icons.conf).
+family = "Departure Mono"
 base-size = 12
 caption = 10
 body-small = 11

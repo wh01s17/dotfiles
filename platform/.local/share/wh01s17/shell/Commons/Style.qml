@@ -264,8 +264,8 @@ QtObject {
   //
   // `fontFamily` defaults to "monospace" so the bar and every qs.Ui
   // component follows the fontconfig alias `wh01s17-font-set` writes.
-  // Themes can override per-token via [font] in shell.toml, but the
-  // family stays system-wide.
+  // Themes can override per-token via [font] in shell.toml, and a theme's
+  // `family` key replaces the family for the shell alone.
   property string fontFamily: "monospace"
 
   // The concrete family `monospace` resolves to right now, e.g.
@@ -387,6 +387,7 @@ QtObject {
     var styleOut = {}
     var spacingOut = {}
     var nextBase = 12
+    var nextFamily = ""
     var nextSpacingScale = 1.0
     var nextSpacingScaleWithFont = true
     var nextBarScaleWithFont = true
@@ -398,6 +399,10 @@ QtObject {
       var key = fullKey.substr(dot + 1)
       var raw = v[fullKey]
       if (section === "font") {
+        if (key === "family") {
+          nextFamily = String(raw).replace(/^\s+|\s+$/g, "")
+          continue
+        }
         var ival = parseInt(raw, 10)
         if (!isFinite(ival)) continue
         if (key === "base-size") nextBase = ival
@@ -432,6 +437,10 @@ QtObject {
     spacingScale = nextSpacingScale
     spacingScaleWithFont = nextSpacingScaleWithFont
     fontBaseSize = nextBase
+    if (fontFamily !== (nextFamily || "monospace")) {
+      fontFamily = nextFamily || "monospace"
+      resolveFontFamily()
+    }
     fontOverrides = fontOut
     barOverrides = barOut
     barScaleWithFont = nextBarScaleWithFont
@@ -466,7 +475,7 @@ QtObject {
 
   property Process fcMatchProc: Process {
     id: fcMatchProc
-    command: ["fc-match", "-f", "%{family[0]}", "monospace"]
+    command: ["fc-match", "-f", "%{family[0]}", root.fontFamily]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
