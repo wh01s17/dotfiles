@@ -47,6 +47,23 @@ cpu_totals() {
   }' /proc/stat
 }
 
+# A five-block 8-bit gauge in Pango-style markup (StatusModule renders it
+# as StyledText): lit blocks in the wh01s17 green, amber from 60% and red
+# from 85%, unlit blocks in the theme's muted tone.
+meter() {
+  local percent=$1 lit color lit_blocks="" unlit_blocks="" i
+  lit=$(( (percent * 5 + 50) / 100 ))
+  (( percent > 0 && lit == 0 )) && lit=1
+  if (( percent >= 85 )); then color="#ff6b66"
+  elif (( percent >= 60 )); then color="#e8b53f"
+  else color="#84c959"
+  fi
+  for ((i = 0; i < 5; i++)); do
+    if (( i < lit )); then lit_blocks+="■"; else unlit_blocks+="■"; fi
+  done
+  printf "<font color='%s'>%s</font><font color='#33454f'>%s</font>" "$color" "$lit_blocks" "$unlit_blocks"
+}
+
 human_bytes() {
   awk -v bytes="$1" 'BEGIN {
     split("B KB MB GB TB", unit, " ")
@@ -130,7 +147,7 @@ json_status() {
   fi
 
   jq -cn \
-    --arg text "$ICON" \
+    --arg text "$ICON C$(meter "$cpu_percent") M$(meter "$mem_percent")" \
     --arg class "$class" \
     --arg tooltip "$tooltip" \
     '{text: $text, class: $class, tooltip: $tooltip}' > "$CACHE_FILE.$$"

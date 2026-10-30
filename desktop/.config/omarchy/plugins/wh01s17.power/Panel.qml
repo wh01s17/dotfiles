@@ -273,14 +273,68 @@ Panel {
     }
   }
 
+  // A horizontal bar shows the charge as five 8-bit hearts (half hearts
+  // included), red on battery and accent green while plugged in; the
+  // percentage toggle and vertical bars keep the battery glyph.
+  readonly property bool heartMode: root.batteryPresent && !button.vertical && !root.showPercentage
+  readonly property int halfHearts: Math.round(root.batteryFraction * 10)
+
   BarIconButton {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.showPercentage && !vertical
+    text: root.heartMode ? "" : root.showPercentage && !vertical
       ? Math.round(root.batteryFraction * 100) + "% " + root.batteryIcon()
       : root.batteryIcon()
-    slotSize: Style.bar.iconSlot * (root.showPercentage && !vertical ? 2 : 1)
+    slotSize: root.heartMode
+      ? hearts.implicitWidth + Style.space(10)
+      : Style.bar.iconSlot * (root.showPercentage && !vertical ? 2 : 1)
+
+    Row {
+      id: hearts
+      visible: root.heartMode
+      anchors.centerIn: parent
+      spacing: Style.space(2)
+
+      readonly property int px: Style.space(2)
+      readonly property color lit: root.discharging ? Color.bar.active : Color.accent
+      readonly property color unlit: Util.alpha(root.bar ? root.bar.barForeground : Color.foreground, 0.25)
+      // 7x6 heart, as [x, y] pixels.
+      readonly property var pixels: [
+        [1, 0], [2, 0], [4, 0], [5, 0],
+        [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1],
+        [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2],
+        [1, 3], [2, 3], [3, 3], [4, 3], [5, 3],
+        [2, 4], [3, 4], [4, 4],
+        [3, 5]
+      ]
+
+      Repeater {
+        model: 5
+
+        Item {
+          id: heart
+          required property int index
+          // 2 = full, 1 = left half, 0 = empty.
+          readonly property int halves: Math.max(0, Math.min(2, root.halfHearts - index * 2))
+          width: hearts.px * 7
+          height: hearts.px * 6
+
+          Repeater {
+            model: hearts.pixels
+
+            Rectangle {
+              required property var modelData
+              x: modelData[0] * hearts.px
+              y: modelData[1] * hearts.px
+              width: hearts.px
+              height: hearts.px
+              color: heart.halves === 2 || (heart.halves === 1 && modelData[0] <= 3) ? hearts.lit : hearts.unlit
+            }
+          }
+        }
+      }
+    }
     tooltipText: !root.batteryPresent
       ? "Sin batería"
       : Math.round(root.batteryFraction * 100) + "% · "
