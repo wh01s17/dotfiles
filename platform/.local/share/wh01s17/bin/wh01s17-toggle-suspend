@@ -2,7 +2,7 @@
 
 # wh01s17:summary=Toggle suspend availability in the system menu
 
-wh01s17-toggle suspend-off
+wh01s17-toggle suspend-off || exit 1
 
 if wh01s17-toggle-enabled suspend-off; then
   wh01s17-notification-send -g 󰒲 "Suspend removed from system menu"

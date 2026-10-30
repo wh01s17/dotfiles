@@ -30,7 +30,7 @@ nvim) editor="nvim"; name="Neovim"; glyph= ;;
   ;;
 esac
 
-mkdir -p "$(dirname "$editor_file")"
-printf '%s\n' "$editor" >"$editor_file"
+mkdir -p "$(dirname "$editor_file")" || exit 1
+printf '%s\n' "$editor" >"$editor_file" || exit 1
 
 wh01s17-notification-send -g $glyph "$name is now the default editor"

@@ -13,7 +13,8 @@ ACTION="${2:-toggle}"
 FLAG="$HOME/.local/state/wh01s17/toggles/$FLAG_NAME"
 
 enable() {
-  mkdir -p "$(dirname "$FLAG")"
+  mkdir -p "$(dirname "$FLAG")" || return 1
+  [[ ! -d $FLAG ]] || { echo "State file is a directory: $FLAG" >&2; return 1; }
   touch "$FLAG"
 }
 

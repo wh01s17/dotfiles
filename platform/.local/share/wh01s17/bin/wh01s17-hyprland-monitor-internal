@@ -15,7 +15,7 @@ wake() {
 
 on() {
   if wh01s17-hyprland-toggle-enabled $TOGGLE; then
-    wh01s17-hyprland-toggle $TOGGLE off
+    wh01s17-hyprland-toggle $TOGGLE off || return 1
     wh01s17-notification-send -g 󰍹 "Laptop display enabled"
   fi
 
@@ -41,7 +41,8 @@ off() {
   fi
 
   if wh01s17-hyprland-toggle-disabled $TOGGLE && wh01s17-hyprland-toggle-disabled $MIRROR_TOGGLE; then
-    printf 'hl.monitor({ output = "%s", disabled = true })\n' "$INTERNAL" >"$TOGGLE_FLAG"
+    mkdir -p "$(dirname "$TOGGLE_FLAG")" || return 1
+    printf 'hl.monitor({ output = "%s", disabled = true })\n' "$INTERNAL" >"$TOGGLE_FLAG" || return 1
     wh01s17-notification-send -g 󰍹 "Laptop display disabled"
     hyprctl reload
   fi
@@ -54,7 +55,7 @@ recover() {
   wh01s17-hyprland-monitor-external-active && return 0
   wh01s17-hyprland-toggle-enabled $TOGGLE || return 0
 
-  wh01s17-hyprland-toggle $TOGGLE off
+  wh01s17-hyprland-toggle $TOGGLE off || return 1
   wake
 }
 

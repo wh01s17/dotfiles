@@ -33,7 +33,7 @@ audit_scale_change() {
   local parent_cmd
   local grandparent_cmd
 
-  mkdir -p "$STATE_DIR" || return 0
+  mkdir -p "$STATE_DIR" || return 1
 
   grandparent_pid=$(ps -o ppid= -p "$parent_pid" 2>/dev/null | tr -d ' ')
   parent_cmd=$(cmdline_for_pid "$parent_pid")
@@ -94,8 +94,8 @@ set_scale() {
   local new_gdk_scale="$(awk -v scale="$new_scale" 'BEGIN { printf "%d", int(scale + 0.5) }')"
   local monitor_lua="$HOME/.config/hypr/monitors.lua"
 
-  hyprctl eval "hl.monitor({ output = \"$active_monitor\", mode = \"${width}x${height}@${refresh_rate}\", position = \"auto\", scale = $new_scale })" >/dev/null
-  audit_scale_change "$requested" "$active_monitor" "$current_scale" "$new_scale"
+  hyprctl eval "hl.monitor({ output = \"$active_monitor\", mode = \"${width}x${height}@${refresh_rate}\", position = \"auto\", scale = $new_scale })" >/dev/null || return 1
+  audit_scale_change "$requested" "$active_monitor" "$current_scale" "$new_scale" || return 1
 
   # Persist to monitors.lua if the user still has wh01s17's generic catch-all
   # defaults, so the scale survives reboots.

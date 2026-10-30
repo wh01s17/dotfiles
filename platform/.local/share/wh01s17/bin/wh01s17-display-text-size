@@ -54,15 +54,15 @@ current_base_size() {
 # sections and keys in the user override are left untouched.
 set_base_size() {
   local size="$1"
-  mkdir -p "$(dirname "$shell_config")"
+  mkdir -p "$(dirname "$shell_config")" || return 1
 
   if [[ ! -f $shell_config ]]; then
-    printf '[font]\nbase-size = %s\n' "$size" >"$shell_config"
-    return
+    printf '[font]\nbase-size = %s\n' "$size" >"$shell_config" || return 1
+    return 0
   fi
 
   local tmp
-  tmp="$(mktemp)"
+  tmp="$(mktemp)" || return 1
   awk -v val="$size" '
     function emit_base() { print "base-size = " val; done = 1 }
     /^[[:space:]]*\[/ {
@@ -84,21 +84,21 @@ set_base_size() {
         emit_base()
       }
     }
-  ' "$shell_config" >"$tmp"
-  mv "$tmp" "$shell_config"
+  ' "$shell_config" >"$tmp" || { rm -f "$tmp"; return 1; }
+  mv -T "$tmp" "$shell_config" || { rm -f "$tmp"; return 1; }
 }
 
 # Drop the base-size line, returning the shell to the theme/default size.
 reset_base_size() {
   [[ -f $shell_config ]] || return 0
   local tmp
-  tmp="$(mktemp)"
+  tmp="$(mktemp)" || return 1
   awk '
     /^[[:space:]]*\[/ { in_font = ($0 ~ /^[[:space:]]*\[font\]([[:space:]]|$)/) }
     in_font && /^[[:space:]]*base-size[[:space:]]*=/ { next }
     { print }
-  ' "$shell_config" >"$tmp"
-  mv "$tmp" "$shell_config"
+  ' "$shell_config" >"$tmp" || { rm -f "$tmp"; return 1; }
+  mv -T "$tmp" "$shell_config" || { rm -f "$tmp"; return 1; }
 }
 
 # ---- GTK text-scaling-factor ----
@@ -137,26 +137,26 @@ set_terminal_size() {
   local pt="$1"
 
   if [[ -f ~/.config/alacritty/alacritty.toml ]]; then
-    sed -i -E "s/^size[[:space:]]*=.*/size = $pt/" ~/.config/alacritty/alacritty.toml
+    sed -i -E "s/^size[[:space:]]*=.*/size = $pt/" ~/.config/alacritty/alacritty.toml || return 1
   fi
 
   if [[ -f ~/.config/kitty/kitty.conf ]] || wh01s17-cmd-present kitty; then
-    mkdir -p ~/.config/kitty
+    mkdir -p ~/.config/kitty || return 1
     if grep -qE '^[[:space:]]*font_size[[:space:]]+' ~/.config/kitty/kitty.conf 2>/dev/null; then
-      sed --follow-symlinks -i -E "s/^[[:space:]]*font_size[[:space:]]+.*/font_size $pt.0/" ~/.config/kitty/kitty.conf
+      sed --follow-symlinks -i -E "s/^[[:space:]]*font_size[[:space:]]+.*/font_size $pt.0/" ~/.config/kitty/kitty.conf || return 1
     else
-      printf '\nfont_size %s.0\n' "$pt" >>~/.config/kitty/kitty.conf
+      printf '\nfont_size %s.0\n' "$pt" >>~/.config/kitty/kitty.conf || return 1
     fi
     pkill -USR1 kitty 2>/dev/null || true
   fi
 
   if [[ -f ~/.config/ghostty/config ]]; then
-    sed -i -E "s/^font-size = .*/font-size = $pt/" ~/.config/ghostty/config
+    sed -i -E "s/^font-size = .*/font-size = $pt/" ~/.config/ghostty/config || return 1
     pkill -SIGUSR2 ghostty 2>/dev/null || true
   fi
 
   if [[ -f ~/.config/foot/foot.ini ]]; then
-    sed -i -E "s/(:size=)[0-9.]+/\1$pt/" ~/.config/foot/foot.ini
+    sed -i -E "s/(:size=)[0-9.]+/\1$pt/" ~/.config/foot/foot.ini || return 1
     # Foot has no config-reload signal, so a running instance keeps its startup
     # size until relaunched (new windows pick up the change). Nudge the user —
     # but reuse the same notification id (freedesktop replaces_id) so dragging
@@ -208,9 +208,9 @@ case "${1:-}" in
     exit 0
     ;;
   reset | default)
-    reset_base_size
+    reset_base_size || exit 1
     gsettings reset "$GKEY_SCHEMA" "$GKEY_NAME" 2>/dev/null || true
-    set_terminal_size "$TERM_DEFAULT_PT"
+    set_terminal_size "$TERM_DEFAULT_PT" || exit 1
     exit 0
     ;;
 esac
@@ -223,7 +223,7 @@ if [[ ! $size =~ ^[0-9]+$ ]] || ((size < MIN || size > MAX)); then
 fi
 
 # Shell side: base-size in px (the wh01s17 shell's rem root).
-set_base_size "$size"
+set_base_size "$size" || exit 1
 
 # GTK side: multiplier anchored so 12px == 1.0, quantized so the interface
 # font renders at a whole point size. Raw ratios yield fractional point sizes,

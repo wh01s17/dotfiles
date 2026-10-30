@@ -56,4 +56,9 @@ for _ in {1..10}; do
   [[ $(current_temp) == "$TARGET_TEMP" ]] && break
 done
 
+if [[ $(current_temp) != "$TARGET_TEMP" ]]; then
+  echo "Could not apply nightlight temperature." >&2
+  exit 1
+fi
+
 wh01s17-shell -q nightlight refresh

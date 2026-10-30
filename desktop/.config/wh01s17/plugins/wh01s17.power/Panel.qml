@@ -225,7 +225,11 @@ Panel {
 
   Process {
     id: actionProc
-    onExited: root.refresh()
+    onExited: function(exitCode) {
+      if (exitCode !== 0)
+        Quickshell.execDetached(["wh01s17-notification-send", "Power profile change failed"])
+      root.refresh()
+    }
   }
 
   Timer { interval: 5000; running: root.opened; repeat: true; onTriggered: root.refresh() }

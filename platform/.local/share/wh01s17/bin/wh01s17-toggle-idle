@@ -31,7 +31,8 @@ print_idle_state() {
 apply_state() {
   case "$1" in
     stay-awake)
-      mkdir -p "$STATE_DIR"
+      mkdir -p "$STATE_DIR" || return 1
+      [[ ! -d $STATE_FILE ]] || { echo "State file is a directory: $STATE_FILE" >&2; return 1; }
       touch "$STATE_FILE"
       ;;
     allow-idle)
@@ -43,18 +44,18 @@ apply_state() {
 case "${1:-toggle}" in
   toggle)
     if stay_awake_enabled; then
-      apply_state allow-idle
+      apply_state allow-idle || exit 1
     else
-      apply_state stay-awake
+      apply_state stay-awake || exit 1
     fi
     print_idle_state
     ;;
   stay-awake|awake|on)
-    apply_state stay-awake
+    apply_state stay-awake || exit 1
     print_idle_state
     ;;
   allow-idle|idle|off)
-    apply_state allow-idle
+    apply_state allow-idle || exit 1
     print_idle_state
     ;;
   status|--status)

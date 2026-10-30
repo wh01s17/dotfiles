@@ -33,7 +33,7 @@ case "${1:-}" in
   else
     location=$(jq -n --arg name "$2" '{$name}')
   fi
-  mkdir -p "$(dirname "$LOC_FILE")"
+  mkdir -p "$(dirname "$LOC_FILE")" || exit 1
   echo "$location" >"$LOC_FILE"
   ;;
 --clear)

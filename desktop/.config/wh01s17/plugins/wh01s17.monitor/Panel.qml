@@ -401,9 +401,10 @@ Panel {
       'mkdir -p "$dir" || exit 1; ' +
       'file="$dir/monitor-modes.conf"; ' +
       'tmp=$(mktemp "$file.XXXXXX") || exit 1; ' +
-      'if [ -f "$file" ]; then grep -v "^' + name + '=" "$file" >>"$tmp"; fi; ' +
-      'printf "%s=%s\\n" "' + name + '" "' + value + '" >>"$tmp"; ' +
-      'mv "$tmp" "$file" && hyprctl reload']
+      'if [ -f "$file" ]; then grep -v "^' + name + '=" "$file" >>"$tmp"; status=$?; ' +
+      'if [ "$status" -gt 1 ]; then rm -f "$tmp"; exit 1; fi; fi; ' +
+      'printf "%s=%s\\n" "' + name + '" "' + value + '" >>"$tmp" || { rm -f "$tmp"; exit 1; }; ' +
+      'mv -T "$tmp" "$file" && hyprctl reload']
     if (!actionProc.running) actionProc.running = true
   }
 
@@ -475,9 +476,9 @@ Panel {
       'file="$dir/monitor-layout.conf"; ' +
       'wh01s17-hyprland-monitor-internal-mirror off >/dev/null; ' +
       'mkdir -p "$dir" && { printf "layout=%s\\ninternal=%s\\n" "$1" "$2"; ' +
-      'if [ -n "$5" ]; then printf "%s\\n" "$5"; fi; } >"$file.tmp" && mv "$file.tmp" "$file" || exit 1; ' +
+      'if [ -n "$5" ]; then printf "%s\\n" "$5"; fi; } >"$file.tmp" && mv -T "$file.tmp" "$file" || exit 1; ' +
       'arr="$dir/monitor-arrangement.conf"; ' +
-      'if [ "$3" = write ]; then printf "%s\\n" "$4" >"$arr.tmp" && mv "$arr.tmp" "$arr" || exit 1; ' +
+      'if [ "$3" = write ]; then printf "%s\\n" "$4" >"$arr.tmp" && mv -T "$arr.tmp" "$arr" || exit 1; ' +
       'elif [ "$3" = clear ]; then rm -f "$arr"; fi; ' +
       // An output leaving mirror mode on a reload stays hidden from clients
       // (no bar, no wallpaper, unknown to grim). Switching it off first makes
@@ -654,6 +655,13 @@ Panel {
   Process {
     id: actionProc
     stdout: StdioCollector { waitForEnd: true }
+    onExited: function(exitCode) {
+      if (exitCode !== 0) {
+        root.pendingMode = ""
+        root.pendingLayout = ""
+        Quickshell.execDetached(["wh01s17-notification-send", "Display change failed"])
+      }
+    }
     onRunningChanged: if (!running) root.refresh()
   }
 

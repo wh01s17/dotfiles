@@ -780,6 +780,7 @@ Item {
 
   FileView {
     id: settingsFile
+    onSaveFailed: function(error) { console.warn("Could not save notification settings", error) }
     path: service.settingsPath
     watchChanges: false
     atomicWrites: true

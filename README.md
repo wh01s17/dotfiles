@@ -720,6 +720,9 @@ el uso diario:
 
 ## Pruebas
 
+La revisión de persistencia y errores de los módulos está en
+[docs/module-actions.md](docs/module-actions.md).
+
 Validación estática:
 
 ```bash

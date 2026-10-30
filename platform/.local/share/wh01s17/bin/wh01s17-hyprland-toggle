@@ -19,8 +19,8 @@ FLAG_SOURCE="$WH01S17_PATH/default/hypr/toggles/$FLAG_NAME.lua"
 
 on() {
   if [[ -f $FLAG_SOURCE ]]; then
-    mkdir -p "$(dirname "$FLAG_FILE")"
-    cp "$FLAG_SOURCE" "$FLAG_FILE"
+    mkdir -p "$(dirname "$FLAG_FILE")" || return 1
+    cp -T "$FLAG_SOURCE" "$FLAG_FILE"
   else
     echo "Flag not found: $FLAG_NAME" >&2
     exit 1
@@ -33,10 +33,10 @@ off() {
 
 toggle() {
   if [[ -f $FLAG_FILE ]]; then
-    off
+    off || return 1
     echo "off"
   else
-    on
+    on || return 1
     echo "on"
   fi
 }
@@ -49,6 +49,6 @@ case $ACTION in
     usage
     exit 1
     ;;
-esac
+esac || exit 1
 
 hyprctl reload >/dev/null

@@ -51,17 +51,17 @@ apply_device() {
 enable() {
   # Clear the persisted state before requiring a usable device, so a device
   # that stops reporting a valid name can never wedge the disable in place.
-  rm -f "$NAME_FILE"
+  rm -f "$NAME_FILE" || return 1
   require_device
-  apply_device true
+  apply_device true || return 1
   wh01s17-osd -i "$ICON" -m "$LABEL enabled"
 }
 
 disable() {
   require_device
-  apply_device false
-  mkdir -p "$(dirname "$NAME_FILE")"
-  printf '%s\n' "$device" >"$NAME_FILE"
+  mkdir -p "$(dirname "$NAME_FILE")" || return 1
+  apply_device false || return 1
+  printf '%s\n' "$device" >"$NAME_FILE" || return 1
   wh01s17-osd -i "$ICON" -m "$LABEL disabled"
 }
 

@@ -50,7 +50,7 @@ if [[ $action == "mute-toggle" ]]; then
   fi
   printf '%s\n' "$now" >"$debounce_file"
 
-  pactl set-sink-mute "$sink" toggle
+  pactl set-sink-mute "$sink" toggle || exit 1
 elif [[ $action =~ ^([+-])([0-9]+)$ ]]; then
   direction="${BASH_REMATCH[1]}"
   step="${BASH_REMATCH[2]}"
@@ -69,8 +69,8 @@ elif [[ $action =~ ^([+-])([0-9]+)$ ]]; then
     ((next >= 0)) || next=0
   fi
 
-  pactl set-sink-mute "$sink" 0
-  pactl set-sink-volume "$sink" "${next}%"
+  pactl set-sink-mute "$sink" 0 || exit 1
+  pactl set-sink-volume "$sink" "${next}%" || exit 1
 else
   echo "Unknown volume action: $action"
   exit 1

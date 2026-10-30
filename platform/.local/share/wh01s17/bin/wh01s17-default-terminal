@@ -28,7 +28,8 @@ kitty) desktop_id="kitty.desktop"; name="Kitty"; glyph= ;;
   ;;
 esac
 
-cat >~/.config/xdg-terminals.list <<EOF
+mkdir -p "$HOME/.config" || exit 1
+cat >"$HOME/.config/xdg-terminals.list" <<EOF || exit 1
 # Terminal emulator preference order for xdg-terminal-exec
 # The first found and valid terminal will be used
 $desktop_id

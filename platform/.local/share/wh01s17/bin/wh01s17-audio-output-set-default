@@ -13,7 +13,7 @@ if [[ -z $node_id || -z $sink_name ]]; then
 fi
 
 timeout 2 wpctl set-default "$node_id" 2>/dev/null || true
-timeout 2 pactl set-default-sink "$sink_name" 2>/dev/null || true
+timeout 2 pactl set-default-sink "$sink_name" 2>/dev/null || exit 1
 
 # Move only real application streams. A DSP filter-chain's own output is also a
 # sink input but carries no application.name, and moving it would rewire the

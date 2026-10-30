@@ -58,6 +58,6 @@ fi
 powerprofilesctl set "$profile" || exit
 
 if [[ -n $requested_profile ]]; then
-  mkdir -p "$state_dir"
+  mkdir -p "$state_dir" || exit 1
   printf '%s\n' "$requested_profile" >"$state_file"
 fi

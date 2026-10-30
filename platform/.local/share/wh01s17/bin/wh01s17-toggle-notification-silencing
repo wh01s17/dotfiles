@@ -2,5 +2,5 @@
 
 # wh01s17:summary=Toggle notification do-not-disturb mode
 
-state=$(wh01s17-shell notifications toggleDnd 2>/dev/null || echo "")
+wh01s17-shell notifications toggleDnd >/dev/null || exit 1
 wh01s17-shell -q core.indicators refresh

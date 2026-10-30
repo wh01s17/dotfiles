@@ -116,7 +116,7 @@ store_internal_scale() {
   local scale="$1"
   valid_scale "$scale" || return 0
 
-  mkdir -p "$TOGGLES_DIR"
+  mkdir -p "$TOGGLES_DIR" || return 1
   printf '%s\n' "$scale" >"$SCALE_STATE"
 }
 
@@ -210,7 +210,7 @@ enable_internal() {
   local changed=0
 
   if [[ -f $CLAMSHELL_FLAG ]]; then
-    rm -f "$CLAMSHELL_FLAG"
+    rm -f "$CLAMSHELL_FLAG" || return 1
     changed=1
   fi
 
@@ -230,14 +230,14 @@ disable_internal() {
   [[ -n $INTERNAL ]] || exit 0
   [[ -f $MANUAL_DISABLE_FLAG ]] && return 0
 
-  mkdir -p "$TOGGLES_DIR"
-  remember_internal_scale
+  mkdir -p "$TOGGLES_DIR" || return 1
+  remember_internal_scale || return 1
 
   local config
   config=$(printf 'hl.monitor({ output = "%s", disabled = true })' "$INTERNAL")
 
   if [[ ! -f $CLAMSHELL_FLAG ]] || [[ $(< "$CLAMSHELL_FLAG") != $config ]]; then
-    printf '%s\n' "$config" >"$CLAMSHELL_FLAG"
+    printf '%s\n' "$config" >"$CLAMSHELL_FLAG" || return 1
     hyprctl reload >/dev/null 2>&1 || true
   fi
 }

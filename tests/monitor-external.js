@@ -69,4 +69,40 @@ try {
 } finally {
   fs.rmSync(temporary, { recursive: true, force: true })
 }
+// Exercise mode persistence against a conflicting destination directory: mv
+// must fail rather than move the new config *inside* it and report success.
+vm.runInContext(panel.match(/^  function setMode\([^\n]+\) \{[\s\S]*?^  \}/m)[0], context)
+const modesHome = fs.mkdtempSync(path.join(os.tmpdir(), 'monitor-modes-'))
+try {
+  const state = path.join(modesHome, 'wh01s17')
+  fs.mkdirSync(state)
+  const destination = path.join(state, 'monitor-modes.conf')
+  fs.mkdirSync(destination)
+  root.focusedMonitor = 'DP-1'
+  root.focusedModeValue = '1920x1080@60'
+  context.setMode('3840x2160@60')
+  const [command, ...args] = context.actionProc.command
+  const result = spawnSync(command, args, {
+    env: { ...process.env, XDG_STATE_HOME: modesHome }, encoding: 'utf8'
+  })
+  assert.notEqual(result.status, 0)
+  assert.deepEqual(fs.readdirSync(destination), [])
+} finally {
+  fs.rmSync(modesHome, { recursive: true, force: true })
+}
+
+const messages = []
+context.Quickshell = { execDetached: args => messages.push(args) }
+const actionProcess = panel.slice(panel.indexOf('    id: actionProc'))
+const exitHandler = actionProcess.match(/^    onExited: function\(exitCode\) \{[\s\S]*?^    \}/m)[0]
+vm.runInContext(exitHandler.replace('onExited:', 'globalThis.actionExited ='), context)
+root.pendingMode = '3840x2160@60'
+root.pendingLayout = 'external'
+context.actionExited(1)
+assert.equal(root.pendingMode, '')
+assert.equal(root.pendingLayout, '')
+assert.equal(messages.length, 1)
+context.actionExited(0)
+assert.equal(messages.length, 1)
+
 console.log('External display selection passed')

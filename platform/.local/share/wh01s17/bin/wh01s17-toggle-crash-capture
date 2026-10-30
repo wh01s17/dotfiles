@@ -5,14 +5,14 @@
 # nf-md-robot_dead, escaped so this file reads without a Nerd Font.
 readonly CRASH_GLYPH=$'\U000f16a1'
 
-wh01s17-toggle crash-capture-off
+wh01s17-toggle crash-capture-off || exit 1
 
 # The unit checks the same flag with ConditionPathExists, so stopping and
 # starting only settles this session; the next login reads the flag itself.
 if wh01s17-toggle-enabled crash-capture-off; then
-  systemctl --user stop wh01s17-crash-watch.service
+  systemctl --user stop wh01s17-crash-watch.service || exit 1
   wh01s17-notification-send -g "$CRASH_GLYPH" "Crash capture disabled"
 else
-  systemctl --user start wh01s17-crash-watch.service
+  systemctl --user start wh01s17-crash-watch.service || exit 1
   wh01s17-notification-send -g "$CRASH_GLYPH" "Crash capture enabled"
 fi

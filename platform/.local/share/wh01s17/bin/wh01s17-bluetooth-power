@@ -49,7 +49,7 @@ wait_powered() {
 }
 
 power_on() {
-  rfkill unblock bluetooth
+  rfkill unblock bluetooth || return 1
 
   # Usually all it takes: with AutoEnable at its default, bluetoothd powers the
   # adapter up on its own once the block is gone. It will not do that for an

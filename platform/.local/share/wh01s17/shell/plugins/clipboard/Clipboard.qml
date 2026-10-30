@@ -249,6 +249,7 @@ Item {
 
   FileView {
     id: historyFile
+    onSaveFailed: function(error) { console.warn("Could not save clipboard history", error) }
     path: root.historyPath
     watchChanges: true
     atomicWrites: true

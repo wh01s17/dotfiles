@@ -133,6 +133,7 @@ ShellRoot {
 
   FileView {
     id: userConfigFile
+    onSaveFailed: function(error) { console.warn("Could not save desktop settings", error) }
     path: shell.userConfigPath
     watchChanges: true
     atomicWrites: true
