@@ -571,14 +571,17 @@ Los indicadores nativos agrupan dictado, grabación, recordatorios, luz nocturna
 
 ### Estilo
 
-Con `"islands": true` en `shell.json`, la superficie de la barra queda
-transparente y cada zona (izquierda, centro y derecha) queda enmarcada por su
-propio contorno, sin fondo: redondeado como las ventanas y con el borde
-`[bar] border`, que el tema apunta al degradado verde/cian del borde activo de
-Hyprland. El contorno crece y se encoge con una animación corta cuando la zona
-cambia de ancho (indicadores que aparecen, módulos que se ocultan) y, a la
-derecha, empieza donde están los widgets visibles y acompaña al cajón de la
-bandeja mientras se despliega. El resto del estilo sigue la estética del tema:
+Con `"outline": true` en `shell.json`, la barra queda sin fondo y la rodea un
+único contorno, redondeado como las ventanas y con el borde `[bar] border`, que
+el tema apunta al degradado verde/cian del borde activo de Hyprland. Los
+indicadores del centro sólo se despliegan al pasar el ratón sobre los módulos
+centrales.
+
+`"islands": true` usa el mismo borde, pero enmarca cada zona (izquierda, centro
+y derecha) por separado: el contorno crece y se encoge con una animación corta
+cuando la zona cambia de ancho y, a la derecha, empieza donde están los widgets
+visibles y acompaña al cajón de la bandeja. El resto del estilo sigue la
+estética del tema:
 
 - **Escritorios:** sólo números; el activo en `accent` sobre una barra corta,
   los ocupados en el color de la barra y los vacíos atenuados.
