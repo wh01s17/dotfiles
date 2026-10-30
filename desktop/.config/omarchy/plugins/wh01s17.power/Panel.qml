@@ -286,6 +286,9 @@ Panel {
     text: root.heartMode ? "" : root.showPercentage && !vertical
       ? Math.round(root.batteryFraction * 100) + "% " + root.batteryIcon()
       : root.batteryIcon()
+    // The hearts are drawn as children, not as text or iconComponent, so the
+    // button would otherwise count as empty and the bar would hide it.
+    hasVisualContent: root.heartMode || text !== ""
     slotSize: root.heartMode
       ? hearts.implicitWidth + Style.space(10)
       : Style.bar.iconSlot * (root.showPercentage && !vertical ? 2 : 1)
