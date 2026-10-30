@@ -57,6 +57,10 @@ Item {
   // right) is outlined by its own rounded border that grows and shrinks with
   // the section. Set by shell.json's `bar.islands`.
   property bool islands: false
+  // Outline: a single border around the whole bar, the islands' look on one
+  // surface. Set by shell.json's `bar.outline`.
+  property bool outlined: false
+  readonly property bool framed: islands || outlined
   // Compatibility value for widgets using the old global API. The actual
   // hover reveal state lives on each BarPanel so one monitor never relayouts
   // the bars on the other outputs.
@@ -621,6 +625,7 @@ Item {
     position = normalizePosition(config.position)
     setRequestedTransparency(config.transparent === true)
     islands = config.islands === true
+    outlined = !islands && config.outline === true
     centerAnchor = Util.canonicalWidgetId(config.centerAnchor || "")
 
     // layoutEntries feeds plain JS arrays to the module Repeaters, and QML
@@ -1279,9 +1284,9 @@ Item {
       id: centerSectionRevealTimer
       interval: 120
       onTriggered: {
-        // Islands collapse as soon as the pointer leaves the center island;
-        // without them the reveal holds while it stays anywhere on the bar.
-        if (!barWindow.centerSectionHovered && (root.islands || !barWindow.barHovered))
+        // A framed bar collapses as soon as the pointer leaves the center
+        // span; a plain one holds the reveal while it stays anywhere on it.
+        if (!barWindow.centerSectionHovered && (root.framed || !barWindow.barHovered))
           barWindow.centerSectionRevealHeld = false
       }
     }
@@ -1315,7 +1320,7 @@ Item {
 
     implicitWidth: root.vertical ? root.barSize : 0
     implicitHeight: root.vertical ? 0 : root.barSize
-    color: root.transparent || root.islands ? "transparent" : root.background
+    color: root.transparent || root.framed ? "transparent" : root.background
     surfaceFormat.opaque: false
     WlrLayershell.namespace: "omarchy-bar"
     WlrLayershell.layer: WlrLayer.Top
@@ -1405,6 +1410,18 @@ Item {
       Item {
         anchors.fill: parent
 
+        // Lined up with the windows: as far from the screen edges as
+        // Hyprland's gaps_out, as far above the first window as two windows
+        // are from each other, and rounded like a window plus its border.
+        BarIsland {
+          visible: root.outlined
+          y: root.outlineGap
+          height: root.barSize - root.outlineGap * 2
+          radius: Style.cornerRadius + 1
+          targetX: root.outlineGap
+          targetWidth: parent.width - root.outlineGap * 2
+        }
+
         BarIsland {
           id: leftIsland
           visible: root.islands && leftModules.width > 0
@@ -1433,7 +1450,7 @@ Item {
           LeftModules {
             id: leftModules
             anchors.left: parent.left
-            anchors.leftMargin: root.islands ? root.islandGap + root.islandPadding : Style.space(8)
+            anchors.leftMargin: root.framed ? root.islandGap + root.islandPadding : Style.space(8)
             anchors.verticalCenter: parent.verticalCenter
           }
         }
@@ -1444,7 +1461,7 @@ Item {
           RightModules {
             id: rightModules
             anchors.right: parent.right
-            anchors.rightMargin: root.islands ? root.islandGap + root.islandPadding : Style.space(8)
+            anchors.rightMargin: root.framed ? root.islandGap + root.islandPadding : Style.space(8)
             anchors.verticalCenter: parent.verticalCenter
           }
         }
@@ -1614,6 +1631,8 @@ Item {
   readonly property int islandPadding: Style.space(6)
   readonly property int islandGap: Style.space(6)
   readonly property int islandSnap: Style.space(12)
+  // Style.gapsOut is half of Hyprland's gaps_out.
+  readonly property int outlineGap: Style.gapsOut * 2
 
   component BarIsland: BorderSurface {
     id: island
@@ -1705,10 +1724,10 @@ Item {
 
         CenterGestureArea { anchors.fill: parent }
 
-        // Without islands the whole center band reveals the indicators; with
-        // them, only the center island does.
+        // On a plain bar the whole center band reveals the indicators; on a
+        // framed one (islands or outline) only the center modules' span does.
         HoverHandler {
-          enabled: !root.islands
+          enabled: !root.framed
           onHoveredChanged: centerRoot.surfaceWindow.setCenterSectionHovered(hovered)
           Component.onDestruction: if (hovered) centerRoot.surfaceWindow.setCenterSectionHovered(false)
         }
@@ -1717,10 +1736,10 @@ Item {
           x: centerIsland.x
           width: centerIsland.width
           height: parent.height
-          visible: root.islands
+          visible: root.framed
 
           HoverHandler {
-            enabled: root.islands
+            enabled: root.framed
             onHoveredChanged: centerRoot.surfaceWindow.setCenterSectionHovered(hovered)
             Component.onDestruction: if (hovered) centerRoot.surfaceWindow.setCenterSectionHovered(false)
           }

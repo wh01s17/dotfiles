@@ -7,7 +7,7 @@
   "bar": {
     "position": "top",
     "transparent": true,
-    "islands": true,
+    "outline": true,
     "centerAnchor": "wh01s17.clock",
     "layout": {
       "left": [
