@@ -4,7 +4,7 @@
     "type": "command-raw",
     "source": "python3 ~/.config/fastfetch/w-spin.py --static",
     "padding": {
-      "top": 4,
+      "top": 3,
       "right": 6,
       "left": 2
     }

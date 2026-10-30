@@ -8,7 +8,8 @@ to an ASCII ramp tinted with the theme accent.
 
 Usage:
     w-spin.py --static [--accent HEX]
-        Print the resting frame, e.g. as Fastfetch's command-raw logo.
+        Print the resting frame and the "wh01s17 OS" wordmark below it, e.g.
+        as Fastfetch's command-raw logo.
     w-spin.py --play ROWS_UP COLUMN [--accent HEX]
         Animate in place over a frame already on screen whose top-left corner
         is ROWS_UP rows above the cursor, at COLUMN (1-based), then come to
@@ -221,6 +222,93 @@ def shade(accent, v):
     return tuple(int(c + (255 - c) * w) for c in accent)
 
 
+# The 5x7 pixel glyphs of the theme's pixel-art wallpapers (sources/pixel-art.py).
+GLYPHS = {
+    "w": [".....", ".....", "#...#", "#...#", "#.#.#", "#.#.#", ".#.#."],
+    "h": ["#....", "#....", "#.##.", "##..#", "#...#", "#...#", "#...#"],
+    "0": [".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###."],
+    "1": ["..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###."],
+    "s": [".....", ".....", ".####", "#....", ".###.", "....#", "####."],
+    "7": ["#####", "....#", "...#.", "..#..", ".#...", ".#...", ".#..."],
+    "O": [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+    "S": [".####", "#....", "#....", ".###.", "....#", "....#", "####."],
+    " ": ["...."] * 7,  # with the glyph gaps, a word space of six pixels
+}
+WORDMARK = "wh01s17 OS"
+LETTERS = (0xCB, 0xD5, 0xCE)  # wh01s17 foreground; digits take the accent
+
+# Octants split a cell into 2x4 square pixels. Unicode only encodes the
+# patterns that no older block character already draws; these are the rest.
+# Bit i is the pixel at row i // 2, column i % 2.
+OCTANT_OLD = {
+    0b00000000: " ",
+    0b00000001: "\U0001cea8",
+    0b00000010: "\U0001ceab",
+    0b00000011: "\U0001fb82",
+    0b00000101: "\u2598",
+    0b00001010: "\u259d",
+    0b00001111: "\u2580",
+    0b00010100: "\U0001fbe6",
+    0b00101000: "\U0001fbe7",
+    0b00111111: "\U0001fb85",
+    0b01000000: "\U0001cea3",
+    0b01010000: "\u2596",
+    0b01010101: "\u258c",
+    0b01011010: "\u259e",
+    0b01011111: "\u259b",
+    0b10000000: "\U0001cea0",
+    0b10100000: "\u2597",
+    0b10100101: "\u259a",
+    0b10101010: "\u2590",
+    0b10101111: "\u259c",
+    0b11000000: "\u2582",
+    0b11110000: "\u2584",
+    0b11110101: "\u2599",
+    0b11111010: "\u259f",
+    0b11111100: "\u2586",
+    0b11111111: "\u2588",
+}
+
+
+def octant(bits):
+    """The block character that lights the pixels in `bits`."""
+    if bits in OCTANT_OLD:
+        return OCTANT_OLD[bits]
+    # U+1CD00 onwards lists the remaining patterns in increasing order.
+    index = sum(1 for b in range(bits) if b not in OCTANT_OLD)
+    return chr(0x1CD00 + index)
+
+
+def wordmark(accent):
+    """WORDMARK in octant pixels, centred in WIDTH cells; letters light, digits accent."""
+    pixels, x = {}, 0
+    for ch in WORDMARK:
+        color = accent if ch.isdigit() else LETTERS
+        for row, line in enumerate(GLYPHS[ch]):
+            for col, bit in enumerate(line):
+                if bit == "#":
+                    pixels[(x + col, row)] = color
+        x += len(GLYPHS[ch][0]) + 1
+    cols = (x - 1 + 1) // 2
+    pad = " " * ((WIDTH - cols) // 2)
+    lines = []
+    for top in (0, 4):
+        out, last = [pad], None
+        for c in range(cols):
+            bits, color = 0, None
+            for i in range(8):
+                px = pixels.get((2 * c + i % 2, top + i // 2))
+                if px:
+                    bits |= 1 << i
+                    color = px
+            if color and color != last:
+                out.append("\x1b[38;2;%d;%d;%dm" % color)
+                last = color
+            out.append(octant(bits))
+        lines.append("".join(out).rstrip() + "\x1b[0m")
+    return lines
+
+
 def theme_accent():
     """The accent declared by the active Omarchy theme, or None."""
     state = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
@@ -299,7 +387,7 @@ def main():
     accent = parse_hex(args.accent or theme_accent() or DEFAULT_ACCENT)
 
     if args.static:
-        sys.stdout.write("\n".join(render(REST_YAW, accent)) + "\n")
+        sys.stdout.write("\n".join(render(REST_YAW, accent) + wordmark(accent)) + "\n")
     else:
         play(*args.play, accent)
 

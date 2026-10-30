@@ -788,12 +788,16 @@ una luz puntual, la oscurece según su profundidad y la traduce a la
 rampa ` .:-=+*#%@` teñida con el `accent` del tema activo (frente claro,
 costado en sombra). La W va inclinada hacia la izquierda; el borde superior de
 su frente se pinta en blanco y un brillo blanco recorre cada cara cuando pasa
-por el reflejo de la luz. `config.jsonc` la usa como logo
-`command-raw` en su pose de reposo, así que también aparece al llamar a
-`fastfetch` con opciones.
+por el reflejo de la luz. Debajo va `wh01s17 OS` con los glifos pixelados de 5×7
+de los wallpapers pixel art (letras claras, números en `accent`), dibujado con
+octantes Unicode: cada celda son 2×4 píxeles cuadrados, así que el rótulo cabe
+en 28 columnas. Kitty dibuja los octantes por sí mismo; en otros terminales
+dependen de la fuente. `config.jsonc` usa W y rótulo como logo `command-raw` en
+su pose de reposo, así que también aparecen al llamar a `fastfetch` con
+opciones.
 
 El lanzador [`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) centra la W
-verticalmente junto a los paneles de información. Cuando el informe ya está en
+y el rótulo verticalmente junto a los paneles de información. Cuando el informe ya está en
 pantalla, `w-spin.py --play` hace girar la W una vuelta en su sitio durante
 2,4 s (`WH01S17_SPIN_SECONDS` lo cambia) y la deja en la misma pose de reposo;
 Ctrl-C salta al final. En una redirección o cuando se entregan opciones a
