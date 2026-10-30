@@ -58,7 +58,11 @@ mediante enlaces, los cambios no necesitan generar copias. El timer
 `dotfiles-sync.timer` revisa cambios cada cinco segundos y actualiza los
 enlaces para incorporar archivos nuevos o eliminados. También funciona
 después de `git pull`; no descarga cambios por su cuenta ni instala paquetes.
-Las aplicaciones que no recargan su configuración necesitan reiniciarse.
+Los cambios en el tema activo regeneran su copia de estado y recargan
+Hyprland, la paleta del shell y los terminales compatibles, sin cambiar el
+wallpaper ni ejecutar hooks de instalación de aplicaciones. Los cambios de
+configuración de Hyprland también provocan una recarga. Otras aplicaciones
+que no recargan su configuración necesitan reiniciarse.
 
 ```bash
 dotfiles-sync --force

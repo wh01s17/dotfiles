@@ -58,7 +58,8 @@ class SyncTests(unittest.TestCase):
                  patch.object(sys, 'argv', ['dotfiles-sync', '--dotfiles', str(root)]), \
                  patch('time.sleep'), \
                  patch('subprocess.check_output', return_value=str(root / '.git')), \
-                 patch.dict(main.__globals__, {'run': lambda *args: calls.append(tuple(map(str, args)))}), \
+                 patch.dict(main.__globals__, {'run': lambda *args, **kwargs: calls.append(tuple(map(str, args))),
+                                               'session_inputs': lambda root: {'theme': None, 'instance': None, 'hypr': None}}), \
                  contextlib.redirect_stdout(io.StringIO()):
                 main()
                 self.assertEqual(len(calls), 5)
@@ -85,8 +86,64 @@ class SyncTests(unittest.TestCase):
                  patch.object(sys, 'argv', ['dotfiles-sync', '--dotfiles', str(root)]), \
                  patch('time.sleep'), \
                  patch('subprocess.check_output', return_value=str(root / '.git')), \
-                 patch.dict(main.__globals__, {'run': lambda *args: calls.append(args)}):
+                 patch.dict(main.__globals__, {'run': lambda *args, **kwargs: calls.append(args),
+                                               'session_inputs': lambda root: {'theme': None, 'instance': None, 'hypr': None}}):
                 main(); self.assertEqual(calls, [])
+
+
+class SessionRefreshTests(unittest.TestCase):
+    def test_active_theme_refreshes_staged_files_and_live_session(self):
+        current = {'theme': {'name': 'wh01s17', 'files': 'changed'},
+                   'instance': 'session', 'hypr': 'same'}
+        previous = {'theme': {'name': 'wh01s17', 'files': 'old'},
+                    'instance': 'session', 'hypr': 'same'}
+        calls = []
+        refresh = SYNC['refresh_session']
+        with patch.dict(refresh.__globals__, {'run': lambda *args, **kwargs: calls.append((args, kwargs))}):
+            refresh(ROOT, current, previous)
+        self.assertEqual(len(calls), 4)
+        staging_args, staging_options = calls[0]
+        self.assertIn('wh01s17-theme-set', str(staging_args[1]))
+        self.assertEqual(staging_options['env']['WH01S17_THEME_HEADLESS'], '1')
+        self.assertEqual(staging_options['env']['WH01S17_THEME_SKIP_BACKGROUND'], '1')
+        self.assertEqual(calls[1][0], ('hyprctl', 'reload'))
+        self.assertIn('applyTheme', calls[2][0])
+        self.assertNotIn('wh01s17-theme-set-browser', str(calls))
+
+    def test_unrelated_edits_do_not_reload_session(self):
+        current = {'theme': {'name': 'wh01s17', 'files': 'same'},
+                   'instance': 'session', 'hypr': 'same'}
+        refresh = SYNC['refresh_session']
+        with patch.dict(refresh.__globals__, {'run': lambda *args, **kwargs: self.fail(str(args))}):
+            refresh(ROOT, current, current)
+
+    def test_hyprland_edit_reloads_without_regenerating_theme(self):
+        current = {'theme': None, 'instance': 'session', 'hypr': 'new'}
+        calls = []
+        refresh = SYNC['refresh_session']
+        with patch.dict(refresh.__globals__, {'run': lambda *args, **kwargs: calls.append(args)}):
+            refresh(ROOT, current, dict(current, hypr='old'))
+        self.assertEqual(calls, [('hyprctl', 'reload')])
+
+    def test_only_active_theme_sources_and_templates_invalidate_theme(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            home = Path(temporary)
+            root = home / 'repo'
+            name = home / '.local/state/wh01s17/current/theme.name'
+            name.parent.mkdir(parents=True)
+            name.write_text('wh01s17')
+            theme = root / 'desktop/.config/wh01s17/themes/wh01s17'
+            theme.mkdir(parents=True)
+            source = theme / 'hyprland.lua'
+            source.write_text('enabled = true')
+            with patch.dict(os.environ, {'HOME': str(home)}):
+                initial = SYNC['session_inputs'](root)
+                unrelated = root / 'terminal'
+                unrelated.mkdir()
+                (unrelated / 'config').write_text('unrelated')
+                self.assertEqual(SYNC['session_inputs'](root), initial)
+                source.write_text('enabled = false')
+                self.assertNotEqual(SYNC['session_inputs'](root)['theme'], initial['theme'])
 
 
 if __name__ == '__main__':

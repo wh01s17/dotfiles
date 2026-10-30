@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Keep native wh01s17 Stow links in sync with the source checkout."""
 import argparse
+import base64
 import fcntl
 import hashlib
 import json
@@ -29,8 +30,51 @@ def snapshot(root, packages):
     return hashlib.sha256(json.dumps(entries).encode()).hexdigest()
 
 
-def run(*args):
-    subprocess.run([str(arg) for arg in args], check=True)
+def run(*args, **kwargs):
+    subprocess.run([str(arg) for arg in args], check=True, **kwargs)
+
+
+def session_inputs(root):
+    """Track the active theme's sources separately from unrelated package edits."""
+    theme_name = Path.home() / '.local/state/wh01s17/current/theme.name'
+    theme = None
+    if theme_name.is_file():
+        name = theme_name.read_text().strip()
+        relative = f'desktop/.config/wh01s17/themes/{name}'
+        if name and '/' not in name and not name.startswith('.') and (root / relative).is_dir():
+            theme = {'name': name, 'files': snapshot(root, (
+                relative, 'desktop/.config/wh01s17/themed',
+                'platform/.local/share/wh01s17/default/themed'))}
+    instance = os.environ.get('HYPRLAND_INSTANCE_SIGNATURE')
+    return {
+        'theme': theme,
+        'instance': instance,
+        'hypr': snapshot(root, ('desktop/.config/hypr',
+                              'platform/.local/share/wh01s17/default/hypr')) if instance else None,
+    }
+
+
+def refresh_session(root, current, previous):
+    runtime = root / 'platform/.local/share/wh01s17'
+    environment = dict(os.environ, WH01S17_PATH=str(runtime),
+                       PATH=str(runtime / 'bin') + os.pathsep + os.environ.get('PATH', ''))
+    theme_changed = current['theme'] is not None and current['theme'] != previous.get('theme')
+    if theme_changed:
+        # Rebuild staged theme files without background transitions or app-install hooks.
+        staging = dict(environment, WH01S17_THEME_HEADLESS='1', WH01S17_THEME_SKIP_BACKGROUND='1')
+        run('bash', runtime / 'bin/wh01s17-theme-set', current['theme']['name'], env=staging)
+        print(f"Tema regenerado: {current['theme']['name']}", flush=True)
+    if current['instance']:
+        if theme_changed or current['instance'] != previous.get('instance') or current['hypr'] != previous.get('hypr'):
+            run('hyprctl', 'reload', env=environment)
+        if theme_changed:
+            theme_path = Path.home() / '.local/state/wh01s17/current/theme'
+            payloads = [base64.b64encode((theme_path / name).read_bytes()).decode()
+                        if (theme_path / name).is_file() else '' for name in ('colors.toml', 'shell.toml')]
+            # The shell might still be starting; absence must not block Hyprland's update.
+            run(runtime / 'bin/wh01s17-shell', '-q', 'shell', 'applyTheme', *payloads, env=environment)
+            run('bash', runtime / 'bin/wh01s17-restart-terminal', env=environment)
+
 
 
 def main():
@@ -56,11 +100,17 @@ def main():
         # Let editors and Git finish a batch before publishing it.
         before = snapshot(root, packages)
         marker = state / (hashlib.sha256(str(root).encode()).hexdigest() + '.stamp')
-        if not args.force and marker.exists() and marker.read_text() == 'direct-v1:' + before:
+        current = session_inputs(root)
+        try:
+            previous = json.loads(marker.read_text())
+        except (OSError, ValueError):
+            previous = {}
+        if not args.force and previous.get('files') == before and previous.get('session') == current:
             return
         time.sleep(1)
         git_dir = subprocess.check_output(['git', '-C', str(root), 'rev-parse', '--absolute-git-dir'], text=True).strip()
-        if (Path(git_dir) / 'index.lock').exists() or snapshot(root, packages) != before:
+        if ((Path(git_dir) / 'index.lock').exists() or snapshot(root, packages) != before
+                or session_inputs(root) != current):
             if args.force:
                 raise RuntimeError('El checkout está cambiando; vuelve a intentarlo al terminar.')
             return
@@ -75,9 +125,10 @@ def main():
         for command in commands:
             run(*command)
         run('systemctl', '--user', 'daemon-reload')
+        refresh_session(root, current, {} if args.force else previous.get('session', {}))
         # If sources changed during Stow, the next invocation picks them up.
         temporary = marker.with_suffix('.tmp')
-        temporary.write_text('direct-v1:' + before)
+        temporary.write_text(json.dumps({'files': before, 'session': current}))
         temporary.replace(marker)
         print(f'Dotfiles sincronizados: {root}', flush=True)
 

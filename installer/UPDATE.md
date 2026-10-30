@@ -19,7 +19,9 @@ git -C ~/dotfiles pull --ff-only && ~/dotfiles/update.sh --local
 
 `--local` aplica el checkout actual sin descargar cambios. Si falla el pull,
 se detiene sin descartar ni guardar automáticamente los cambios locales.
-Después de una actualización correcta, cierra sesión y vuelve a entrar.
+El sincronizador regenera el tema activo y recarga Hyprland cuando cambian
+sus fuentes. Para cambios de sesión que requieran reinicio, cierra sesión y
+vuelve a entrar.
 
 Los cambios de paquetes o configuración del sistema requieren ejecutar las
 etapas correspondientes de `installer/install.sh`; el sincronizador sólo
