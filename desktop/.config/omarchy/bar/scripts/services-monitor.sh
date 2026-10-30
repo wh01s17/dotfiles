@@ -275,10 +275,10 @@ panel_rows_json() {
       IFS='|' read -r port host process <<< "$record"
       if is_loopback "$host"; then
         exposure="Solo localhost"
-        printf '󰒍\t%s\t%s:%s\t%s\t#5fd75f\n' "$process" "$host" "$port" "$exposure"
+        printf '󰒍\t%s\t%s:%s\t%s\t#84c959\n' "$process" "$host" "$port" "$exposure"
       else
         exposure="Expuesto en la red"
-        printf '󰒍\t%s\t%s:%s\t%s\t#ffaf5f\n' "$process" "$host" "$port" "$exposure"
+        printf '󰒍\t%s\t%s:%s\t%s\t#e8b53f\n' "$process" "$host" "$port" "$exposure"
       fi
       ((shown += 1))
     done
@@ -286,21 +286,21 @@ panel_rows_json() {
     for record in "${reverse_listeners[@]}"; do
       ((shown >= 6)) && break
       IFS='|' read -r port host process <<< "$record"
-      printf '󰆍\t%s\t%s:%s\tListener de reverse shell\t#ff5f5f\n' "$process" "$host" "$port"
+      printf '󰆍\t%s\t%s:%s\tListener de reverse shell\t#ff6b66\n' "$process" "$host" "$port"
       ((shown += 1))
     done
 
     for record in "${reverse_sessions[@]}"; do
       ((shown >= 6)) && break
       IFS='|' read -r port host process local_address <<< "$record"
-      printf '󰆍\t%s\t%s\tSesión probable desde %s\t#ff5f5f\n' "$process" "$host" "$local_address"
+      printf '󰆍\t%s\t%s\tSesión probable desde %s\t#ff6b66\n' "$process" "$host" "$local_address"
       ((shown += 1))
     done
 
     if ((total == 0)); then
-      printf '󰅖\tSin actividad\t—\tNo hay servicios ni reverse shells\t#777777\n'
+      printf '󰅖\tSin actividad\t—\tNo hay servicios ni reverse shells\t#748178\n'
     elif ((total > shown)); then
-      printf '󰇘\tMás elementos\t+%s\tConsulta el tooltip para verlos todos\t#777777\n' "$((total - shown))"
+      printf '󰇘\tMás elementos\t+%s\tConsulta el tooltip para verlos todos\t#748178\n' "$((total - shown))"
     fi
   } | jq -Rsc '
     split("\n")

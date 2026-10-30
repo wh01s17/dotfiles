@@ -6,11 +6,11 @@ STATE_DIR="${CTF_STATE_DIR:-$STATE_HOME/omarchy/bar/ctf}"
 LEGACY_STATE_DIR="$HOME/.config/waybar/state/ctf"
 TARGET_FILE="$STATE_DIR/target"
 
-COLOR_TARGET="#ff5f5f"
-COLOR_VPN="#33ccff"
-COLOR_LAN="#5fd75f"
-COLOR_MISSING="#777777"
-COLOR_SEPARATOR="#666666"
+COLOR_TARGET="#ff6b66"
+COLOR_VPN="#45d9ea"
+COLOR_LAN="#84c959"
+COLOR_MISSING="#748178"
+COLOR_SEPARATOR="#33454f"
 
 if [[ ! -e "$STATE_DIR" && -d "$LEGACY_STATE_DIR" ]]; then
   mkdir -p "$(dirname "$STATE_DIR")"
