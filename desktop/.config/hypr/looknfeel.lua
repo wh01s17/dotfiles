@@ -7,7 +7,7 @@ hl.config({
 	},
 
 	decoration = {
-		rounding = 3,
+		rounding = 10,
 
 		blur = {
 			enabled = true,
