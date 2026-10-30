@@ -32,6 +32,6 @@ Both are deterministic vector compositions rendered to exact 4K PNGs. They conta
 omarchy theme set wh01s17
 ```
 
-The theme lets Omarchy generate application-specific configurations from `colors.toml`, then adds branded shell surfaces, a green/cyan Hyprland border, six-pixel rounding, a restrained phosphor shadow, and Yaru's dark prussian-green icons.
+The theme lets Omarchy generate application-specific configurations from `colors.toml`, then adds branded shell surfaces, a green/cyan Hyprland border, ten-pixel rounding, a restrained phosphor shadow, and Yaru's dark prussian-green icons. The shell draws its text in Departure Mono and its icons in wh01s17 Pixel Icons, Pixelarticons glyphs placed at the Nerd Font code points the shell already uses (`sources/pixel-icons.py`); see `docs/tema.md` in the dotfiles.
 
 The logo in `brand/logo.svg` is the official mark published by wh01s17.com and is kept here as the design source of truth.

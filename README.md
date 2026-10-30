@@ -467,7 +467,7 @@ usa un desenfoque corto de tamaño 3 con dos pasadas:
 
 ```lua
 decoration = {
-  rounding = 3,
+  rounding = 10,
 
   blur = {
     enabled = true,
