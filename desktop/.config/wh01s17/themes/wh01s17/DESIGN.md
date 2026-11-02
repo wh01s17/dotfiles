@@ -19,7 +19,8 @@ The wallpaper system is intentionally private and minimal: deep negative space w
 - `sources/02-outline-mark.svg` uses the outlined W mark.
 - `sources/pixel-art.py` renders `06-pixel-moon-black.png` (full moon) and `07-pixel-moon-wordmark-black.png` (first quarter with a pixel-glyph `wh01s17`): the real lunar near side, maria and craters placed by selenographic coordinates, as an 8-bit sprite in the theme greens on pure black `#000000`, on a 240×135 grid scaled 16×.
 - `sources/pixel-art.py` also renders `08-pixel-gengar-wordmark-black.png`: the Gen 1 Gengar sprite traced from `~/.config/fastfetch/gengar.png`, in its original colors on pure black `#000000`, above the pixel `wh01s17`; `09-pixel-gengar-black.png` is the same sprite alone.
-- The pixel-art wallpapers (06–09) intentionally trade the flat/no-dither rule and the JetBrains Mono wordmark for the 8-bit look.
+- `sources/pixel-art.py` also renders `10-pixel-opeth-white-black.png` and `11-pixel-opeth-green-black.png`: the Opeth logo downsampled from the band's artwork to a 90-row sprite (`OPETH`), white on black, and in the theme colors (O in `#84c959`, `peth` in `#cbd5ce`), on a 480×270 grid scaled 8× so the logo sits at half size with its ornaments intact.
+- The pixel-art wallpapers (06–11) intentionally trade the flat/no-dither rule and the JetBrains Mono wordmark for the 8-bit look.
 
 Render with:
 

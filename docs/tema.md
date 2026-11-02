@@ -4,7 +4,7 @@
 variante oscura inspirada en `wh01s17.com`: superficies casi negras, tipografía
 monoespaciada y acentos verde fósforo, cian, ámbar, rojo y púrpura.
 
-Actívala y recorre sus cinco fondos con:
+Actívala y recorre sus ocho fondos con:
 
 ```bash
 wh01s17 theme set wh01s17
@@ -20,7 +20,7 @@ Sus piezas son:
 | [`hyprland.lua`](../desktop/.config/wh01s17/themes/wh01s17/hyprland.lua) | Bordes verde/cian, radio de 10 px y sombras del tema |
 | [`icons.theme`](../desktop/.config/wh01s17/themes/wh01s17/icons.theme) | Selecciona `Yaru-prussiangreen-dark` |
 | [`shell.*.toml`](../desktop/.config/wh01s17/themes/wh01s17/) | Barra, controles, tipografía (Departure Mono), menús, lock, notificaciones, popups, polkit, espaciado y tooltips |
-| [`backgrounds/`](../desktop/.config/wh01s17/themes/wh01s17/backgrounds/) | Cinco wallpapers PNG 4K listos para usar |
+| [`backgrounds/`](../desktop/.config/wh01s17/themes/wh01s17/backgrounds/) | Ocho wallpapers PNG 4K listos para usar |
 | [`sources/`](../desktop/.config/wh01s17/themes/wh01s17/sources/) | Maestros SVG, generador de los wallpapers pixel art y de los iconos pixel del shell |
 | [`brand/logo.svg`](../desktop/.config/wh01s17/themes/wh01s17/brand/logo.svg) | Geometría oficial de la marca |
 
@@ -43,11 +43,16 @@ composición. Los fondos son:
 | `07-pixel-moon-wordmark-black.png` | Cuarto creciente 8-bit con `wh01s17` en pixel art sobre negro `#000000` | `sources/pixel-art.py` |
 | `08-pixel-gengar-wordmark-black.png` | Gengar de Fastfetch con sus colores originales y `wh01s17` sobre negro `#000000` | `sources/pixel-art.py` |
 | `09-pixel-gengar-black.png` | El mismo Gengar sobre negro `#000000`, sin `wh01s17` | `sources/pixel-art.py` |
+| `10-pixel-opeth-white-black.png` | Logo de Opeth en 8-bit, blanco sobre negro `#000000` | `sources/pixel-art.py` |
+| `11-pixel-opeth-green-black.png` | El mismo logo con la «O» en verde señal `#84c959` y «peth» en `#cbd5ce`, sobre negro | `sources/pixel-art.py` |
 
 Las lunas reproducen la cara visible real: los mares y cráteres principales se
 ubican por latitud y longitud selenográficas y se iluminan según la fase. El
-Gengar es el sprite de `fastfetch/gengar.png` calcado píxel por píxel. Todo se
-dibuja en una cuadrícula de 240×135 que se escala 16× sin interpolación.
+Gengar es el sprite de `fastfetch/gengar.png` calcado píxel por píxel. El logo de Opeth se redujo del arte original a 90 filas
+con promedio por bloques y umbral, y vive en `OPETH` como sprite editable. Todo se
+dibuja en una cuadrícula de 240×135 que se escala 16× sin interpolación,
+salvo Opeth: para mostrar el logo a la mitad sin perder sus ornamentos usa
+una cuadrícula de 480×270 escalada 8×.
 
 Para regenerar los PNG:
 
