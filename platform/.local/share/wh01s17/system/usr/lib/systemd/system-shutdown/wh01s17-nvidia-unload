@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Unload the NVIDIA driver before the firmware cuts power.
+#
+# With the proprietary driver loaded, poweroff sometimes stops with a black
+# screen while the fans and keyboard backlight stay on: the kernel hands over
+# to ACPI with the GPU still initialized and the firmware never finishes.
+# systemd-shutdown runs this after every process is gone and the filesystems
+# are read-only, so nothing holds the modules any more and they can be removed
+# cleanly. $1 is poweroff, reboot, halt or kexec.
+#
+# Best effort: every step is bounded and failures are ignored, so a stuck
+# driver can never make the shutdown worse than it already was.
+
+lsmod 2>/dev/null | grep -q '^nvidia ' || exit 0
+
+log() { echo "wh01s17-nvidia-unload: $*" >/dev/kmsg 2>/dev/null; }
+
+# fbcon keeps the nvidia-drm framebuffer bound; release it first.
+for vtcon in /sys/class/vtconsole/vtcon*; do
+  grep -q 'frame buffer' "$vtcon/name" 2>/dev/null && echo 0 >"$vtcon/bind" 2>/dev/null
+done
+
+if timeout 10 /usr/bin/modprobe -r nvidia_drm nvidia_modeset nvidia_uvm nvidia 2>/dev/null; then
+  log "modules unloaded before $1"
+else
+  log "could not unload modules before $1, continuing"
+fi
+
+exit 0

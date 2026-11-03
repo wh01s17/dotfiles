@@ -26,4 +26,9 @@ EOF
   cat > /etc/mkinitcpio.conf.d/nvidia.conf <<'EOF'
 MODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
 EOF
+
+  # Unload the driver at the very end of shutdown so poweroff does not hang
+  # with the fans still running.
+  install -D -m 0755 "$WH01S17_PATH/system/usr/lib/systemd/system-shutdown/wh01s17-nvidia-unload" \
+    /usr/lib/systemd/system-shutdown/wh01s17-nvidia-unload
 fi
