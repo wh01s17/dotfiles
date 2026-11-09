@@ -1,22 +1,10 @@
 #!/usr/bin/env python3
-"""Spin the wh01s17 W as a 3D ASCII render, in the spirit of Codex's logo.
+"""Turn a dotted theme W into the Arch A alongside Fastfetch.
 
-The W from brand/logo.svg (three bars joined by two feet) is extruded into
-five boxes. Each frame supersamples perspective rays per character cell, lights
-the nearest face with a point light, fades it with depth, and maps the light
-to an ASCII ramp tinted with the theme accent.
-
-Usage:
-    w-spin.py --static [--accent HEX]
-        Print the resting frame and the "wh01s17 OS" wordmark below it, e.g.
-        as Fastfetch's command-raw logo.
-    w-spin.py --play ROWS_UP COLUMN [--accent HEX]
-        Animate in place over a frame already on screen whose top-left corner
-        is ROWS_UP rows above the cursor, at COLUMN (1-based), then come to
-        rest on the --static frame. Ctrl-C skips to the resting frame.
-
-The accent defaults to the active wh01s17 theme's, then to the wh01s17 green.
-WH01S17_SPIN_SECONDS sets the length of the spin (2.4 s by default).
+--static prints the initial W and wordmark; --play ROWS_UP COLUMN rotates
+the W twice into the Arch A, then twice back into the resting W. Both use the
+active wh01s17 theme: accent for W, bright_foreground for A. Ctrl-C skips to W.
+WH01S17_SPIN_SECONDS controls the duration (default 7.2 seconds).
 """
 
 import argparse
@@ -25,217 +13,109 @@ import os
 import sys
 import time
 
-WIDTH, HEIGHT = 40, 20  # character cells left of Fastfetch's report
-CELL_ASPECT = 2.0  # a terminal cell is about twice as tall as it is wide
-RAMP = " .,:;irsXA253hMHGS#9B&@"
-
-# logo.svg geometry (512 units): (x0, y0, x1, y1) of each bar and foot.
-BOXES_2D = [
-    (88, 104, 168, 344),
-    (216, 104, 296, 344),
-    (344, 104, 424, 344),
-    (152, 344, 232, 408),
-    (280, 344, 360, 408),
-]
-DEPTH = 64  # extrusion, in the same units
-
-REST_YAW = math.radians(22)  # resting pose: turned enough to show depth
-TILT = math.radians(-18)  # constant pitch so the top faces show
-LEAN = math.radians(8)  # roll about the view axis: the W leans left, a backslant
-TURNS = 1
-DURATION = float(os.environ.get("WH01S17_SPIN_SECONDS", "2.4"))
-FPS = 30
-SAMPLES = ((-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25))
-
-CAMERA = 2.6  # distance from the centre, in W extents: lower is more perspective
-LIGHT = (-1.6, 1.8, -2.4)  # view-space point light, in W extents: upper left, in front
-FOG = 0.35  # how much the far side of the W darkens
+WIDTH, HEIGHT = 40, 20
 DEFAULT_ACCENT = "84c959"
-WHITE = (0xF3, 0xFB, 0xEE)  # wh01s17 bright foreground, for rims and sheen
+DEFAULT_FOREGROUND = "f3fbee"
+REST_YAW = 0.0
+FPS = 30
+DEFAULT_DURATION = 7.2
+# Braille gives a regular 2x4 dot grid per terminal cell, with no solid fill.
+DOT_WIDTH, DOT_HEIGHT = WIDTH * 2, HEIGHT * 4
+BRAILLE_BITS = ((0, 3), (1, 4), (2, 5), (6, 7))
+BOXES_2D = (
+    (88, 104, 168, 344), (216, 104, 296, 344),
+    (344, 104, 424, 344), (152, 344, 232, 408), (280, 344, 360, 408),
+)
 
 
-def normalized(v):
-    n = math.sqrt(sum(c * c for c in v))
-    return tuple(c / n for c in v)
+def silhouette(x, y, logo):
+    """Theme brand bars, or Arch's tapered silhouette with its open arch."""
+    if logo == "w":
+        sx, sy = x * 168 + 256, 256 - y * 168
+        return any(x0 <= sx <= x1 and y0 <= sy <= y1
+                   for x0, y0, x1, y1 in BOXES_2D)
+    # Apex at y=1, flared base at -1. The asymmetric cuts distinguish Arch
+    # from a generic letter A; the lower opening is a round arch.
+    if not -1 <= y <= 1 or abs(x) > (1 - y) / 2:
+        return False
+    if y < -0.42 or (x / 0.245) ** 2 + ((y + 0.42) / 0.38) ** 2 < 1:
+        if abs(x) < 0.245:
+            return False
+    if -0.63 < y < -0.48 and x > 0.56 + (-0.48 - y) * 2:
+        return False
+    if 0.32 < y < 0.48 and x < -0.13 - (y - 0.32) * 0.7:
+        return False
+    return True
 
 
-def boxes_3d():
-    """The W as 3D boxes centred on the origin, y up, front face at -z."""
-    xs = [x for b in BOXES_2D for x in (b[0], b[2])]
-    ys = [y for b in BOXES_2D for y in (b[1], b[3])]
-    cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
-    return [
-        ((x0 - cx, cy - y1, -DEPTH / 2), (x1 - cx, cy - y0, DEPTH / 2))
-        for x0, y0, x1, y1 in BOXES_2D
-    ]
+def surface(logo):
+    """Sample both faces and the thin edge of an extruded silhouette once."""
+    points = []
+    step = 1 / 38
+    for iy in range(-38, 39):
+        for ix in range(-38, 39):
+            x, y = ix * step, iy * step
+            if not silhouette(x, y, logo):
+                continue
+            points.extend(((x, y, -0.065, 0, 0, -1),
+                           (x, y, 0.065, 0, 0, 1)))
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                if not silhouette(x + dx * step, y + dy * step, logo):
+                    for iz in range(-2, 3):
+                        points.append((x, y, iz * 0.0325, dx, dy, 0))
+    return points
 
 
-BOXES = boxes_3d()
+SURFACES = {logo: surface(logo) for logo in ("w", "arch")}
 
 
-def matmul(a, b):
-    return tuple(tuple(sum(a[r][k] * b[k][c] for k in range(3)) for c in range(3)) for r in range(3))
-
-
-def rotation(yaw):
-    """Rows of the object-to-view rotation: yaw about y, pitch, then lean."""
+def render(yaw, accent, logo="w"):
+    """Perspective-project lit surface dots, keeping the nearest per pixel."""
     cy, sy = math.cos(yaw), math.sin(yaw)
-    cp, sp = math.cos(TILT), math.sin(TILT)
-    cr, sr = math.cos(LEAN), math.sin(LEAN)
-    spin = ((cy, 0.0, sy), (0.0, 1.0, 0.0), (-sy, 0.0, cy))
-    pitch = ((1.0, 0.0, 0.0), (0.0, cp, -sp), (0.0, sp, cp))
-    roll = ((cr, -sr, 0.0), (sr, cr, 0.0), (0.0, 0.0, 1.0))
-    return matmul(roll, matmul(pitch, spin))
-
-
-EXTENT = math.sqrt(sum(max(abs(p[i]) for b in BOXES for p in b) ** 2 for i in range(3)))
-EYE = (0.0, 0.0, -CAMERA * EXTENT)  # view space, looking along +z
-
-
-def to_view(m, v):
-    return tuple(sum(m[r][i] * v[i] for i in range(3)) for r in range(3))
-
-
-def to_object(m, v):
-    return tuple(sum(m[r][i] * v[r] for r in range(3)) for i in range(3))
-
-
-def fit_scale():
-    """Image-plane units per cell column, so the W fits the frame at every yaw."""
-    corners = [
-        (x, y, z)
-        for lo, hi in BOXES
-        for x in (lo[0], hi[0])
-        for y in (lo[1], hi[1])
-        for z in (lo[2], hi[2])
-    ]
-    half_w = half_h = 0.0
-    for step in range(72):
-        m = rotation(2 * math.pi * step / 72)
-        for c in corners:
-            x, y, z = to_view(m, c)
-            k = -EYE[2] / (z - EYE[2])  # projection onto the z = 0 image plane
-            half_w = max(half_w, abs(x * k))
-            half_h = max(half_h, abs(y * k))
-    return max(2 * half_w * 1.04 / WIDTH, 2 * half_h * 1.06 / (HEIGHT * CELL_ASPECT))
-
-
-SCALE = fit_scale()
-
-
-def hit(origin, direction):
-    """Nearest (point, normal) where the object-space ray meets a box, or None."""
-    best = None
-    for lo, hi in BOXES:
-        t0, t1, axis, sign = -math.inf, math.inf, 0, 0.0
-        for a in range(3):
-            o, d = origin[a], direction[a]
-            if abs(d) < 1e-9:
-                if o < lo[a] or o > hi[a]:
-                    break
-                continue
-            ta, tb = (lo[a] - o) / d, (hi[a] - o) / d
-            s = -1.0
-            if ta > tb:
-                ta, tb, s = tb, ta, 1.0
-            if ta > t0:
-                t0, axis, sign = ta, a, s
-            t1 = min(t1, tb)
-            if t0 > t1:
-                break
-        else:
-            if t0 > 0 and (best is None or t0 < best[0]):
-                normal = [0.0, 0.0, 0.0]
-                normal[axis] = sign
-                best = (t0, tuple(normal))
-    if best is None:
-        return None
-    return tuple(origin[i] + best[0] * direction[i] for i in range(3)), best[1]
-
-
-# Cache view-space rays: only the object's transform changes between frames.
-RAYS = [
-    [
-        [normalized(((col + 0.5 + dx - WIDTH / 2) * SCALE,
-                     (HEIGHT / 2 - row - 0.5 - dy) * SCALE * CELL_ASPECT,
-                     -EYE[2])) for dx, dy in SAMPLES]
-        for col in range(WIDTH)
-    ]
-    for row in range(HEIGHT)
-]
-
-
-def render(yaw, accent):
-    """Supersample silhouettes and lighting, retaining a true ASCII surface."""
-    m = rotation(yaw)
-    origin = to_object(m, EYE)
-    lamp = to_object(m, tuple(c * EXTENT for c in LIGHT))
-    # Project each box once to reject empty cells before tracing four rays.
-    bounds = []
-    for lo, hi in BOXES:
-        projected = []
-        for x in (lo[0], hi[0]):
-            for y in (lo[1], hi[1]):
-                for z in (lo[2], hi[2]):
-                    vx, vy, vz = to_view(m, (x, y, z))
-                    k = -EYE[2] / (vz - EYE[2])
-                    projected.append((vx * k / SCALE + WIDTH / 2,
-                                      HEIGHT / 2 - vy * k / (SCALE * CELL_ASPECT)))
-        bounds.append((min(p[0] for p in projected) - 1,
-                       max(p[0] for p in projected),
-                       min(p[1] for p in projected) - 1,
-                       max(p[1] for p in projected)))
+    cp, sp = math.cos(-0.08), math.sin(-0.08)
+    pixels = {}
+    for x, y, z, nx, ny, nz in SURFACES[logo]:
+        vx, vz = cy * x + sy * z, -sy * x + cy * z
+        vy, vz = cp * y - sp * vz, sp * y + cp * vz
+        k = 3.8 / (3.8 + vz)
+        px = round(DOT_WIDTH / 2 + vx * 33 * k)
+        py = round(DOT_HEIGHT / 2 - vy * 33 * k)
+        if not (0 <= px < DOT_WIDTH and 0 <= py < DOT_HEIGHT):
+            continue
+        previous = pixels.get((px, py))
+        if previous is not None and previous[0] <= vz:
+            continue
+        nxx, nzz = cy * nx + sy * nz, -sy * nx + cy * nz
+        nyy, nzz = cp * ny - sp * nzz, sp * ny + cp * nzz
+        light = max(0.0, -0.35 * nxx + 0.45 * nyy - 0.82 * nzz)
+        # Depth and a moving reflection shade the dots without changing hue.
+        shine = 0.5 + 0.42 * light + 0.08 * math.cos(y * 2 + yaw)
+        shine *= 1 - 0.12 * max(0.0, vz)
+        pixels[(px, py)] = (vz, max(0.25, min(1.0, shine)))
     lines = []
-    for row_index, row in enumerate(RAYS):
+    for row in range(HEIGHT):
         out, last = [], None
-        for col, rays in enumerate(row):
-            if not any(x0 <= col <= x1 and y0 <= row_index <= y1
-                       for x0, x1, y0, y1 in bounds):
+        for col in range(WIDTH):
+            bits, values = 0, []
+            for dy in range(4):
+                for dx in range(2):
+                    pixel = pixels.get((col * 2 + dx, row * 4 + dy))
+                    if pixel:
+                        bits |= 1 << BRAILLE_BITS[dy][dx]
+                        values.append(pixel[1])
+            if not bits:
                 out.append(" ")
                 continue
-            values, colors = [], []
-            for ray in rays:
-                sample = hit(origin, to_object(m, ray))
-                if sample is None:
-                    continue
-                point, normal = sample
-                light = normalized(tuple(lamp[i] - point[i] for i in range(3)))
-                eye = normalized(tuple(origin[i] - point[i] for i in range(3)))
-                diffuse = max(0.0, sum(normal[i] * light[i] for i in range(3)))
-                depth = sum(m[2][i] * point[i] for i in range(3))
-                far = min(1.0, max(0.0, (depth + EXTENT) / (2 * EXTENT)))
-                value = (0.22 + 0.72 * diffuse) * (1 - FOG * far)
-                half = normalized(tuple(light[i] + eye[i] for i in range(3)))
-                spec = max(0.0, sum(normal[i] * half[i] for i in range(3))) ** 24
-                # A broad silver reflection follows the light without hard white rims.
-                sheen = min(0.85, spec * 0.8)
-                base = shade(accent, value)
-                colors.append(tuple(c + (w - c) * sheen for c, w in zip(base, WHITE)))
-                values.append(min(1.0, value + spec * 0.3))
-            if not values:
-                out.append(" ")
-                continue
-            coverage = len(values) / len(SAMPLES)
-            value = sum(values) / len(values) * coverage
-            ch = RAMP[max(1, min(len(RAMP) - 1, round(value * (len(RAMP) - 1))))]
-            # Partial cells fade in rather than popping into a full bright glyph.
-            color = tuple(round(sum(c[i] for c in colors) / len(colors)
-                                * math.sqrt(coverage)) for i in range(3))
+            intensity = sum(values) / len(values)
+            # Quantize the lighting to limit escape sequences per frame.
+            intensity = round(intensity * 16) / 16
+            color = tuple(round(c * intensity) for c in accent)
             if color != last:
                 out.append("\x1b[38;2;%d;%d;%dm" % color)
                 last = color
-            out.append(ch)
+            out.append(chr(0x2800 + bits))
         lines.append("".join(out) + "\x1b[0m")
     return lines
-
-
-def shade(accent, v):
-    """Accent darkened in shadow and lifted toward white in full light."""
-    if v < 0.75:
-        k = 0.35 + 0.65 * v / 0.75
-        return tuple(int(c * k) for c in accent)
-    w = (v - 0.75) / 0.25 * 0.45
-    return tuple(int(c + (255 - c) * w) for c in accent)
 
 
 # The 5x7 pixel glyphs of the theme's pixel-art wallpapers (sources/pixel-art.py).
@@ -325,23 +205,26 @@ def wordmark(accent):
     return lines
 
 
-def theme_accent():
-    """The accent declared by the active wh01s17 theme, or None."""
+def theme_colors():
+    """Read semantic colors from the active theme, with standalone fallbacks."""
     state = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
+    palette = {}
     try:
         with open(os.path.join(state, "wh01s17/current/theme/colors.toml")) as colors:
             for line in colors:
                 key, _, value = line.partition("=")
-                if key.strip() == "accent":
-                    return value.strip().strip('"')
-    except OSError:
+                if key.strip() in ("accent", "bright_foreground", "foreground"):
+                    palette[key.strip()] = value.split('"')[1]
+    except (OSError, IndexError):
         pass
-    return None
+    return palette
 
 
 def parse_hex(value):
     value = value.lstrip("#")
     try:
+        if len(value) != 6:
+            raise ValueError("expected six hex digits")
         return tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))
     except ValueError:
         return parse_hex(DEFAULT_ACCENT)
@@ -351,8 +234,38 @@ def ease_out(t):
     return t * t * t * (10 + t * (-15 + 6 * t))
 
 
-def play(rows_up, column, accent):
-    duration = DURATION if math.isfinite(DURATION) and DURATION > 0 else 2.4
+def animation_frame(progress, accent, foreground):
+    """Two turns W → A, pause on A, then two turns A → resting W.
+
+    Swap silhouettes only at the last edge-on pose of each leg, so the new
+    logo finishes facing forward and the rotation keeps the same direction.
+    """
+    if progress < 0.06:
+        return render(REST_YAW, accent, "w")
+    if progress < 0.46:
+        turn = ease_out((progress - 0.06) / 0.40)
+        angle = 4 * math.pi * turn
+        if angle < 3.5 * math.pi:
+            return render(angle, accent, "w")
+        return render(angle - 4 * math.pi, foreground, "arch")
+    if progress < 0.56:
+        return render(REST_YAW, foreground, "arch")
+    if progress < 0.96:
+        turn = ease_out((progress - 0.56) / 0.40)
+        angle = 4 * math.pi * turn
+        if angle < 3.5 * math.pi:
+            return render(angle, foreground, "arch")
+        return render(angle - 4 * math.pi, accent, "w")
+    return render(REST_YAW, accent, "w")
+
+
+def play(rows_up, column, accent, foreground):
+    try:
+        duration = float(os.environ.get("WH01S17_SPIN_SECONDS", str(DEFAULT_DURATION)))
+    except ValueError:
+        duration = DEFAULT_DURATION
+    if not math.isfinite(duration) or duration <= 0:
+        duration = DEFAULT_DURATION
     try:
         rows = os.get_terminal_size(sys.stdout.fileno()).lines
     except OSError:
@@ -382,8 +295,7 @@ def play(rows_up, column, accent):
         deadline = start
         while True:
             progress = min(1.0, (time.monotonic() - start) / duration)
-            t = ease_out(progress)
-            draw(render(REST_YAW - 2 * math.pi * TURNS * (1 - t), accent))
+            draw(animation_frame(progress, accent, foreground))
             if progress >= 1.0:
                 break
             # Drop missed frames instead of stretching the animation on slower CPUs.
@@ -395,7 +307,7 @@ def play(rows_up, column, accent):
     except KeyboardInterrupt:
         pass
     finally:
-        draw(render(REST_YAW, accent))
+        draw(render(REST_YAW, accent, "w"))
         out.write("\x1b[?25h")
         out.flush()
 
@@ -406,13 +318,20 @@ def main():
     mode.add_argument("--static", action="store_true")
     mode.add_argument("--play", nargs=2, type=int, metavar=("ROWS_UP", "COLUMN"))
     parser.add_argument("--accent")
+    parser.add_argument("--foreground", help="Arch color (default: theme bright_foreground)")
+    parser.add_argument("--logo", choices=("w", "arch"), default="w",
+                        help="logo to print in static mode")
     args = parser.parse_args()
-    accent = parse_hex(args.accent or theme_accent() or DEFAULT_ACCENT)
+    palette = theme_colors()
+    accent = parse_hex(args.accent or palette.get("accent") or DEFAULT_ACCENT)
+    foreground = parse_hex(args.foreground or palette.get("bright_foreground")
+                           or palette.get("foreground") or DEFAULT_FOREGROUND)
 
     if args.static:
-        sys.stdout.write("\n".join(render(REST_YAW, accent) + wordmark(accent)) + "\n")
+        color = accent if args.logo == "w" else foreground
+        sys.stdout.write("\n".join(render(REST_YAW, color, args.logo) + wordmark(accent)) + "\n")
     else:
-        play(*args.play, accent)
+        play(*args.play, accent, foreground)
 
 
 if __name__ == "__main__":

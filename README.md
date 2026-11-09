@@ -507,29 +507,30 @@ y púrpura. Paleta, wallpapers y regeneración en [`docs/tema.md`](docs/tema.md)
   paquetes, tema y fuente;
 - estado: antigüedad de la instalación, uptime y última actualización.
 
-El logo es la W de [`brand/logo.svg`](desktop/.config/wh01s17/themes/wh01s17/brand/logo.svg)
-renderizada en 3D con caracteres ASCII por
-[`w-spin.py`](desktop/.config/fastfetch/w-spin.py), al estilo del logo animado
-de Codex. Las tres barras y los dos pies de la W se extruyen como cajas; cada
-celda del lienzo de 40×20 combina cuatro rayos en perspectiva para suavizar
-los bordes. La iluminación y la profundidad se traducen a una rampa ASCII
-de 23 tonos teñida con el `accent` del tema activo (frente claro,
-costado en sombra). La W va inclinada hacia la izquierda y un reflejo suave
-recorre las caras al girar. Debajo va `wh01s17 OS` con los glifos pixelados de 5×7
-de los wallpapers pixel art (letras claras, números en `accent`), dibujado con
-octantes Unicode: cada celda son 2×4 píxeles cuadrados, así que el rótulo cabe
-en 28 columnas. Kitty dibuja los octantes por sí mismo; en otros terminales
-dependen de la fuente. `config.jsonc` usa W y rótulo como logo `command-raw` en
-su pose de reposo, así que también aparecen al llamar a `fastfetch` con
-opciones.
+El logo comienza con la W de [`brand/logo.svg`](desktop/.config/wh01s17/themes/wh01s17/brand/logo.svg)
+y da dos vueltas para revelar la A de Arch, luego otras dos para volver a la W, mediante
+[`w-spin.py`](desktop/.config/fastfetch/w-spin.py). Ambas figuras tienen volumen
+fino, perspectiva y sombreado sobre una trama de puntos Unicode Braille,
+al estilo de las referencias de Codex. El lienzo de 40×20 celdas contiene
+80×80 puntos. La W toma `accent` del tema activo; la A toma
+`bright_foreground` (o `foreground` si falta). En el tema wh01s17 son verde
+`#84c959` y blanco verdoso `#f3fbee`, respectivamente.
 
-El lanzador [`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) centra la W
-y el rótulo verticalmente junto a los paneles de información. Cuando el informe ya está en
-pantalla, `w-spin.py --play` hace girar la W una vuelta en su sitio durante
-2,4 s (`WH01S17_SPIN_SECONDS` lo cambia), con aceleración y frenado suaves, y la deja en la misma pose de reposo;
-Ctrl-C salta al final. En una redirección o cuando se entregan opciones a
-`fastfetch`, el lanzador omite la animación y delega directamente al binario
-para no introducir movimientos de cursor.
+Debajo permanece `wh01s17 OS` con los glifos pixelados de 5×7 de los wallpapers
+pixel art, dibujados con octantes Unicode en 28 columnas. Kitty dibuja los
+octantes por sí mismo; en otros terminales dependen de la fuente.
+`config.jsonc` usa la W inicial y el rótulo como logo `command-raw`, por lo que
+las invocaciones con opciones o salida redirigida muestran esa imagen fija.
+`w-spin.py --static --logo arch` permite ver la A sin animación.
+
+El lanzador [`wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) centra el logo
+y el rótulo junto a los paneles. Cuando el informe ya está en pantalla,
+`w-spin.py --play` mantiene brevemente la W, da dos vueltas para revelar la A,
+hace una pausa y da otras dos vueltas para quedarse como W. La secuencia dura
+7,2 s (`WH01S17_SPIN_SECONDS` lo cambia), con aceleración y frenado suaves;
+Ctrl-C salta a la W final y restaura el cursor.
+En una redirección o cuando se entregan opciones a `fastfetch`, el lanzador
+delega directamente al binario para no introducir movimientos de cursor.
 
 El alias definido en `.zshrc` mantiene el comando habitual:
 
@@ -620,7 +621,7 @@ distinto de cero si hubo errores u omisiones. No recorre subcarpetas de forma
 recursiva.
 
 Aliases destacados: `ls`, `ll`, `la`, `l` y `lla` usan Eza; `cat` usa Bat;
-`icat` usa `kitten icat`; `cd` usa Zoxide y `fastfetch` hace girar la W
+`icat` usa `kitten icat`; `cd` usa Zoxide y `fastfetch` transforma la W en la A de Arch
 del logo.
 
 Advertencias de seguridad:
@@ -705,7 +706,7 @@ el uso diario:
 | [`monitor_scales.lua`](desktop/.config/hypr/monitor_scales.lua) | Recupera la última escala registrada por cada salida |
 | `hypr/profiles/*.lua` | Reglas versionadas de monitores para `hp-gray` y `omen` |
 | `kitty/profiles/*.conf` | Tamaños de fuente versionados para los mismos perfiles |
-| [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Giro de la W 3D y delegación al binario real de Fastfetch |
+| [`fastfetch/wh01s17.sh`](desktop/.config/fastfetch/wh01s17.sh) | Transición de puntos W → Arch y delegación al binario real de Fastfetch |
 | [`ctf-aliases.zsh`](desktop/.config/wh01s17/bar/scripts/ctf-aliases.zsh) | Puente entre `.zshrc` y `ctf-ip.sh` |
 | [`manifest.json`](desktop/.config/wh01s17/plugins/wh01s17.clock/manifest.json) | Declara el reloj como plugin de barra clonado de `core.clock` |
 | `wh01s17.{audio,bluetooth,network,power}/` | Clones de los paneles oficiales con sus modelos y controles ampliados |

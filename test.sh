@@ -103,6 +103,7 @@ else
   need lua
 fi
 need python3 && run "Python (${#py[@]})" check_python "${py[@]}"
+need python3 && run "Animación Fastfetch" python3 -B tests/test_fastfetch_animation.py
 need python3 && run "Enlaces y sincronizador" python3 -B tests/dotfiles-sync.py
 need python3 && run "Instalador y backports" env TEST_DOTFILES="$PWD" python3 -B -m unittest discover -s installer/tests -v
 run "Bash -n (${#bash_scripts[@]})" check_bash "${bash_scripts[@]}"
