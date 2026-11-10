@@ -609,8 +609,6 @@ Funciones propias:
 | `mkt` | Crea `nmap/`, `content/`, `exploits/` y archivos de notas/flags en el directorio actual |
 | `git_config <usuario> <email>` | Configura identidad y editor globales de Git, y las credenciales de GitHub mediante `gh` |
 | `git_update_all [carpeta]` | Actualiza los repositorios hijos directos (incluidos ocultos), por defecto en la carpeta actual, usando solo fast-forward |
-| `ipinfo <IP> [--whois\|--geo\|--info]` | Consulta WHOIS o servicios externos de geolocalización/IP |
-| `subdomain_enum <dominio>` | Combina resultados pasivos de Subfinder y Amass y elimina duplicados |
 | `target`, `myip`, `ctfcopy`, `ctfclear` | Controlan el estado compartido del panel CTF |
 
 `git_update_all "$HOME/workspace"` omite repositorios con cambios locales
@@ -623,13 +621,6 @@ recursiva.
 Aliases destacados: `ls`, `ll`, `la`, `l` y `lla` usan Eza; `cat` usa Bat;
 `icat` usa `kitten icat`; `cd` usa Zoxide y `fastfetch` transforma la W en la A de Arch
 del logo.
-
-Advertencias de seguridad:
-
-- `ipinfo` depende de una credencial de API. No publiques credenciales dentro
-  de `.zshrc`: muévela a una variable de entorno o almacén de secretos y rota
-  cualquier valor que ya haya sido versionado.
-- Las consultas de `ipinfo` envían la IP indicada a servicios externos.
 
 Recarga la sesión después de editar:
 
