@@ -102,8 +102,8 @@
         {
           "id": "wh01s17.metronome",
           "accent": false,
-          "beats": 1,
-          "bpm": 80,
+          "beats": 4,
+          "bpm": 60,
           "subdivision": "1/4",
           "volume": 0.7
         },
