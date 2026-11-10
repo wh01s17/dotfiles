@@ -73,6 +73,31 @@ class FastfetchAnimationTests(unittest.TestCase):
         self.assertNotIn("\x1b[2J", result)
         self.assertNotIn("\x1b[0K", result)
 
+    def test_demo_repeats_cycles_until_interrupt(self):
+        output = io.StringIO()
+        # Two completed cycles must wrap rather than ending playback.
+        with patch.object(spin.sys, "stdout", output), \
+                patch.object(spin.os, "get_terminal_size", return_value=os.terminal_size((120, 40))), \
+                patch.dict(os.environ, {"WH01S17_SPIN_SECONDS": "1"}), \
+                patch.object(spin.time, "monotonic", side_effect=[0, 0.5, 0.5, 1.25, 1.25, 2.75, 2.75]), \
+                patch.object(spin.time, "sleep", side_effect=[None, None, KeyboardInterrupt]), \
+                patch.object(spin, "animation_frame", return_value=["frame"] * spin.HEIGHT) as frame:
+            spin.play(25, 3, GREEN, WHITE, loop=True)
+        self.assertEqual([call.args[0] for call in frame.call_args_list], [0.5, 0.25, 0.75])
+        self.assertTrue(output.getvalue().endswith("\x1b[?25h"))
+        self.assertIn(spin.render(0, GREEN)[10], output.getvalue())
+
+    def test_normal_play_stops_after_one_cycle(self):
+        with patch.object(spin.sys, "stdout", io.StringIO()), \
+                patch.object(spin.os, "get_terminal_size", return_value=os.terminal_size((120, 40))), \
+                patch.dict(os.environ, {"WH01S17_SPIN_SECONDS": "1"}), \
+                patch.object(spin.time, "monotonic", side_effect=[0, 1.1]), \
+                patch.object(spin, "animation_frame", return_value=["frame"] * spin.HEIGHT) as frame, \
+                patch.object(spin.time, "sleep") as sleep:
+            spin.play(25, 3, GREEN, WHITE)
+        frame.assert_called_once_with(1.0, GREEN, WHITE)
+        sleep.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

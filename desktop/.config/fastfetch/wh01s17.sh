@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Options and redirected output use Fastfetch directly: the cursor overlay below
-# is intentionally limited to the normal interactive report.
+demo=false
+if [[ $# -eq 1 && $1 == --demo ]]; then
+	demo=true
+	shift
+fi
+
+# Options and redirected output use Fastfetch directly. --demo repeats the
+# interactive overlay until Ctrl-C, and is consumed before delegating.
 if [[ ! -t 1 || $# -gt 0 ]]; then
 	exec /usr/bin/fastfetch "$@"
 fi
@@ -21,8 +27,12 @@ logo_column=3
 fastfetch_status=$?
 
 if ((fastfetch_status == 0)); then
+	animation_options=()
+	if [[ $demo == true ]]; then
+		animation_options+=(--loop)
+	fi
 	python3 "$HOME/.config/fastfetch/w-spin.py" \
-		--play "$((output_rows - logo_top))" "$logo_column" || true
+		--play "$((output_rows - logo_top))" "$logo_column" "${animation_options[@]}" || true
 fi
 
 exit "$fastfetch_status"

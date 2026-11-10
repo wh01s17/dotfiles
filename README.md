@@ -538,7 +538,16 @@ El alias definido en `.zshrc` mantiene el comando habitual:
 fastfetch
 ```
 
-El lanzador reenvía todas las opciones a `/usr/bin/fastfetch`. Para omitir la
+Para repetir la animación indefinidamente hasta presionar Ctrl-C:
+
+```bash
+fastfetch --demo
+```
+
+Cada ciclo respeta `WH01S17_SPIN_SECONDS`. Al salir queda la W y se restaura
+el cursor. Con salida redirigida se imprime el informe estático una sola vez.
+
+El lanzador reenvía las demás opciones a `/usr/bin/fastfetch`. Para omitir la
 animación puntualmente, ejecuta `/usr/bin/fastfetch` de forma directa.
 
 ## Kitty

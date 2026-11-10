@@ -4,7 +4,8 @@
 --static prints the initial W and wordmark; --play ROWS_UP COLUMN rotates
 the W twice into the Arch A, then twice back into the resting W. Both use the
 active wh01s17 theme: accent for W, bright_foreground for A. Ctrl-C skips to W.
-WH01S17_SPIN_SECONDS controls the duration (default 7.2 seconds).
+Add --loop to --play to repeat until Ctrl-C. WH01S17_SPIN_SECONDS controls
+the duration of each cycle (default 7.2 seconds).
 """
 
 import argparse
@@ -259,7 +260,7 @@ def animation_frame(progress, accent, foreground):
     return render(REST_YAW, accent, "w")
 
 
-def play(rows_up, column, accent, foreground):
+def play(rows_up, column, accent, foreground, loop=False):
     try:
         duration = float(os.environ.get("WH01S17_SPIN_SECONDS", str(DEFAULT_DURATION)))
     except ValueError:
@@ -294,7 +295,8 @@ def play(rows_up, column, accent, foreground):
         start = time.monotonic()
         deadline = start
         while True:
-            progress = min(1.0, (time.monotonic() - start) / duration)
+            elapsed = (time.monotonic() - start) / duration
+            progress = elapsed % 1.0 if loop else min(1.0, elapsed)
             draw(animation_frame(progress, accent, foreground))
             if progress >= 1.0:
                 break
@@ -317,11 +319,14 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--static", action="store_true")
     mode.add_argument("--play", nargs=2, type=int, metavar=("ROWS_UP", "COLUMN"))
+    parser.add_argument("--loop", action="store_true", help="repeat --play until Ctrl-C")
     parser.add_argument("--accent")
     parser.add_argument("--foreground", help="Arch color (default: theme bright_foreground)")
     parser.add_argument("--logo", choices=("w", "arch"), default="w",
                         help="logo to print in static mode")
     args = parser.parse_args()
+    if args.loop and not args.play:
+        parser.error("--loop requires --play")
     palette = theme_colors()
     accent = parse_hex(args.accent or palette.get("accent") or DEFAULT_ACCENT)
     foreground = parse_hex(args.foreground or palette.get("bright_foreground")
@@ -331,7 +336,7 @@ def main():
         color = accent if args.logo == "w" else foreground
         sys.stdout.write("\n".join(render(REST_YAW, color, args.logo) + wordmark(accent)) + "\n")
     else:
-        play(*args.play, accent, foreground)
+        play(*args.play, accent, foreground, loop=args.loop)
 
 
 if __name__ == "__main__":
