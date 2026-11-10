@@ -372,3 +372,6 @@ _prompt_sparse_precmd() {
 autoload -Uz add-zsh-hook
 add-zsh-hook preexec _prompt_sparse_preexec
 add-zsh-hook precmd _prompt_sparse_precmd
+
+# Added by codebase-memory-mcp install
+export PATH="/home/wh01s17/.local/bin:$PATH"
