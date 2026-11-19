@@ -169,7 +169,8 @@ BorderSurface {
           Layout.fillWidth: true
           visible: root.summary.length > 0
           text: root.summary
-          font.family: "Liberation Sans"
+          // Pixel mode (the wh01s17 theme) writes notifications in the theme font.
+          font.family: Style.pixelMode && root.fontFamily !== "" ? root.fontFamily : "Liberation Sans"
           color: Colors.notifications.text
           font.pixelSize: Style.font.title
           font.bold: true
@@ -184,7 +185,8 @@ BorderSurface {
           visible: root.sanitizedBody.length > 0
           text: root.styledBody
           textFormat: Text.StyledText
-          font.family: "Liberation Sans"
+          // Pixel mode (the wh01s17 theme) writes notifications in the theme font.
+          font.family: Style.pixelMode && root.fontFamily !== "" ? root.fontFamily : "Liberation Sans"
           color: root.bodyColor
           font.pixelSize: Style.font.title
           wrapMode: Text.WordWrap

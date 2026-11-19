@@ -1,0 +1,9 @@
+[pixel]
+# 8-bit shell surfaces (Commons/Style.qml, pixel mode).
+# Corners: a staircase of `steps` cells, each `unit` px, instead of a curve.
+# Sliders and meters are drawn as blocks of the same unit.
+# Panels open, close and morph in `motion-steps` jumps (0 = smooth).
+enabled      = true
+unit         = 2
+steps        = 2
+motion-steps = 5

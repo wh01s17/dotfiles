@@ -962,10 +962,20 @@ Panel {
                 Rectangle {
                   width: parent.width
                   height: Math.max(Style.space(5), Style.spacing.xs)
-                  color: Util.alpha(root.bar.foreground, 0.18)
+                  color: Style.pixelMode ? "transparent" : Util.alpha(root.bar.foreground, 0.18)
                   opacity: root.inputMuted ? 0.35 : 1.0
 
+                  // Pixel mode: the live input level as blocks, like a VU meter.
+                  PixelBar {
+                    anchors.fill: parent
+                    visible: Style.pixelMode
+                    value: Math.max(0, Math.min(1, inputPeakMonitor.peak))
+                    fillColor: root.bar.foreground
+                    trackColor: Util.alpha(root.bar.foreground, 0.18)
+                  }
+
                   Rectangle {
+                    visible: !Style.pixelMode
                     height: parent.height
                     width: parent.width * Math.max(0, Math.min(1, inputPeakMonitor.peak))
                     color: root.bar.foreground

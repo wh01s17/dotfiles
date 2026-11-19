@@ -1,11 +1,17 @@
 pragma Singleton
 import Quickshell
 import QtQuick
+import "PixelGeometry.js" as PixelGeometry
 
 // Shared utility helpers used across plugins. Pure functions only — no
 // state. Anything stateful belongs on Color, Style, or a service.
 QtObject {
   id: root
+
+  // Pixel-mode geometry (PixelGeometry.js): staircase borders and bar blocks.
+  function pixelOutline(w, h, unit, steps, bw) { return PixelGeometry.pixelOutline(w, h, unit, steps, bw) }
+  function blockLayout(length, cell, gap) { return PixelGeometry.blockLayout(length, cell, gap) }
+  function litBlocks(value, count) { return PixelGeometry.litBlocks(value, count) }
 
   function clamp(value, min, max) {
     var n = Number(value)

@@ -28,8 +28,40 @@ import Quickshell.Io
 QtObject {
   id: root
 
-  property int cornerRadius: 0
+  // Hyprland's rounding as read; cornerRadius is what surfaces draw with.
+  property int roundingRadius: 0
+  readonly property int cornerRadius: pixelMode ? 0 : roundingRadius
   property int gapsOut: 5
+
+  // ---------------------------------------------------------- pixel mode
+  //
+  // `[pixel]` in shell.toml turns the shell's surfaces 8-bit: square corners
+  // cut in a staircase of `steps` cells of `unit` px (BorderSurface), sliders
+  // and meters drawn as blocks (PixelBar), and panel motion advanced in
+  // `motion-steps` jumps instead of a smooth curve. Off unless a theme asks.
+  property bool pixelMode: false
+  property int pixelUnit: 2
+  property int pixelSteps: 2
+  property int motionSteps: 0
+  readonly property int pixelCorner: pixelMode ? pixelUnit * pixelSteps : 0
+
+  // A 0..1 progress as it should be drawn: in `motionSteps` jumps when the
+  // theme asks for stepped motion, untouched otherwise. The ends stay exact.
+  function stepped(progress) {
+    var v = Number(progress)
+    if (!(motionSteps > 0) || v <= 0 || v >= 1) return v
+    return Math.round(v * motionSteps) / motionSteps
+  }
+
+  // Every shell animation runs for Style.duration(ms); reduceMotion makes it 0.
+  property bool reduceMotion: false
+  function duration(ms) {
+    return reduceMotion ? 0 : ms
+  }
+
+  // A strong ease-out, for anything appearing or moving in answer to the
+  // pointer: it starts at once and settles without a bounce (Omarchy 4.5).
+  readonly property var easeOut: [0.23, 1.0, 0.32, 1.0, 1.0, 1.0]
 
   // ---------------------------------------------------------- state tokens
   //
@@ -360,7 +392,7 @@ QtObject {
     try {
       var json = JSON.parse(raw || "{}")
       var n = Number(json.int)
-      if (isFinite(n) && n >= 0) cornerRadius = n
+      if (isFinite(n) && n >= 0) roundingRadius = n
     } catch (e) {
       // hyprctl missing / Hyprland not running — leave the previous value.
     }
@@ -391,6 +423,7 @@ QtObject {
     var nextSpacingScale = 1.0
     var nextSpacingScaleWithFont = true
     var nextBarScaleWithFont = true
+    var nextPixel = { mode: false, unit: 2, steps: 2, motion: 0 }
     var v = values || {}
     for (var fullKey in v) {
       var dot = fullKey.indexOf(".")
@@ -423,6 +456,15 @@ QtObject {
           if (key === "scale") nextSpacingScale = fval
           else spacingOut[key] = fval
         }
+      } else if (section === "pixel") {
+        if (key === "enabled") nextPixel.mode = boolToken(raw, false)
+        else {
+          var pval = parseInt(raw, 10)
+          if (!isFinite(pval) || pval < 0) continue
+          if (key === "unit") nextPixel.unit = Math.max(1, pval)
+          else if (key === "steps") nextPixel.steps = pval
+          else if (key === "motion-steps") nextPixel.motion = pval
+        }
       } else if (section === "controls" || section === "style") {
         // Strings are passed through; styleRawNum/styleString coerce on read.
         // [style] is the legacy name for [controls].
@@ -446,6 +488,10 @@ QtObject {
     barScaleWithFont = nextBarScaleWithFont
     spacingOverrides = spacingOut
     styleOverrides = styleOut
+    pixelUnit = nextPixel.unit
+    pixelSteps = nextPixel.steps
+    motionSteps = nextPixel.motion
+    pixelMode = nextPixel.mode
   }
 
   property Process hyprctlProc: Process {

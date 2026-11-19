@@ -96,6 +96,7 @@ else
 fi
 need node && run "JavaScript (${#js[@]})" check_js "${js[@]}"
 need node && run "External display selection" node tests/monitor-external.js
+need node && run "Geometría pixel" node tests/pixel-geometry.js
 lua_runtime=$(command -v lua || command -v lua5.4 || true)
 if [[ -n $lua_runtime ]]; then
   run "External display layout" "$lua_runtime" tests/monitor-external.lua

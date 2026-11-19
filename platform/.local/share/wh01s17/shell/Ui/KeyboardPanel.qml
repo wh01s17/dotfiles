@@ -62,6 +62,24 @@ PanelWindow {
 
   default property alias contentItem: contentHolder.children
 
+  // Lazy content (Omarchy 4.5). A panel that sets `content` to a Component
+  // gets it built the first time the panel opens instead of at shell startup.
+  // It stays loaded after that, so reopening is instant and its state
+  // survives a close. Root-level panel code reaches into it through
+  // `loadedContent`, null until then. Panels that declare children directly
+  // keep the eager behaviour.
+  property Component content: null
+  property bool contentRequested: false
+  readonly property Item loadedContent: contentLoader.item
+  readonly property real loadedContentHeight: contentLoader.item ? contentLoader.item.implicitHeight : 0
+
+  // Build the content without opening the panel, for callers that need to
+  // reach it first.
+  function ensureContent() {
+    if (content) contentRequested = true
+    return contentLoader.item
+  }
+
   readonly property var coordinatorKey: owner || root
   readonly property var anchorWindow: anchorItem ? anchorItem.QsWindow.window : null
   readonly property string barPos: bar ? bar.position : "top"
@@ -225,6 +243,7 @@ PanelWindow {
   // animation, which made ownership transfer to a sibling popup race.
   onOpenChanged: {
     if (open) {
+      if (content) contentRequested = true
       focusPrimed = false
       beginFocusPrime()
       if (focusTarget) Qt.callLater(function() {
@@ -238,7 +257,9 @@ PanelWindow {
     if (open) {
       popoutSwitchClosing = false
       popoutSwitching = bar.activePopout && bar.activePopout !== coordinatorKey
+      if (popoutSwitching) morphFromLastCard()
       bar.requestPopout(coordinatorKey)
+      publishCard()
       if (popoutSwitching) popoutSwitchTimer.restart()
     } else {
       popoutSwitchClosing = !!(owner && owner.popoutSwitchClosing)
@@ -260,8 +281,64 @@ PanelWindow {
 
   Timer {
     id: popoutSwitchTimer
-    interval: 150
+    // Outlasts the morph, so the card stays shown until it has landed.
+    interval: 250
     onTriggered: root.popoutSwitching = false
+  }
+
+  // --- opening and switching (Omarchy 4.5, #16470) -------------------------
+
+  // Where the card grows from, in its own coordinates: the point on its
+  // bar-facing edge nearest the icon it hangs from.
+  readonly property point growOrigin: {
+    var x = Math.max(0, Math.min(anchorScreenPos.x + anchorW / 2 - cardOrigin.x, contentWidth))
+    var y = Math.max(0, Math.min(anchorScreenPos.y + anchorH / 2 - cardOrigin.y, contentHeight))
+    if (barPos === "bottom") return Qt.point(x, contentHeight)
+    if (barPos === "left") return Qt.point(0, y)
+    if (barPos === "right") return Qt.point(contentWidth, y)
+    return Qt.point(x, 0)
+  }
+
+  // One card, not two: a panel taking over from another in the same section of
+  // the bar starts its card where the last one stood, at its size, and morphs
+  // it into its own place while the new content fades in. Each panel tells the
+  // bar where its card is. Across sections the new panel opens fresh.
+  readonly property rect cardTarget: Qt.rect(cardOrigin.x, cardOrigin.y, contentWidth, contentHeight)
+  onCardTargetChanged: publishCard()
+
+  function publishCard() {
+    if (!open || !bar || !screen || typeof bar.notePopoutCard !== "function") return
+    bar.notePopoutCard({ screen: screen.name, x: cardTarget.x, y: cardTarget.y,
+                         width: cardTarget.width, height: cardTarget.height })
+  }
+
+  // Already true as `open` flips, before onOpenChanged marks the switch, so
+  // the card never starts growing in on top of the morph.
+  readonly property bool takingOver: !!bar && !!bar.activePopout && bar.activePopout !== coordinatorKey
+    && typeof bar.popoutCardFor === "function" && !!bar.popoutCardFor(coordinatorKey)
+
+  property rect morphFrom: Qt.rect(0, 0, 0, 0)
+  property real morph: 1
+  // As drawn: in jumps when the theme asks for stepped (8-bit) motion.
+  readonly property real morphShown: Style.stepped(morph)
+
+  function morphFromLastCard() {
+    var last = bar && typeof bar.popoutCardFor === "function" ? bar.popoutCardFor(coordinatorKey) : null
+    if (!last || !screen || last.screen !== screen.name) return
+    morphFrom = Qt.rect(last.x, last.y, last.width, last.height)
+    morphRun.restart()
+  }
+
+  NumberAnimation {
+    id: morphRun
+    target: root; property: "morph"; from: 0; to: 1
+    duration: Style.duration(220)
+    easing.type: Easing.Bezier
+    easing.bezierCurve: Style.easeOut
+  }
+
+  function morphed(from, to) {
+    return morphShown >= 1 ? to : from + (to - from) * morphShown
   }
 
   Timer {
@@ -378,19 +455,49 @@ PanelWindow {
 
   BorderSurface {
     id: card
-    x: root.cardOrigin.x
-    y: root.cardOrigin.y
-    width: root.contentWidth
-    height: root.contentHeight
+    // How far the card has come out of the bar, 0..1, as drawn.
+    readonly property real shownStep: Style.stepped(shown)
+    // Pixel mode unrolls the card from its bar edge in steps, like an 8-bit
+    // dialog box, instead of scaling and fading it (both blur the pixels).
+    readonly property bool unrolling: Style.pixelMode && shownStep < 1
+    readonly property real unrolledHeight: Math.max(Style.pixelCorner * 2 + 1,
+      Math.round(root.morphed(root.morphFrom.height, root.contentHeight) * shownStep))
+    readonly property real fullY: root.morphed(root.morphFrom.y, root.cardOrigin.y)
+    readonly property real fullHeight: root.morphed(root.morphFrom.height, root.contentHeight)
+
+    x: root.morphed(root.morphFrom.x, root.cardOrigin.x)
+    y: unrolling && root.barPos === "bottom" ? fullY + fullHeight - unrolledHeight : fullY
+    width: root.morphed(root.morphFrom.width, root.contentWidth)
+    height: unrolling ? unrolledHeight : fullHeight
+    // While it morphs or unrolls, the content keeps its own size and the card crops it.
+    clip: root.morph < 1 || unrolling
     color: Colors.popups.background
     borderSpec: root.borderSpec
     padding: root.padding
     radius: Style.cornerRadius
-    opacity: root.open || root.popoutSwitching ? 1.0 : 0
 
-    Behavior on opacity {
-      enabled: !root.popoutSwitching && !root.popoutSwitchClosing
-      NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+    // The card fades in as it grows out of the bar from just under full size,
+    // toward the icon it hangs from, and goes in two thirds of the time. On a
+    // switch within a section of the bar it doesn't: the card morphs over from
+    // the last one.
+    property real shown: root.open || root.popoutSwitching ? 1 : 0
+    Behavior on shown {
+      id: showing
+      // The card giving way on a switch still fades out, briefly over the one
+      // taking its place, so there's no empty frame while that one maps.
+      enabled: !root.takingOver && !(root.popoutSwitching && root.morph < 1)
+      NumberAnimation {
+        duration: Style.duration(showing.targetValue > 0 ? 180 : 120)
+        easing.type: Easing.Bezier
+        easing.bezierCurve: Style.easeOut
+      }
+    }
+    opacity: Style.pixelMode ? (shownStep > 0 ? 1 : 0) : shown
+    transform: Scale {
+      origin.x: root.growOrigin.x
+      origin.y: root.growOrigin.y
+      xScale: Style.pixelMode ? 1 : 0.97 + 0.03 * card.shown
+      yScale: Style.pixelMode ? 1 : 0.97 + 0.03 * card.shown
     }
 
     // Swallow clicks on the card so they don't bubble to the dismissal
@@ -402,16 +509,20 @@ PanelWindow {
 
     Item {
       id: contentHolder
-      anchors.fill: parent
-      anchors.topMargin: card.contentTopInset
-      anchors.rightMargin: card.contentRightInset
-      anchors.bottomMargin: card.contentBottomInset
-      anchors.leftMargin: card.contentLeftInset
-      opacity: root.popoutSwitching ? (root.open ? 1.0 : 0) : 1.0
+      x: card.contentLeftInset
+      // Unrolling up from a bottom bar, the content stays put on screen.
+      y: card.contentTopInset - (card.unrolling && root.barPos === "bottom" ? card.fullHeight - card.height : 0)
+      width: root.contentWidth - card.contentLeftInset - card.contentRightInset
+      height: root.contentHeight - card.contentTopInset - card.contentBottomInset
+      // Fades in with the morph, done by the time the card has mostly landed.
+      opacity: Style.pixelMode ? (root.morphShown >= 0.5 ? 1 : 0) : Math.min(1, root.morphShown * 1.6)
 
-      Behavior on opacity {
-        enabled: root.popoutSwitching
-        NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+      Loader {
+        id: contentLoader
+        anchors.fill: parent
+        focus: true
+        active: !!root.content && (root.open || root.contentRequested)
+        sourceComponent: root.content
       }
     }
   }

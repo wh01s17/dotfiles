@@ -174,8 +174,17 @@ Item {
           width: root.barWidth
           height: Math.max(Style.space(6), Style.spacing.sm)
           anchors.verticalCenter: parent.verticalCenter
-          color: Util.alpha(Colors.popups.text, 0.45)
+          color: Style.pixelMode ? "transparent" : Util.alpha(Colors.popups.text, 0.45)
+          // Pixel mode (the wh01s17 theme): the level as blocks.
+          PixelBar {
+            anchors.fill: parent
+            visible: Style.pixelMode
+            value: root.hasProgress && root.maxValue > 0 ? root.value / root.maxValue : 0
+            fillColor: Colors.accent
+            trackColor: Util.alpha(Colors.popups.text, 0.45)
+          }
           Rectangle {
+            visible: !Style.pixelMode
             height: parent.height
             width: parent.width * (root.hasProgress ? root.value / root.maxValue : 0)
             color: Colors.accent

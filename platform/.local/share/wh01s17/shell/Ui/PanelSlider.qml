@@ -41,14 +41,36 @@ Item {
   readonly property real progress: Math.max(0, Math.min(1, (liveValue - minimum) / range))
   readonly property bool _hot: mouseArea.containsMouse || root.dragging
 
+  // Pixel mode: the track is a row of blocks and the knob moves block by block.
+  readonly property bool pixel: Style.pixelMode
+  readonly property real shownProgress: pixel && pixelTrack.blocks.length > 0
+    ? pixelTrack.lit / pixelTrack.blocks.length
+    : progress
+
   Rectangle {
     id: track
     anchors.verticalCenter: parent.verticalCenter
     anchors.left: parent.left
     anchors.right: parent.right
+    // Inset by half a knob so the knob's centre reaches both ends of the track.
+    anchors.leftMargin: root.knobSize / 2
+    anchors.rightMargin: root.knobSize / 2
     height: root.trackHeight
     radius: height / 2
     color: root.trackColor
+    visible: !root.pixel
+  }
+
+  PixelBar {
+    id: pixelTrack
+    visible: root.pixel
+    anchors.verticalCenter: track.verticalCenter
+    x: track.x
+    width: track.width
+    height: Math.max(root.trackHeight + Style.pixelUnit * 2, Style.pixelUnit * 3)
+    value: root.progress
+    fillColor: root.fillColor
+    trackColor: root.trackColor
   }
 
   Rectangle {
@@ -58,6 +80,7 @@ Item {
     height: track.height
     radius: track.radius
     color: root.fillColor
+    visible: !root.pixel
     width: track.width * root.progress
 
     Behavior on width {
@@ -83,15 +106,15 @@ Item {
     id: knob
     width: root.knobSize
     height: root.knobSize
-    radius: root.knobSize / 2
+    radius: root.pixel ? 0 : root.knobSize / 2
     color: root.knobColor
     borderSpec: Border.flat(root.bar ? root.bar.background : "#101315", Math.max(1, Style.space(2)))
     anchors.verticalCenter: track.verticalCenter
-    x: Math.max(0, Math.min(track.width - width, track.width * root.progress - width / 2))
-    scale: root._hot ? 1.15 : 1.0
+    x: track.x + track.width * root.shownProgress - width / 2
+    scale: root._hot && !root.pixel ? 1.15 : 1.0
 
     Behavior on x {
-      enabled: !root.dragging
+      enabled: !root.dragging && !root.pixel
       NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
     }
 

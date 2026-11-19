@@ -36,4 +36,6 @@ wh01s17 theme set wh01s17
 
 The theme lets wh01s17 generate application-specific configurations from `colors.toml`, then adds branded shell surfaces, a green/cyan Hyprland border, ten-pixel rounding, a restrained phosphor shadow, and Yaru's dark prussian-green icons. The shell draws its text in Departure Mono and its icons in wh01s17 Pixel Icons, Pixelarticons glyphs placed at the Nerd Font code points the shell already uses (`sources/pixel-icons.py`); see `docs/tema.md` in the dotfiles.
 
+`shell.pixel.toml` turns on the shell's pixel mode for the panels and popups that open from the bar (the bar itself keeps its look): corners cut as a two-step staircase of 2 px cells, sliders and meters drawn as blocks with a square knob, and panels that unroll from the bar and morph between each other in five jumps instead of a smooth curve. Set `enabled = false` there to go back to the rounded panels; `motion-steps = 0` keeps the pixel shapes with smooth motion.
+
 The logo in `brand/logo.svg` is the official mark published by wh01s17.com and is kept here as the design source of truth.

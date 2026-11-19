@@ -458,10 +458,22 @@ Panel {
             anchors.fill: parent
             radius: height / 2
             color: Qt.rgba(root.bar.foreground.r, root.bar.foreground.g, root.bar.foreground.b, 0.12)
+            visible: !Style.pixelMode
+          }
+
+          // Pixel mode: the charge as blocks, pulsing with the bar it stands in for.
+          PixelBar {
+            anchors.fill: parent
+            visible: Style.pixelMode
+            value: root.batteryFraction
+            fillColor: root.batteryFillColor
+            trackColor: barTrack.color
+            opacity: barFill.opacity
           }
 
           Rectangle {
             id: barFill
+            visible: !Style.pixelMode
             anchors.left: barTrack.left
             anchors.verticalCenter: barTrack.verticalCenter
             height: barTrack.height

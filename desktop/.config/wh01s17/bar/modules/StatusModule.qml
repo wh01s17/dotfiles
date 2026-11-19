@@ -238,7 +238,8 @@ WidgetButton {
           height: width
           anchors.left: parent.left
           anchors.verticalCenter: parent.verticalCenter
-          radius: Style.cornerRadius
+          radius: Style.roundingRadius
+          pixelCorners: false  // the bar keeps its own look in pixel mode
           color: Style.normalFillFor(root.panelAccent, Colors.accent)
           borderSpec: Border.controlSpec("normal", root.panelAccent, Colors.accent)
 
@@ -354,7 +355,8 @@ WidgetButton {
 
             width: parent.width
             implicitHeight: detailContent.implicitHeight + Style.space(12)
-            radius: Style.cornerRadius
+            radius: Style.roundingRadius
+            pixelCorners: false  // the bar keeps its own look in pixel mode
             color: Style.normalFillFor(accentColor, Colors.accent)
             borderSpec: Border.controlSpec("normal", accentColor, Colors.accent)
 

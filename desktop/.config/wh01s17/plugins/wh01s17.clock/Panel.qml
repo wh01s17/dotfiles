@@ -446,9 +446,18 @@ Panel {
                 anchors.verticalCenter: parent.verticalCenter
                 height: Style.space(6)
                 radius: Style.cornerRadius > 0 ? height / 2 : 0
-                color: Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.12)
+                color: Style.pixelMode ? "transparent" : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.12)
+
+                PixelBar {
+                  anchors.fill: parent
+                  visible: Style.pixelMode
+                  value: root.yearDone
+                  fillColor: Style.selectedStateColor(root.contentForeground, Colors.accent)
+                  trackColor: Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.12)
+                }
 
                 Rectangle {
+                  visible: !Style.pixelMode
                   width: Math.round(parent.width * root.yearDone)
                   height: parent.height
                   radius: parent.radius
@@ -503,9 +512,18 @@ Panel {
                 anchors.verticalCenter: parent.verticalCenter
                 height: Style.space(6)
                 radius: Style.cornerRadius > 0 ? height / 2 : 0
-                color: Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.12)
+                color: Style.pixelMode ? "transparent" : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.12)
+
+                PixelBar {
+                  anchors.fill: parent
+                  visible: Style.pixelMode
+                  value: root.lifeDone
+                  fillColor: Style.selectedStateColor(root.contentForeground, Colors.accent)
+                  trackColor: Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.12)
+                }
 
                 Rectangle {
+                  visible: !Style.pixelMode
                   width: Math.round(parent.width * root.lifeDone)
                   height: parent.height
                   radius: parent.radius

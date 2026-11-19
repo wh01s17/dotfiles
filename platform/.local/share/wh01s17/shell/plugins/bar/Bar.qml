@@ -90,6 +90,38 @@ Item {
   property bool tooltipShown: false
   property int tooltipRequest: 0
   property var activePopout: null
+  // Where the open panel's card stands, and in which section of the bar, so
+  // a panel taking over in the same section can start its card from there
+  // (Omarchy 4.5, #16470).
+  property var popoutCard: null
+
+  // The section a panel's widget sits in, the center's pieces counted as one.
+  function popoutSectionOf(owner) {
+    for (var i = 0; i < moduleSlots.length; i++) {
+      var slot = moduleSlots[i]
+      if (slot && slot.activeItem === owner) {
+        var region = String(slot.region || "")
+        return region.indexOf("center") === 0 ? "center" : region
+      }
+    }
+    return ""
+  }
+
+  // Reported by the open panel. Only a screen name and four numbers are kept,
+  // whoever reports them; the section comes from the bar's own layout.
+  function notePopoutCard(card) {
+    popoutCard = card ? { screen: String(card.screen || ""), section: popoutSectionOf(activePopout),
+                          x: Number(card.x) || 0, y: Number(card.y) || 0,
+                          width: Number(card.width) || 0, height: Number(card.height) || 0 } : null
+  }
+
+  // The last card, copied, for a panel taking over in the same section: one
+  // switching across the bar opens fresh instead of flying the card over it.
+  function popoutCardFor(owner) {
+    var card = popoutCard
+    if (!card || !card.section || card.section !== popoutSectionOf(owner)) return null
+    return { screen: card.screen, x: card.x, y: card.y, width: card.width, height: card.height }
+  }
   property var barDragSource: null
   property var barDragTarget: null
   property var barDragTargetGeometry: null
@@ -258,6 +290,8 @@ Item {
       _requestPopout: function(owner) { root.requestPluginPopout(key, owner) },
       _releasePopout: function(owner) { root.releasePluginPopout(key, owner) },
       _switchPanelFrom: function(owner, direction) { return root.switchPanelFrom(owner, direction) },
+      _notePopoutCard: function(card) { root.notePopoutCard(card) },
+      _popoutCardFor: function(owner) { return root.popoutCardFor(owner) },
       _targetBelongsToWindow: function(target, window) { return root.targetBelongsToWindow(target, window) },
       _moduleWidgets: function(requestedId) {
         return String(requestedId || "") === String(moduleName || "")
@@ -1352,11 +1386,13 @@ Item {
 
       BorderSurface {
         id: tooltipBubble
+        opacity: tooltipWindow.revealed ? 1 : 0
         implicitWidth: tooltipLabel.implicitWidth + 20
         implicitHeight: tooltipLabel.implicitHeight + 14
         color: Colors.tooltip.background
         borderSpec: Border.surfaceSpec("tooltip", "border", Colors.tooltip.border, 1)
-        radius: Style.cornerRadius
+        radius: Style.roundingRadius
+        pixelCorners: false  // the bar keeps its own look in pixel mode
 
         Text {
           id: tooltipLabel
@@ -1460,7 +1496,8 @@ Item {
         anchors.fill: parent
         color: root.transparent ? "transparent" : root.background
         borderSpec: Border.flat(root.barForeground, 1)
-        radius: Math.min(Style.cornerRadius, height / 2)
+        radius: Math.min(Style.roundingRadius, height / 2)
+        pixelCorners: false  // the bar keeps its own look in pixel mode
         opacity: root.transparent ? 0.45 : 0.94
       }
 
@@ -1856,7 +1893,8 @@ Item {
       anchors.margins: Style.space(1)
       color: root.transparent ? "transparent" : root.background
       borderSpec: Border.flat(root.barForeground, 1)
-      radius: Math.min(Style.cornerRadius, height / 2)
+      radius: Math.min(Style.roundingRadius, height / 2)
+      pixelCorners: false  // the bar keeps its own look in pixel mode
       opacity: root.transparent ? 0.22 : 0.32
     }
 
