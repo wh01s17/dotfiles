@@ -8,7 +8,10 @@
 set -euo pipefail
 
 readonly MARGIN=40
-readonly REGION_FILE="${XDG_RUNTIME_DIR:-/tmp}/wh01s17-screenrecord-region"
+# Has to resolve to whatever wh01s17-capture-screenrecording writes, fallback
+# included, or a recording without a session runtime dir anchors the camera to
+# the whole monitor instead of the region it recorded.
+readonly REGION_FILE="${XDG_RUNTIME_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/wh01s17}/wh01s17-screenrecord-region"
 
 usage() {
   echo "Usage: wh01s17-capture-webcam-resize <smaller|larger|reset|small|medium|large>" >&2
