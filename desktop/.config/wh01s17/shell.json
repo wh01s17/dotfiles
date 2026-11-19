@@ -101,11 +101,11 @@
         },
         {
           "id": "wh01s17.metronome",
-          "accent": false,
+          "accent": true,
           "beats": 4,
-          "bpm": 120,
+          "bpm": 100,
           "subdivision": "1/4",
-          "volume": 0.7
+          "volume": 0.51
         },
         {
           "id": "firewall-status",
