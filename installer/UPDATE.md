@@ -17,6 +17,11 @@ Para obtener el script por primera vez en un equipo con la configuración anteri
 git -C ~/dotfiles pull --ff-only && ~/dotfiles/update.sh --local
 ```
 
+Si el `git pull` trae cambios del shell y hay una sesión de Hyprland, reinicia
+el shell para cargarlos (Quickshell no recarga solo el QML, y el servicio de
+bloqueo no se cambia en caliente). También retira `lock-explorer`, el plugin de
+terceros que reemplazó `wh01s17.lock`, borrando sólo sus propias rutas.
+
 `--local` aplica el checkout actual sin descargar cambios. Si falla el pull,
 se detiene sin descartar ni guardar automáticamente los cambios locales.
 El sincronizador regenera el tema activo y recarga Hyprland cuando cambian

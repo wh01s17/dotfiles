@@ -69,6 +69,59 @@ class UpdateTests(unittest.TestCase):
                 UPDATER['legacy_links'](root, home)
             self.assertIn('.arch-build', str((home / '.config/hypr/config').resolve()))
 
+    def test_lock_explorer_is_retired_without_touching_user_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            config = home / '.config/wh01s17'
+            plugin = config / 'plugins' / UPDATER['LOCK_EXPLORER']
+            (plugin / 'videos').mkdir(parents=True)
+            (plugin / 'videos/eye.mp4').write_text('clip')
+            (config / 'lock-videos').mkdir()
+            (config / 'lock-videos/eye.mp4').symlink_to(plugin / 'videos/eye.mp4')
+            (config / f'plugins/.{UPDATER["LOCK_EXPLORER"]}.bak.20261119').mkdir()
+            (config / 'lock-explorer.json').write_text('{"design": "neon"}')
+            (config / 'lock-components').mkdir()
+            (config / 'plugins/wh01s17.lock').mkdir()
+            (config / 'branding').mkdir()
+            previews = home / '.local/state/wh01s17/lock-explorer-boot-previews'
+            previews.mkdir(parents=True)
+            with patch.dict(os.environ, {'XDG_STATE_HOME': str(home / '.local/state')}):
+                removed = UPDATER['retire_lock_explorer'](home)
+            self.assertEqual(len(removed), 6)
+            for gone in (plugin, config / 'lock-videos', config / 'lock-explorer.json',
+                         config / 'lock-components', previews):
+                self.assertFalse(os.path.lexists(gone), gone)
+            self.assertTrue((config / 'plugins/wh01s17.lock').is_dir())
+            self.assertTrue((config / 'branding').is_dir())
+            with patch.dict(os.environ, {'XDG_STATE_HOME': str(home / '.local/state')}):
+                self.assertEqual(UPDATER['retire_lock_explorer'](home), [])
+
+    def test_lock_explorer_keeps_videos_and_components_that_are_not_its_own(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            config = home / '.config/wh01s17'
+            (config / 'plugins' / UPDATER['LOCK_EXPLORER']).mkdir(parents=True)
+            (config / 'lock-videos').mkdir()
+            (config / 'lock-videos/mine.mp4').write_text('own clip')
+            (config / 'lock-components').mkdir()
+            (config / 'lock-components/Custom.qml').write_text('Item {}')
+            with patch.dict(os.environ, {'XDG_STATE_HOME': str(home / '.local/state')}):
+                UPDATER['retire_lock_explorer'](home)
+            self.assertTrue((config / 'lock-videos/mine.mp4').is_file())
+            self.assertTrue((config / 'lock-components/Custom.qml').is_file())
+            self.assertFalse((config / 'plugins' / UPDATER['LOCK_EXPLORER']).exists())
+
+    def test_shell_restarts_only_for_shell_sources(self):
+        changed = UPDATER['shell_changed']
+        self.assertTrue(changed(['platform/.local/share/wh01s17/shell/Ui/KeyboardPanel.qml']))
+        self.assertTrue(changed(['desktop/.config/wh01s17/plugins/wh01s17.lock/LockView.qml']))
+        self.assertTrue(changed(['desktop/.config/wh01s17/shell.json']))
+        self.assertFalse(changed(['README.md', 'desktop/.config/hypr/hyprland.lua']))
+        self.assertFalse(changed([]))
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(UPDATER['restart_shell'](ROOT))
+        self.assertEqual(UPDATER['changed_paths'](ROOT, None), [])
+
 
 if __name__ == '__main__':
     unittest.main()
