@@ -18,6 +18,11 @@ renombrado intermedio.
 | `system/` | Configuración del sistema que se instala con sudo |
 | `docs/` | Documentación de tema, CTF y Pomodoro |
 
+Las asociaciones de archivos están en `apps/.config/mimeapps.list`: LibreOffice
+para documentos, Firefox para HTML, Evince para PDF/DjVu/cómics y Calibre para
+ebooks. El instalador y el sincronizador enlazan ese archivo con una ruta
+absoluta para evitar el fallo de GLib 2.90 al guardar mediante enlaces relativos.
+
 ## Instalación
 
 En un Arch ya instalado, como usuario normal:
@@ -777,7 +782,8 @@ Para retirar únicamente los enlaces:
 ```bash
 cd "$HOME/dotfiles"
 stow --delete --target="$HOME" platform desktop terminal maintenance
-stow --delete --no-folding --target="$HOME" apps
+stow --delete --no-folding '--ignore=(^|/)mimeapps[.]list$' --target="$HOME" apps
+unlink "$HOME/.config/mimeapps.list"
 ```
 
 Antes de retirar `maintenance`, desactiva sus timers con

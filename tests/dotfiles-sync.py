@@ -15,6 +15,33 @@ SYNC = runpy.run_path(str(ROOT / 'maintenance/.local/bin/dotfiles-sync'))
 
 
 class StowTests(unittest.TestCase):
+    def test_mimeapps_link_stays_absolute_after_repeated_stow(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, home = Path(tmp) / 'repo', Path(tmp) / 'home'
+            (home / '.config').mkdir(parents=True)
+            source = root / 'apps/.config/mimeapps.list'
+            source.parent.mkdir(parents=True)
+            source.write_text('[Default Applications]\ntext/plain=nvim.desktop\n')
+            command = ['stow', '--restow', '--no-folding', '--ignore=(^|/)mimeapps[.]list$', '--dir', str(root),
+                       '--target', str(home), 'apps']
+            target = home / '.config/mimeapps.list'
+            target.symlink_to(os.path.relpath(source, target.parent))
+            for _ in range(2):
+                subprocess.run(command, check=True)
+                SYNC['fix_mimeapps_link'](root, home)
+                self.assertEqual(target.readlink(), source)
+                self.assertEqual(target.read_text(), source.read_text())
+            target.unlink()
+            target.write_text('local preferences')
+            SYNC['fix_mimeapps_link'](root, home)
+            self.assertEqual(target.read_text(), 'local preferences')
+            target.unlink()
+            unrelated = home / 'custom-mimeapps.list'
+            unrelated.write_text('custom preferences')
+            target.symlink_to(unrelated)
+            SYNC['fix_mimeapps_link'](root, home)
+            self.assertEqual(target.readlink(), unrelated)
+
     def test_direct_links_preserve_local_files_and_follow_source_edits(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, home = Path(tmp) / 'repo', Path(tmp) / 'home'

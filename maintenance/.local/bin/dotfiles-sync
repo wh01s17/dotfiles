@@ -34,6 +34,15 @@ def run(*args, **kwargs):
     subprocess.run([str(arg) for arg in args], check=True, **kwargs)
 
 
+def fix_mimeapps_link(root, home):
+    # GLib 2.90 follows relative mimeapps links relative to the process cwd.
+    source = root / 'apps/.config/mimeapps.list'
+    target = home / '.config/mimeapps.list'
+    if source.is_file() and (not os.path.lexists(target) or (
+            target.is_symlink() and target.resolve() == source and not target.readlink().is_absolute())):
+        run('ln', '-sfn', source, target)
+
+
 def session_inputs(root):
     """Track the active theme's sources separately from unrelated package edits."""
     theme_name = Path.home() / '.local/state/wh01s17/current/theme.name'
@@ -117,13 +126,14 @@ def main():
         commands = [
             ['stow', '--restow', '--dir', root, '--target', Path.home(),
              'platform', 'maintenance', 'desktop', 'terminal'],
-            ['stow', '--restow', '--no-folding', '--dir', root,
+            ['stow', '--restow', '--no-folding', '--ignore=(^|/)mimeapps[.]list$', '--dir', root,
              '--target', Path.home(), 'apps'],
         ]
         for command in commands:
             run(*command, '--simulate')
         for command in commands:
             run(*command)
+        fix_mimeapps_link(root, Path.home())
         run('systemctl', '--user', 'daemon-reload')
         refresh_session(root, current, {} if args.force else previous.get('session', {}))
         # If sources changed during Stow, the next invocation picks them up.

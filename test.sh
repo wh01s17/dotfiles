@@ -84,7 +84,7 @@ check_js() {
 
 check_stow() {
   stow --simulate --target="$HOME" platform desktop terminal maintenance &&
-    stow --simulate --no-folding --target="$HOME" apps
+    stow --simulate --no-folding '--ignore=(^|/)mimeapps[.]list$' --target="$HOME" apps
 }
 need stow && run "stow (simulación)" check_stow
 need jq && run "JSON (${#json[@]})" check_json "${json[@]}"

@@ -546,8 +546,10 @@ stage_stow() {
     run stow --restow -d "${entry%%:*}" -t "$HOME" "${entry#*:}"
   done
   for entry in "${STOW_NO_FOLDING_PACKAGES[@]}"; do
-    run stow --restow --no-folding -d "${entry%%:*}" -t "$HOME" "${entry#*:}"
+    run stow --restow --no-folding '--ignore=(^|/)mimeapps[.]list$' -d "${entry%%:*}" -t "$HOME" "${entry#*:}"
   done
+  # GLib 2.90 cannot save associations through Stow's relative mimeapps link.
+  run ln -sfn "$DOTFILES_DIR/apps/.config/mimeapps.list" "$HOME/.config/mimeapps.list"
 }
 
 # --------------------------------------------------------------------- seed
