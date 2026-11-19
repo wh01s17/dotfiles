@@ -50,6 +50,13 @@ redirige los enlaces de `.arch-build` y elimina esa copia tras completar las
 comprobaciones. Conserva los perfiles locales y no ejecuta etapas de disco,
 cifrado ni instalación de paquetes.
 
+Si el `git pull` trae cambios del shell (runtime, plugins, `bar/` o
+`shell.json`) y hay una sesión de Hyprland, reinicia el shell: Quickshell no
+recarga solo el QML nuevo y el servicio de bloqueo nunca se cambia en caliente.
+También retira el plugin de terceros `lock-explorer` que reemplazó
+`wh01s17.lock`: su carpeta, su configuración, sus miniaturas y, sólo si son
+suyos, `lock-videos` y `lock-components` vacío.
+
 La primera vez, para obtener el actualizador en otro equipo:
 
 ```bash
@@ -302,6 +309,14 @@ estética del tema:
   `ctf-ip.sh` y `services-monitor.sh` usan la paleta wh01s17 (`#84c959`,
   `#e8b53f`, `#ff6b66`, `#45d9ea`, `#748178`).
 
+Los paneles desplegados siguen el modo pixel del tema
+([`shell.pixel.toml`](desktop/.config/wh01s17/themes/wh01s17/shell.pixel.toml),
+ver [docs/tema.md](docs/tema.md)): esquinas en escalera, sliders y medidores
+por bloques, y paneles que se despliegan desde la barra y se transforman entre
+sí en pasos (la animación de Omarchy 4.5, #16470). La barra y sus widgets
+conservan su aspecto. El panel de agentes es el de Omarchy 4.5 (límites por
+proveedor, varias cuentas), con su medidor por bloques.
+
 ### Módulos propios y clones
 
 Los clones conservan la integración de wh01s17 con sus paneles originales,
@@ -320,6 +335,7 @@ distribución. Todos se declaran en `shell.json` y sus metadatos viven en el
 | `wh01s17.metronome` | Propio | Click track con dial de tempo, tap tempo, subdivisiones y acento |
 | `wh01s17.bar` | `core.bar` | Estado de hover por monitor (revelar los indicadores en una pantalla no redistribuye las barras de las demás) e islas flotantes |
 | `wh01s17.indicators` | `core.indicators` | Lee ese estado por monitor desde `wh01s17.bar` y carga sus propios indicadores desde `indicators/` |
+| `wh01s17.lock` | `core.lock` | Pantalla de bloqueo 8-bit con la marca pixel, reloj Departure Mono y prompt de terminal; mismos flujos PAM que `core.lock` |
 
 `wh01s17.bar` reemplaza la barra completa (`bar.id` en `shell.json`), así que
 no recibe las mejoras posteriores de `Bar.qml` en wh01s17. Al actualizar

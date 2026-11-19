@@ -19,7 +19,7 @@ Sus piezas son:
 | [`colors.toml`](../desktop/.config/wh01s17/themes/wh01s17/colors.toml) | Paleta usada para generar configuraciones de aplicaciones |
 | [`hyprland.lua`](../desktop/.config/wh01s17/themes/wh01s17/hyprland.lua) | Bordes verde/cian, radio de 10 px y sombras del tema |
 | [`icons.theme`](../desktop/.config/wh01s17/themes/wh01s17/icons.theme) | Selecciona `Yaru-prussiangreen-dark` |
-| [`shell.*.toml`](../desktop/.config/wh01s17/themes/wh01s17/) | Barra, controles, tipografía (Departure Mono), menús, lock, notificaciones, popups, polkit, espaciado y tooltips |
+| [`shell.*.toml`](../desktop/.config/wh01s17/themes/wh01s17/) | Barra, controles, tipografía (Departure Mono), menús, lock, notificaciones, popups, polkit, espaciado, tooltips y modo pixel |
 | [`backgrounds/`](../desktop/.config/wh01s17/themes/wh01s17/backgrounds/) | Ocho wallpapers PNG 4K listos para usar |
 | [`sources/`](../desktop/.config/wh01s17/themes/wh01s17/sources/) | Maestros SVG, generador de los wallpapers pixel art y de los iconos pixel del shell |
 | [`brand/logo.svg`](../desktop/.config/wh01s17/themes/wh01s17/brand/logo.svg) | Geometría oficial de la marca |
@@ -67,6 +67,24 @@ wh01s17 theme set wh01s17
 ```
 
 El último comando copia los fondos regenerados al tema activo.
+
+## Modo pixel
+
+[`shell.pixel.toml`](../desktop/.config/wh01s17/themes/wh01s17/shell.pixel.toml)
+añade una sección `[pixel]` al `shell.toml` del tema. La leen
+`Commons/Style.qml` y los componentes de `shell/Ui`:
+
+| Clave | Efecto |
+| --- | --- |
+| `enabled` | Activa el modo; con `false` los paneles vuelven a las esquinas redondeadas |
+| `unit`, `steps` | Esquinas en escalera de `steps` celdas de `unit` px (`BorderSurface`); también el tamaño de los bloques de sliders y medidores (`PixelBar`) |
+| `motion-steps` | Los paneles se despliegan desde la barra y se transforman entre sí en ese número de saltos; `0` los deja suaves |
+
+Afecta a lo que se despliega: paneles, popups de la bandeja, notificaciones
+(también en Departure Mono), OSD y la pantalla de bloqueo `wh01s17.lock`. La
+barra y sus widgets usan `Style.roundingRadius` y `pixelCorners: false`, así que
+conservan su aspecto y los iconos 8-bit. La geometría está en
+`Commons/PixelGeometry.js` y se prueba con `tests/pixel-geometry.js`.
 
 ## Tipografía e iconos del shell
 
