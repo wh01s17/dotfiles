@@ -21,6 +21,9 @@ Rectangle {
   property real bottomPadding: padding
   property real leftPadding: padding
   property bool pixelCorners: true
+  // Whole-number multiple of the theme's pixel unit, for surfaces drawn at an
+  // integer scale (the lock screen on a 4K output).
+  property int pixelScale: 1
 
   readonly property real borderTop: Border.top(borderSpec)
   readonly property real borderRight: Border.right(borderSpec)
@@ -33,7 +36,7 @@ Rectangle {
   readonly property bool usesOverlayBorder: Border.needsOverlay(borderSpec)
 
   // Steps that fit: a small chip gets a shallower staircase, a tiny one none.
-  readonly property int pixelUnit: Math.max(1, Style.pixelUnit)
+  readonly property int pixelUnit: Math.max(1, Style.pixelUnit) * Math.max(1, pixelScale)
   readonly property int pixelStepCount: Math.max(0, Math.min(Style.pixelSteps,
     Math.floor(Math.min(width, height) / (3 * pixelUnit))))
   readonly property bool pixelShaped: Style.pixelMode && pixelCorners && pixelStepCount > 0

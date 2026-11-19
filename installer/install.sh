@@ -21,8 +21,6 @@ readonly STOW_NO_FOLDING_PACKAGES=("$DOTFILES_DIR:apps")
 readonly SOURCE_PACKAGES=(platform maintenance apps desktop terminal)
 readonly OPTIONAL_GROUPS=(dev apps gaming virtualization pentest)
 readonly ALL_STAGES=(preflight bootstrap dotfiles decide packages aur fixes stow seed machine system user hibernate shell services validate)
-readonly EXTERNAL_SHELL_PLUGIN_ID=io.github.sirjul1337.lock-explorer
-readonly EXTERNAL_SHELL_PLUGIN_URL=https://github.com/SirJul1337/omarchy-lock-explorer.git
 # Web apps the runtime installs that you do not use (lista propia).
 readonly DROPPED_DESKTOP_FILES=(
   HEY X YouTube Zoom "Google Contacts" "Google Maps" "Google Messages" "Google Photos"
@@ -683,17 +681,6 @@ stage_user() {
     # shellcheck disable=SC2086  # "PACKAGE COMMAND" splits into two arguments
     run platform_env wh01s17-mise-install $launcher || note "No se pudo crear el lanzador de ${launcher##* }."
   done
-
-  local plugin_dir="$HOME/.config/wh01s17/plugins/$EXTERNAL_SHELL_PLUGIN_ID"
-  if [[ ! -e $plugin_dir ]]; then
-    log "Plugin de terceros $EXTERNAL_SHELL_PLUGIN_ID"
-    if run git clone --depth=1 "$EXTERNAL_SHELL_PLUGIN_URL" "$plugin_dir"; then
-      run rm -rf "$plugin_dir/.git"
-      run python3 -I "$script_dir/tools/import-plugin.py" "$plugin_dir"
-    else
-      note "No se pudo clonar $EXTERNAL_SHELL_PLUGIN_URL; shell.json lo usa."
-    fi
-  fi
 }
 
 stage_hibernate() {

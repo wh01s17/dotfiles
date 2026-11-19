@@ -97,6 +97,7 @@ fi
 need node && run "JavaScript (${#js[@]})" check_js "${js[@]}"
 need node && run "External display selection" node tests/monitor-external.js
 need node && run "Geometría pixel" node tests/pixel-geometry.js
+need node && run "Pantalla de bloqueo" node tests/lock-model.js
 lua_runtime=$(command -v lua || command -v lua5.4 || true)
 if [[ -n $lua_runtime ]]; then
   run "External display layout" "$lua_runtime" tests/monitor-external.lua
@@ -141,6 +142,7 @@ if local_only qmllint; then
     desktop/.config/wh01s17/bar/modules/StatusModule.qml \
     desktop/.config/wh01s17/plugins/wh01s17.clock/Panel.qml \
     desktop/.config/wh01s17/plugins/wh01s17.monitor/Panel.qml \
+    desktop/.config/wh01s17/plugins/wh01s17.lock/LockView.qml \
     desktop/.config/wh01s17/plugins/wh01s17.metronome/MetronomeCore.qml
 fi
 if local_only systemd-analyze; then

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "wh01s17.lock",
+  "name": "My Lock Screen",
+  "version": "1.0.0",
+  "author": "wh01s17",
+  "description": "Session lock in the wh01s17 8-bit style: pixel W mark, Departure Mono clock and a terminal password prompt, on core.lock's password and fingerprint PAM flows.",
+  "kinds": [
+    "service"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml"
+  },
+  "wh01s17": {
+    "clonedFrom": "core.lock"
+  }
+}

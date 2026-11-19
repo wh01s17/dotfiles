@@ -200,14 +200,13 @@
   },
   "plugins": [
     {
-      "id": "io.github.sirjul1337.lock-explorer",
-      "design": "neon"
+      "id": "wh01s17.lock"
     }
   ],
   "disabledPlugins": [
     "core.lock"
   ],
   "cloneSourceRestores": [
-    "io.github.sirjul1337.lock-explorer"
+    "wh01s17.lock"
   ]
 }

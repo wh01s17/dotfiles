@@ -381,11 +381,20 @@ El arte ASCII mostrado por el salvapantallas vive en
 Los cambios de `shell.json` se recargan al guardar; si no se reflejan, ejecuta
 `wh01s17 restart shell`.
 
-El lock nativo `core.lock` está deshabilitado y lo reemplaza
-`io.github.sirjul1337.lock-explorer` con diseño `neon`. La entrada
-`cloneSourceRestores` en `shell.json` hace que wh01s17 restaure su fuente
-clonada al reconstruir los plugins; no se versiona una copia del plugin de
-terceros en este repositorio.
+### Pantalla de bloqueo
+
+[`wh01s17.lock`](desktop/.config/wh01s17/plugins/wh01s17.lock/) reemplaza a
+`core.lock` (deshabilitado en `shell.json`). Su `Service.qml` es el de
+`core.lock` sin cambios, con los mismos flujos PAM de contraseña y huella; solo
+cambia la vista (`LockView.qml`): el fondo actual pixelado y oscurecido, la
+marca pixel `wh01s17` de los fondos 07/08, el reloj en Departure Mono y un
+prompt de terminal con esquinas en escalera, estado `[ ENTER ]` / `[ AUTH ]` /
+`[ DENIED ]` y sacudida a saltos al fallar. Todo escala por un factor entero de
+la altura de la pantalla para que los pixeles sigan nítidos en 4K.
+
+Vista previa sin bloquear: `wh01s17-shell lock preview` (clic para cerrar).
+La entrada `cloneSourceRestores` de `shell.json` hace que wh01s17 restaure
+`core.lock` si el clon desaparece.
 
 ### Reloj y calendario
 
