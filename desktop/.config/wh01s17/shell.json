@@ -6,7 +6,7 @@
   },
   "bar": {
     "position": "top",
-    "transparent": true,
+    "transparent": false,
     "outline": false,
     "centerAnchor": "wh01s17.clock",
     "layout": {
@@ -103,7 +103,7 @@
           "id": "wh01s17.metronome",
           "accent": false,
           "beats": 4,
-          "bpm": 60,
+          "bpm": 120,
           "subdivision": "1/4",
           "volume": 0.7
         },
