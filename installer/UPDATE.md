@@ -32,6 +32,21 @@ Los cambios de paquetes o configuración del sistema requieren ejecutar las
 etapas correspondientes de `installer/install.sh`; el sincronizador sólo
 aplica enlaces de usuario. Revisa `./installer/install.sh --help`.
 
+## Limine no arranca solo
+
+En equipos instalados antes de que la entrada del primer arranque se llamara
+`/Primer arranque`, `limine-entry-tool` guardó los kernels dentro de
+`/Arch Linux`, que quedó como un directorio con campos de arranque propios.
+Limine no puede arrancar un directorio, así que al terminar el `timeout` el
+menú se queda esperando. Para corregirlo (deja una copia
+`limine.conf.bak-autoboot`):
+
+```bash
+sudo bash ~/dotfiles/installer/patches/limine-autoboot.sh
+```
+
+La etapa `system` del instalador lo aplica sola.
+
 ## Equipos instalados con el esquema de disco anterior
 
 Las instalaciones hechas antes de que `INSTALL.md` creara los subvolúmenes `@`

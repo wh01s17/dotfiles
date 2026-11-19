@@ -347,7 +347,7 @@ EOF
 cat >/mnt/boot/limine.conf <<EOF
 timeout: 3
 
-/Arch Linux
+/Primer arranque
     protocol: linux
     path: boot():/vmlinuz-linux
     cmdline: $cmdline

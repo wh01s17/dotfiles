@@ -184,7 +184,7 @@ EOF
 cat > /boot/limine.conf <<EOF
 timeout: 3
 
-/Arch Linux
+/Primer arranque
     protocol: linux
     path: boot():/vmlinuz-linux
     cmdline: root=PARTUUID=$root_uuid rootflags=subvol=@ zswap.enabled=0 rw rootfstype=btrfs

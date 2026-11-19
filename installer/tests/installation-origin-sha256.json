@@ -1,8 +1,8 @@
 {
   "lib/common.sh": "3bd16d06b66feff995b8a6b9cd30235b5e66a98e6f367d9204641b962d4a2a67",
   "lib/detect.sh": "e8db3538f2608e1de85fd43342f8c75c0f3f26cbb2297cfebbf01b31b86b00a1",
-  "lib/system-setup.sh": "b195c34cd0bbed42b3a5a1d87fd2e0ada271a5ed2dec8b456a1ed3217aeb7205",
-  "tools/iso-install.sh": "d16ae675f698ebc0ed796ab95f05d37a10dfae516aae40f1c0c054be0ee354bd",
+  "lib/system-setup.sh": "85dde170fdd128613bdefd762d4513bd7fabbe4e05ea396797868e9e392651cd",
+  "tools/iso-install.sh": "258de5eae3296dc9ec51d6f6f7bf666dad28b022ff5c0aef2a5b97a880c2507b",
   "packages/apps.aur.txt": "f41f5d84aee8ce9e31ad5d22c1e589b9485a68892481a62b09b3c70cf0a5d5a2",
   "packages/apps.txt": "d7c22f764a79c0a9bc9c08840f5905c6897ccf85389464f4e34bfd383926ccf0",
   "packages/base.txt": "ea78b34fc60ffc31b34f369f5ec2c5d9132ac1cf4b498847f8774f485ca30e48",
