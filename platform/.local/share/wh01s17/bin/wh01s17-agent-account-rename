@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# wh01s17:summary=Rename a Claude, Codex, or Grok subscription account
+# wh01s17:args=[claude|codex|grok] <account> <name>
+# wh01s17:examples=wh01s17 agent account rename primary Hey | wh01s17 agent account rename codex side Side project
+
+set -uo pipefail
+
+# The provider can be left out when it's your default agent:
+# `wh01s17 agent account rename primary Hey`.
+if [[ ${1:-} != "claude" && ${1:-} != "codex" && ${1:-} != "grok" ]]; then
+  default=$(wh01s17-default-agent)
+  [[ $default == "claude" || $default == "codex" || $default == "grok" ]] && set -- "$default" "$@"
+fi
+
+if [[ ${1:-} != "claude" && ${1:-} != "codex" && ${1:-} != "grok" ]] || (( $# < 3 )); then
+  echo "Usage: wh01s17-agent-account-rename [claude|codex|grok] <account> <name>" >&2
+  exit 1
+fi
+
+account=$(wh01s17-agent-account-state rename "$@") || exit 1
+echo "Renamed to $(jq -r .label <<<"$account"). Switch to it with: wh01s17 agent account use $1 $(jq -r .id <<<"$account")"
+# The panel reads account names from the usage record.
+wh01s17-agent-usage-update --limits-only "$1" >/dev/null 2>&1 &
