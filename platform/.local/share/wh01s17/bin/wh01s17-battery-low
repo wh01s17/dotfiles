@@ -13,5 +13,5 @@ fi
 
 level=$1
 
-wh01s17-notification-send -g 󱐋 -u critical "Time to recharge!" "Battery is down to ${level}%" -i battery-caution -t 30000
+wh01s17-notification-send -g 󱐋 -u normal "Time to recharge!" "Battery is down to ${level}%" -i battery-caution -t 30000
 wh01s17-hook battery-low "$level"
