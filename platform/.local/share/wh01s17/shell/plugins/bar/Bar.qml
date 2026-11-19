@@ -402,6 +402,7 @@ Item {
 
   function clearTooltip() {
     tooltipTimer.stop()
+    if (tooltipShown) tooltipWarmTimer.restart()
     pendingTooltipTarget = null
     pendingTooltipText = ""
     tooltipTarget = null
@@ -1113,6 +1114,10 @@ Item {
   }
 
   function showTooltip(target, text) {
+    // The delay only guards the first tooltip against a passing pointer. Once
+    // one is up, or was a moment ago, the next icon's shows at once, so
+    // sliding along the bar reads each label without waiting on every one.
+    var warm = tooltipShown || tooltipWarmTimer.running
     clearTooltip()
 
     if (!targetTooltipHovered(target) || !text) {
@@ -1135,7 +1140,8 @@ Item {
       tooltipText = pendingTooltipText
       pendingTooltipTarget = null
       pendingTooltipText = ""
-      tooltipTimer.restart()
+      if (warm) tooltipShown = true
+      else tooltipTimer.restart()
     })
   }
 
@@ -1153,6 +1159,14 @@ Item {
       if (root.targetTooltipHovered(root.tooltipTarget)) root.tooltipShown = true
       else root.clearTooltip()
     }
+  }
+
+  // How long after a tooltip hides the next one still skips the delay. Long
+  // enough to cross the gap between two icons, short enough that coming back
+  // to the bar later waits again.
+  Timer {
+    id: tooltipWarmTimer
+    interval: 400
   }
 
   Timer {
@@ -1290,6 +1304,17 @@ Item {
       color: "transparent"
       implicitWidth: Math.ceil(tooltipBubble.implicitWidth)
       implicitHeight: Math.ceil(tooltipBubble.implicitHeight)
+
+      // Each show maps a fresh surface at a whole-number scale before Qt receives
+      // the output's fractional one. Keep the bubble transparent until it matches the bar.
+      readonly property bool scaleReady: visible && Math.round(devicePixelRatio * 120) === Math.round(barWindow.devicePixelRatio * 120)
+      property bool revealed: false
+
+      // Only hiding resets it: at a whole-number scale the ratio dips to 1 after the first frame.
+      onVisibleChanged: if (!visible) revealed = false
+      onScaleReadyChanged: if (scaleReady) Qt.callLater(function() {
+        if (tooltipWindow.scaleReady) tooltipWindow.revealed = true
+      })
 
       anchor {
         id: tooltipAnchor
@@ -1843,7 +1868,7 @@ Item {
       opacity: slot.dragSource ? 0.22 : 1.0
       onLoaded: {
         slot.injectProps()
-        Qt.callLater(slot.injectProps)
+        injectLater.restart()
       }
     }
 
@@ -1855,7 +1880,7 @@ Item {
       opacity: slot.dragSource ? 0.22 : 1.0
       onLoaded: {
         slot.injectProps()
-        Qt.callLater(slot.injectProps)
+        injectLater.restart()
       }
     }
 
@@ -1867,7 +1892,7 @@ Item {
       opacity: slot.dragSource ? 0.22 : 1.0
       onLoaded: {
         slot.injectProps()
-        Qt.callLater(slot.injectProps)
+        injectLater.restart()
       }
     }
 
@@ -1993,7 +2018,16 @@ Item {
       }
     }
 
-    onActiveItemChanged: Qt.callLater(injectProps)
+    // Deferred through a child Timer rather than Qt.callLater: the timer dies
+    // with the slot, so a bar torn down by a reload or an unplugged screen never
+    // runs injectProps in a dead context (pluginBarApiFor "is not a function").
+    onActiveItemChanged: injectLater.restart()
+
+    Timer {
+      id: injectLater
+      interval: 0
+      onTriggered: injectProps()
+    }
     onModuleSettingsChanged: injectProps()
 
     function injectProps() {

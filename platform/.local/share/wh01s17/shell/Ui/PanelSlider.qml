@@ -75,8 +75,7 @@ Item {
       radius: 1
       color: root.tickColor
       anchors.verticalCenter: track.verticalCenter
-      x: Math.max(0, Math.min(track.width - width,
-                              track.width * (index / (root.tickCount - 1)) - width / 2))
+      x: track.x + track.width * (index / (root.tickCount - 1)) - width / 2
     }
   }
 
@@ -109,8 +108,9 @@ Item {
     acceptedButtons: Qt.LeftButton | Qt.RightButton
 
     function valueFromX(x) {
-      var clamped = Math.max(0, Math.min(track.width, x))
-      var raw = root.minimum + (clamped / track.width) * root.range
+      if (track.width <= 0) return root.minimum
+      var fraction = Math.max(0, Math.min(1, (x - track.x) / track.width))
+      var raw = root.minimum + fraction * root.range
       if (root.integer) raw = Math.round(raw)
       return Math.max(root.minimum, Math.min(root.maximum, raw))
     }

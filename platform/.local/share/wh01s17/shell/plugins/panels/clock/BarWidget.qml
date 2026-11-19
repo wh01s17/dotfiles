@@ -109,9 +109,9 @@ BarWidget {
   onBarChanged: injectPanel()
   onSettingsChanged: injectPanel()
 
-  SystemClock {
+  WallClock {
     id: clock
-    precision: SystemClock.Minutes
+    step: 60000
     onDateChanged: root.displayDate = date
   }
 

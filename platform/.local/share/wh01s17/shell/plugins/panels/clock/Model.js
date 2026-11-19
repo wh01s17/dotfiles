@@ -39,6 +39,13 @@ var VERTICAL_CLOCK_FORMATS = [
   "HH\nmm"
 ]
 
+// Milliseconds from nowMs to the next whole step (1000 or 60000), always in
+// (0, step]. Counted on the epoch clock: local wall time repeats an hour when
+// daylight saving ends, and a whole local minute starts on a whole epoch one.
+function msUntilNextTick(nowMs, step) {
+  return step - nowMs % step
+}
+
 function clockFormats(vertical) {
   return vertical ? VERTICAL_CLOCK_FORMATS.slice() : CLOCK_FORMATS.slice()
 }
@@ -278,6 +285,7 @@ function stepMonth(year, month, delta) {
 
 if (typeof module !== "undefined") {
   module.exports = {
+    msUntilNextTick: msUntilNextTick,
     dateKey: dateKey,
     keyForDate: keyForDate,
     normalizedWeekStart: normalizedWeekStart,

@@ -161,6 +161,8 @@ Panel {
   readonly property bool bandPillsVisible: canSelectBand && bandPinned
   readonly property string bandSectionTitle: Model.bandSectionTitle(bandEffective, bandCurrent)
   readonly property bool bandBusy: pendingBand !== ""
+  // The DNS pills show a choice the moment it's made, and fall back if it fails.
+  readonly property string dnsEffective: pendingDnsProvider !== "" ? pendingDnsProvider : dnsProvider
   // The speed test needs an interface to test, so its hero action only
   // appears once there is one.
   readonly property bool canRunSpeedTest: !!info.iface
@@ -386,6 +388,7 @@ Panel {
   onWifiDeviceChanged: {
     setScannerEnabled(true)
     syncWifiNetworks()
+    resetActiveApSignal()
   }
 
   onWifiNetworkObjectsChanged: syncWifiNetworks()
@@ -439,11 +442,52 @@ Panel {
   readonly property string kind: {
     if (wiredDevice && wiredDevice.connected) return "ethernet"
     if (connectedWifiNetwork) return "wifi"
+    // NetworkManager can leave the active profile out of the device's
+    // AvailableConnections, and Quickshell only builds known networks from
+    // that list. An OWE transition-mode network does this between scans: the
+    // in-use access point carries the hidden "_owetm_" SSID, so the profile
+    // for the open SSID looks out of range even while it is connected. Trust
+    // the device's own state then instead of flickering to disconnected.
+    if (wifiDevice && wifiDevice.connected) return "wifi"
     return "disconnected"
   }
-  readonly property int signalStrength: connectedWifiNetwork
-    ? Math.round((connectedWifiNetwork.signalStrength || 0) * 100)
+  readonly property int signalStrength: kind === "wifi"
+    ? Model.connectedSignalStrength(connectedWifiNetwork ? connectedWifiNetwork.signalStrength : 0, activeApSignal)
     : -1
+  // Filled by activeApSignalPoll from nmcli while the connected network has no
+  // strength of its own to report.
+  property int activeApSignal: -1
+  readonly property bool needsActiveApSignal: kind === "wifi"
+    && !(connectedWifiNetwork && connectedWifiNetwork.signalStrength > 0)
+  // Bumped whenever the cached reading stops describing the current link, so
+  // an nmcli read still in flight from before cannot write a stale strength.
+  property int activeApSignalGeneration: 0
+  property int activeApSignalRequest: -1
+  onKindChanged: if (kind !== "wifi") resetActiveApSignal()
+
+  // Switching Wi-Fi networks always passes through a non-"wifi" kind (both the
+  // device and the old network drop out of the connected state while the new
+  // profile activates), so this also covers a change of network.
+  function resetActiveApSignal() {
+    activeApSignal = -1
+    activeApSignalGeneration++
+  }
+
+  function pollActiveApSignal() {
+    if (activeApSignalProc.running) return
+    activeApSignalRequest = activeApSignalGeneration
+    activeApSignalProc.running = true
+  }
+
+  function finishActiveApSignal(raw) {
+    if (activeApSignalRequest !== activeApSignalGeneration) {
+      // The link changed mid-read and the restarted poll skipped while this
+      // one was running; read again now instead of a full interval later.
+      if (needsActiveApSignal) activeApSignalPoll.restart()
+      return
+    }
+    activeApSignal = Model.parseActiveApSignal(raw)
+  }
 
   function copyToClipboard(value) {
     if (!value || !root.bar) return
@@ -674,10 +718,11 @@ Panel {
       return
     }
 
+    // The panel stays open, so the choice can be seen taking hold and another
+    // tried without reopening it.
     root.pendingDnsProvider = provider
     actionProc.command = ["bash", "-c", root.dnsCommand(provider)]
     actionProc.running = true
-    root.close()
   }
 
   function requiresCredentials(security) {
@@ -814,6 +859,26 @@ Panel {
       waitForEnd: true
       onStreamFinished: root.updateDetails(text)
     }
+  }
+
+  // Reads the in-use access point's strength without triggering a scan, for
+  // the connected network that has none of its own (see signalStrength).
+  Process {
+    id: activeApSignalProc
+    command: ["nmcli", "-t", "-f", "IN-USE,SIGNAL", "device", "wifi", "list", "ifname", root.wifiDevice ? root.wifiDevice.name : "", "--rescan", "no"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.finishActiveApSignal(text)
+    }
+  }
+
+  Timer {
+    id: activeApSignalPoll
+    interval: 5000
+    repeat: true
+    triggeredOnStart: true
+    running: root.needsActiveApSignal
+    onTriggered: root.pollActiveApSignal()
   }
 
   Timer {
@@ -1578,7 +1643,7 @@ Panel {
     // Map the panel's domain semantics onto Button's structural props:
     // `current DNS` is the pill's `active` fill; the keyboard cursor lights
     // up `hasCursor`.
-    active: root.dnsProvider === provider
+    active: root.dnsEffective === provider
     hasCursor: root.cursorActive && root.focusSection === "dns" && root.dnsIndex === index
 
     onHovered: function(isHovered) {
