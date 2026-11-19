@@ -4,4 +4,5 @@ omarchy: 4.0.4-1
 omarchy-settings: 4.0.4-1
 omarchy-nvim: 2026.8.13-1
 Generada con arch-desktop/tools/vendor-omarchy.py.
-Backports revisados: arch-desktop/patches/omarchy-4.0.4-fixes.json
+Backports revisados: dotfiles/installer/patches/omarchy-4.0.4-fixes.json
+Backports 4.5.0 revisados: dotfiles/installer/patches/README.md (2026-11-19)

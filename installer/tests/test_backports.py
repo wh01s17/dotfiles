@@ -23,6 +23,13 @@ class BackportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             backports.apply_hunks("unexpected\n", hunks, "test", False)
 
+    def test_superseded_block_is_left_to_the_later_backport(self):
+        hunks = [{"old": "a\n", "new": "b\n", "superseded": "c\n"}]
+        self.assertEqual(backports.apply_hunks("c\n", hunks, "test", False), "c\n")
+        self.assertEqual(backports.apply_hunks("a\n", hunks, "test", False), "b\n")
+        with self.assertRaises(ValueError):
+            backports.apply_hunks("d\n", hunks, "test", False)
+
     def test_plan_does_not_partially_write_on_conflict(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

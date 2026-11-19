@@ -35,6 +35,10 @@ def apply_hunks(text: str, hunks: list[dict], path: str, renamed: bool) -> str:
         new = converted(hunk["new"], path, renamed)
         if old == new or (new and new in text):
             continue
+        # A later reviewed backport may rewrite this block on purpose.
+        superseded = converted(hunk.get("superseded", ""), path, renamed)
+        if superseded and superseded in text:
+            continue
         if not old:
             if text:
                 raise ValueError(f"{path}: el archivo nuevo ya existe con otro contenido")
