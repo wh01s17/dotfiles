@@ -26,11 +26,14 @@ Item {
   property int launchSerial: 0
   property int launchToplevelCount: 0
   property var launchActiveToplevel: null
-  // True while the launch OSD is on screen. It outlives the launch that opened
-  // it: the OSD shows with duration 0, so only closeLaunchFeedback() takes it
-  // down.
+  // True while the launch OSD is on screen. closeLaunchFeedback() normally
+  // takes it down; its own duration only backs that up.
   property bool launchOsdOpen: false
   property string launchOsdMessage: ""
+  // Pending OSD IPC calls. Each call is its own qs process, so firing them
+  // detached let a close that followed a show closely (a window mapping just
+  // after launchDelay) arrive first and strand the OSD on screen.
+  property var osdQueue: []
 
   // Emitted whenever the visible application set may have changed: desktop
   // entries appeared or vanished, or the hidden-entry filters reloaded.
@@ -171,9 +174,20 @@ Item {
     launchDelay.stop()
     launchTimeout.stop()
     if (root.launchOsdOpen) {
-      Quickshell.execDetached(["wh01s17-shell", "osd", "close"])
+      root.sendOsd(["close"])
       root.launchOsdOpen = false
     }
+  }
+
+  function sendOsd(args) {
+    root.osdQueue.push(args)
+    root.pumpOsd()
+  }
+
+  function pumpOsd() {
+    if (osdIpc.running || root.osdQueue.length === 0) return
+    osdIpc.command = ["wh01s17-shell", "-q", "osd"].concat(root.osdQueue.shift())
+    osdIpc.running = true
   }
 
   function maybeFinishLaunchFeedback() {
@@ -242,8 +256,17 @@ Item {
     onTriggered: {
       if (root.toplevelCount() > root.launchToplevelCount || ToplevelManager.activeToplevel !== root.launchActiveToplevel) return
       root.launchOsdOpen = true
-      Quickshell.execDetached(["wh01s17-shell", "osd", "show", JSON.stringify({ icon: "󱓞", message: root.launchOsdMessage, duration: 0 })])
+      // Expire with launchTimeout, so a lost close cannot leave it up.
+      var remaining = launchTimeout.interval - launchDelay.interval
+      root.sendOsd(["show", JSON.stringify({ icon: "󱓞", message: root.launchOsdMessage, duration: remaining })])
     }
+  }
+
+  Process {
+    id: osdIpc
+    // running also drops when the process fails to start, which never emits
+    // exited; pumping on it keeps one failed call from stalling the queue.
+    onRunningChanged: if (!running) root.pumpOsd()
   }
 
   Timer {
