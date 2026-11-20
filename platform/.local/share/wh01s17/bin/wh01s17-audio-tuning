@@ -127,14 +127,19 @@ tuning_present() {
 # a sink input but carries no application.name, and moving it would rewire the
 # tuning itself.
 # pactl translates its headers; parse them in the C locale.
+# Apps on the "Compartido" sink (20-mezcla.conf) stay there: it already follows
+# the default output, and moving them would drop them from the Mezcla mic.
 app_streams() {
-  LC_ALL=C pactl list sink-inputs 2>/dev/null | awk '
+  local shared
+  shared=$(LC_ALL=C pactl list short sinks 2>/dev/null | awk '$2 == "Compartido" {print $1}')
+  LC_ALL=C pactl list sink-inputs 2>/dev/null | awk -v shared="$shared" '
     /^Sink Input #/ {id = substr($3, 2)}
+    /^\tSink: / {sink = $2}
     /application\.name = / {
       app = $0
       sub(/.*application\.name = "/, "", app)
       sub(/"$/, "", app)
-      if (app != "EasyEffects") print id
+      if (app != "EasyEffects" && (shared == "" || sink != shared)) print id
     }'
 }
 

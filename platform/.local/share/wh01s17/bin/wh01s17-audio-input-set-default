@@ -15,6 +15,13 @@ fi
 wpctl set-default "$node_id" 2>/dev/null || true
 pactl set-default-source "$source_name" 2>/dev/null || exit 1
 
-pactl list short source-outputs 2>/dev/null | awk '{ print $1 }' | while read -r output; do
+# Move only real application captures. A virtual microphone built from loopback
+# or filter-chain streams (the Mezcla routing in 20-mezcla.conf) captures through
+# source outputs too, but carries no application.name; moving those would point
+# the mix at the newly selected source -- itself, when that is the virtual mic.
+# pactl translates its headers; parse them in the C locale.
+LC_ALL=C pactl list source-outputs 2>/dev/null | awk '
+  /^Source Output #/ {id = substr($3, 2)}
+  /application\.name = / {print id}' | while read -r output; do
   [[ -n $output ]] && pactl move-source-output "$output" "$source_name" 2>/dev/null || true
 done

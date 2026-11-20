@@ -18,15 +18,20 @@ timeout 2 pactl set-default-sink "$sink_name" 2>/dev/null || exit 1
 # Move only real application streams. A DSP filter-chain's own output is also a
 # sink input but carries no application.name, and moving it would rewire the
 # processing itself -- onto headphones, or into its own virtual sink, which is a
-# cycle. EasyEffects' output stream must stay put for the same reason.
+# cycle. EasyEffects' output stream must stay put for the same reason, and so
+# do apps sent to the "Compartido" sink (20-mezcla.conf) on purpose: that sink
+# already plays on the selected output, and moving them would drop them from
+# the Mezcla virtual microphone.
 # pactl translates its headers; parse them in the C locale.
-LC_ALL=C timeout 2 pactl list sink-inputs 2>/dev/null | awk '
+shared_sink=$(LC_ALL=C timeout 2 pactl list short sinks 2>/dev/null | awk '$2 == "Compartido" {print $1}')
+LC_ALL=C timeout 2 pactl list sink-inputs 2>/dev/null | awk -v shared="$shared_sink" '
   /^Sink Input #/ {id = substr($3, 2)}
+  /^\tSink: / {sink = $2}
   /application\.name = / {
     app = $0
     sub(/.*application\.name = "/, "", app)
     sub(/"$/, "", app)
-    if (app != "EasyEffects") print id
+    if (app != "EasyEffects" && (shared == "" || sink != shared)) print id
   }' | while read -r input; do
   [[ -n $input ]] && timeout 2 pactl move-sink-input "$input" "$sink_name" 2>/dev/null || true
 done
