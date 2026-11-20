@@ -24,9 +24,19 @@ Panel {
     var list = []
     for (var i = 0; i < nodes.length; i++) {
       var n = nodes[i]
-      if (n && n.isSink && !n.isStream) list.push(n)
+      if (n && n.isSink && !n.isStream && !isMixRoutingNode(n)) list.push(n)
     }
     return list
+  }
+
+  // The Mezcla routing (~/.config/pipewire/pipewire.conf.d/20-mezcla.conf) is
+  // plumbing, not devices or apps: its internal summing sink and loopback
+  // streams would only clutter the lists. "Compartido" is hidden too -- picking
+  // it as the output would feed every app, a call included, back into the
+  // microphone. Apps reach it by targeting it by name.
+  function isMixRoutingNode(n) {
+    var name = String(n && n.name || "")
+    return name === "Compartido" || name.indexOf("mezcla.") === 0
   }
 
   readonly property var candidateSources: {
@@ -50,6 +60,7 @@ Panel {
       // A tuning's output is a playback stream too, but it is the processing
       // itself rather than an application, so it does not belong in the list.
       if (String(n.name || "").indexOf("wh01s17_speaker_tuning") === 0) continue
+      if (isMixRoutingNode(n)) continue
       list.push(n)
     }
     return list
@@ -57,6 +68,23 @@ Panel {
 
   property var sinkAvailability: ({})
   property bool sinkAvailabilityLoaded: false
+
+  // Card profiles (Pro Audio, stereo duplex, ...) are device state the Pipewire
+  // service does not expose, so wh01s17-audio-card-profiles reads them while the
+  // panel is open. One card at a time can be expanded to list its profiles; the
+  // rows are primitives, so they are safe to hand to a Repeater as they are.
+  property var cardProfiles: []
+  property string expandedCard: ""
+  readonly property var displayProfileRows: opened ? Model.profileRows(cardProfiles, expandedCard) : []
+  onDisplayProfileRowsChanged: clampCursor()
+
+  // Monitor: hear the Mezcla virtual microphone on the selected output.
+  // wh01s17-audio-mix-monitor owns the links; this only
+  // mirrors its state: "on", "off", or "unavailable" when there is no mix.
+  property string monitorState: ""
+  readonly property bool monitorAvailable: monitorState === "on" || monitorState === "off"
+  readonly property bool monitorOn: monitorState === "on"
+  onMonitorAvailableChanged: clampCursor()
 
   // Identify true playback streams without reading node.properties here:
   // PwNode.properties is invalid until the node is bound, and reading it while
@@ -139,7 +167,10 @@ Panel {
 
   // Re-resolve whenever the selected output changes; the timer below is only a
   // safety net for the tuning being applied or removed underneath us.
-  onSinkChanged: resolveVolumeSink()
+  onSinkChanged: {
+    resolveVolumeSink()
+    monitorFollowTimer.restart()
+  }
 
   function resolveVolumeSink() {
     if (!volumeSinkProc.running) volumeSinkProc.running = true
@@ -188,6 +219,8 @@ Panel {
   function sectionCount(section) {
     if (section === "output") return displayAudioSinks.length
     if (section === "input") return displayAudioSources.length
+    if (section === "monitor") return monitorAvailable ? 1 : 0
+    if (section === "profiles") return displayProfileRows.length
     if (section === "streams") return displayAudioStreams.length
     return 0
   }
@@ -195,6 +228,8 @@ Panel {
   function sectionVisible(section) {
     if (section === "output") return true
     if (section === "input") return displayAudioSources.length > 0 || !!source
+    if (section === "monitor") return monitorAvailable
+    if (section === "profiles") return displayProfileRows.length > 0
     if (section === "streams") return displayAudioStreams.length > 0
     return false
   }
@@ -211,6 +246,8 @@ Panel {
     var list = []
     if (sectionVisible("output")) list.push("output")
     if (sectionVisible("input")) list.push("input")
+    if (sectionVisible("monitor")) list.push("monitor")
+    if (sectionVisible("profiles")) list.push("profiles")
     if (sectionVisible("streams")) list.push("streams")
     return list
   }
@@ -303,6 +340,11 @@ Panel {
       if (src) setDefaultSource(src)
       return
     }
+    if (focusSection === "monitor") { toggleMonitor(); return }
+    if (focusSection === "profiles") {
+      activateProfileRow(displayProfileRows[selectedIndex])
+      return
+    }
     if (focusSection === "streams" && selectedIndex >= 0) {
       var st = nodeFor(displayAudioStreams[selectedIndex])
       if (st && st.audio) st.audio.muted = !st.audio.muted
@@ -318,6 +360,7 @@ Panel {
       Qt.callLater(resetScroll)
     } else {
       clearDisplayAudioModels()
+      expandedCard = ""
     }
   }
 
@@ -498,6 +541,41 @@ Panel {
     }
   }
 
+  function refreshMonitor() {
+    if (!monitorStatusProc.running) monitorStatusProc.running = true
+  }
+
+  function toggleMonitor() {
+    if (!monitorAvailable || monitorToggleProc.running) return
+    monitorState = monitorOn ? "off" : "on"
+    monitorToggleProc.command = ["wh01s17-audio-mix-monitor", monitorState]
+    monitorToggleProc.running = true
+  }
+
+  function refreshCardProfiles() {
+    if (!cardProfilesProc.running) cardProfilesProc.running = true
+  }
+
+  // A card row expands or collapses its profile list; a profile row switches
+  // the card to it. Switching rebuilds that card's nodes, so the device lists
+  // above refresh on their own once PipeWire publishes the new graph.
+  function activateProfileRow(row) {
+    if (!row) return
+    if (row.kind === "card") {
+      expandedCard = expandedCard === row.card ? "" : row.card
+      return
+    }
+    if (row.active) return
+    setCardProfile(row.card, row.profile)
+  }
+
+  function setCardProfile(card, profile) {
+    if (!card || !profile) return
+    cardProfiles = Model.withActiveProfile(cardProfiles, card, profile)
+    Quickshell.execDetached(["wh01s17-audio-card-profiles", "set", card, profile])
+    cardProfilesSettleTimer.restart()
+  }
+
   function sinkAvailable(node) {
     if (!node || !node.name || !sinkAvailabilityLoaded) return true
     var name = String(node.name)
@@ -626,6 +704,67 @@ Panel {
     onTriggered: if (!sinkAvailabilityProc.running) sinkAvailabilityProc.running = true
   }
 
+  Process {
+    id: cardProfilesProc
+    command: ["wh01s17-audio-card-profiles", "list"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.cardProfiles = Model.parseCardProfiles(text)
+    }
+  }
+
+  Timer {
+    interval: 5000
+    running: root.opened
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.refreshCardProfiles()
+  }
+
+  Process {
+    id: monitorStatusProc
+    command: ["wh01s17-audio-mix-monitor", "status"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.monitorState = String(text).trim()
+    }
+  }
+
+  // Reads the real state back afterwards, so a refused switch does not stay
+  // shown as on from the optimistic flip.
+  Process {
+    id: monitorToggleProc
+    onExited: root.refreshMonitor()
+  }
+
+  Timer {
+    interval: 3000
+    running: root.opened
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.refreshMonitor()
+  }
+
+  // The monitor plays on the selected output, so when the output changes a
+  // live monitor is re-linked onto the new one. Runs whether or not the panel
+  // is open; the delay lets the new default settle in PipeWire first.
+  Timer {
+    id: monitorFollowTimer
+    interval: 400
+    repeat: false
+    onTriggered: Quickshell.execDetached(["sh", "-c",
+      "[ \"$(wh01s17-audio-mix-monitor status)\" = on ] && wh01s17-audio-mix-monitor on"])
+  }
+
+  // Read back the real profile once pactl has applied the switch, so a refused
+  // profile does not stay ticked from the optimistic update.
+  Timer {
+    id: cardProfilesSettleTimer
+    interval: 700
+    repeat: false
+    onTriggered: root.refreshCardProfiles()
+  }
+
   // Runs whether or not the panel is open: the bar shows and scrolls the output
   // volume too, so an unresolved sink there would read and change the virtual
   // tuning sink instead of the speakers.
@@ -680,7 +819,7 @@ Panel {
     open: root.opened
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight, Style.space(560))
+    contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight, Style.space(760))
 
     PanelKeyCatcher {
       id: keyCatcher
@@ -1006,6 +1145,139 @@ Panel {
             }
           }
 
+          // ---- Monitor ----
+          PanelSeparator {
+            visible: root.monitorAvailable
+            foreground: root.bar.foreground
+          }
+
+          CursorSurface {
+            id: monitorRow
+            visible: root.monitorAvailable
+            width: parent.width
+            implicitHeight: monitorInner.implicitHeight + Style.spacing.xl
+            hasCursor: root.cursorActive && root.focusSection === "monitor"
+            onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(monitorRow)
+            current: root.monitorOn
+            foreground: root.bar.foreground
+            fill: root.hoverFill
+            currentFill: root.selectedFill
+
+            MouseArea {
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onContainsMouseChanged: if (containsMouse) {
+                root.cursorActive = true
+                root.focusSection = "monitor"
+                root.selectedIndex = 0
+              }
+              onClicked: root.toggleMonitor()
+            }
+
+            Item {
+              id: monitorInner
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              anchors.leftMargin: Style.space(6)
+              anchors.rightMargin: Style.space(6)
+              implicitHeight: Math.max(monitorLabels.implicitHeight, monitorSwitch.implicitHeight)
+
+              Text {
+                id: monitorGlyph
+                textFormat: Text.PlainText
+                text: "󰋋"
+                color: root.bar.foreground
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.title
+                width: Style.space(22)
+                horizontalAlignment: Text.AlignHCenter
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                opacity: root.monitorOn ? 1.0 : 0.6
+              }
+
+              Column {
+                id: monitorLabels
+                anchors.left: monitorGlyph.right
+                anchors.leftMargin: Style.space(8)
+                anchors.right: monitorSwitch.left
+                anchors.rightMargin: Style.space(8)
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Style.space(1)
+
+                Text {
+                  textFormat: Text.PlainText
+                  text: "Monitor"
+                  color: root.bar.foreground
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.body
+                  font.bold: root.monitorOn
+                  elide: Text.ElideRight
+                  width: parent.width
+                }
+
+                Text {
+                  textFormat: Text.PlainText
+                  text: root.monitorOn ? "Escuchando la mezcla" : "Escucha la mezcla"
+                  color: Qt.darker(root.bar.foreground, 1.4)
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.caption
+                  elide: Text.ElideRight
+                  width: parent.width
+                }
+              }
+
+              ToggleSwitch {
+                id: monitorSwitch
+                checked: root.monitorOn
+                busy: monitorToggleProc.running
+                hasCursor: false
+                foreground: root.bar.foreground
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                onHovered: function(on) {
+                  if (!on) return
+                  root.cursorActive = true
+                  root.focusSection = "monitor"
+                  root.selectedIndex = 0
+                }
+                onToggled: root.toggleMonitor()
+              }
+            }
+          }
+
+          // ---- Card profiles ----
+          PanelSeparator {
+            visible: root.displayProfileRows.length > 0
+            foreground: root.bar.foreground
+          }
+
+          Column {
+            width: parent.width
+            spacing: Style.space(6)
+            visible: root.displayProfileRows.length > 0
+
+            PanelSectionHeader {
+              text: "PROFILES"
+              foreground: root.bar.foreground
+              fontFamily: root.bar.fontFamily
+            }
+
+            Repeater {
+              model: root.displayProfileRows
+
+              ProfileRow {
+                required property var modelData
+                required property int index
+                width: panelColumn.width
+                row: modelData
+                rowIndex: index
+              }
+            }
+          }
+
           // ---- Per-app streams ----
           PanelSeparator {
             visible: root.displayAudioStreams.length > 0
@@ -1163,6 +1435,100 @@ Panel {
         root.selectedIndex = sourceRow.rowIndex
       }
       onClicked: root.setDefaultSource(sourceRow.node)
+    }
+  }
+
+  // Card / profile row — cursor target inside the "profiles" section. A card
+  // row shows its active profile and a chevron; the profile rows under an
+  // expanded card are indented, with a check on the active one.
+  component ProfileRow: CursorSurface {
+    id: profileRow
+    required property var row
+    required property int rowIndex
+
+    readonly property bool isCard: row && row.kind === "card"
+    hasCursor: root.cursorActive && root.focusSection === "profiles" && root.selectedIndex === rowIndex
+    onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(profileRow)
+    current: !isCard && !!row && row.active
+    foreground: root.bar.foreground
+    fill: root.hoverFill
+    currentFill: root.selectedFill
+    implicitHeight: profileInner.implicitHeight + Style.spacing.xl
+
+    Row {
+      id: profileInner
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.leftMargin: profileRow.isCard ? Style.space(6) : Style.space(28)
+      anchors.rightMargin: Style.space(6)
+      spacing: Style.space(8)
+
+      Text {
+        id: profileGlyph
+        textFormat: Text.PlainText
+        text: profileRow.isCard
+          ? (profileRow.row.warning ? "󰀦" : "󰓃")
+          : (profileRow.row && profileRow.row.active ? "󰄬" : "")
+        color: profileRow.isCard && profileRow.row.warning ? Colors.urgent : root.bar.foreground
+        font.family: root.bar.fontFamily
+        font.pixelSize: profileRow.isCard ? Style.font.title : Style.font.body
+        width: Style.space(22)
+        horizontalAlignment: Text.AlignHCenter
+        anchors.verticalCenter: parent.verticalCenter
+      }
+
+      Column {
+        width: parent.width - profileGlyph.width - profileChevron.width - Style.space(16)
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Style.space(1)
+
+        Text {
+          textFormat: Text.PlainText
+          text: profileRow.row ? profileRow.row.label : ""
+          color: root.bar.foreground
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.body
+          font.bold: profileRow.isCard ? profileRow.row.expanded : (!!profileRow.row && profileRow.row.active)
+          elide: Text.ElideRight
+          width: parent.width
+        }
+
+        Text {
+          visible: profileRow.isCard
+          textFormat: Text.PlainText
+          text: profileRow.row ? profileRow.row.detail : ""
+          color: profileRow.row && profileRow.row.warning ? Colors.urgent : Qt.darker(root.bar.foreground, 1.4)
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.caption
+          elide: Text.ElideRight
+          width: parent.width
+        }
+      }
+
+      Text {
+        id: profileChevron
+        textFormat: Text.PlainText
+        text: profileRow.isCard ? (profileRow.row.expanded ? "󰅀" : "󰅂") : ""
+        color: Qt.darker(root.bar.foreground, 1.4)
+        font.family: root.bar.fontFamily
+        font.pixelSize: Style.font.body
+        width: Style.space(16)
+        horizontalAlignment: Text.AlignHCenter
+        anchors.verticalCenter: parent.verticalCenter
+      }
+    }
+
+    MouseArea {
+      anchors.fill: parent
+      hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onContainsMouseChanged: if (containsMouse) {
+        root.cursorActive = true
+        root.focusSection = "profiles"
+        root.selectedIndex = profileRow.rowIndex
+      }
+      onClicked: root.activateProfileRow(profileRow.row)
     }
   }
 

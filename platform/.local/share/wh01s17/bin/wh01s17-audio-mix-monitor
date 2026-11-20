@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# wh01s17:summary=Hear the Mezcla virtual microphone on the selected output
+# wh01s17:group=audio
+# wh01s17:args=status | on | off | toggle
+# wh01s17:examples=wh01s17 audio mix monitor toggle
+
+# ~/.config/pipewire/pipewire.conf.d/20-mezcla.conf sums interface inputs 1-2
+# and the "Compartido" sink into the Mezcla source. Monitoring links that
+# source straight onto the selected output's first two channels
+# (FL/FR, or AUX0/AUX1 on a Pro Audio interface): a direct port link adds no
+# buffering of its own, so the delay is the graph quantum, which is lowered
+# while monitoring. The shared-audio loopback is muted meanwhile, because the
+# mix already carries it and it would otherwise be heard twice.
+#
+# Links are made with pw-link, so they live in PipeWire rather than in this
+# process; they last until turned off or PipeWire restarts. `on` re-targets the
+# current default output, so calling it again follows an output change.
+
+SOURCE=Mezcla
+SOURCE_PORT="$SOURCE:capture_MONO"
+SHARED_STREAM=mezcla.compartido.escucha
+QUANTUM=${WH01S17_MIX_MONITOR_QUANTUM:-128}
+
+available() {
+  pw-link -o 2>/dev/null | grep -qxF "$SOURCE_PORT"
+}
+
+# Sink ports currently fed by the monitor (inputs of real sinks are named
+# playback_*; Meet's own capture stream has input_* ports and is left alone).
+monitor_links() {
+  pw-link -l 2>/dev/null | awk -v src="$SOURCE_PORT" '
+    $0 == src { in_src = 1; next }
+    /^[^ \t|]/ { in_src = 0 }
+    in_src && /\|->/ { sub(/.*\|-> /, ""); if ($0 ~ /:playback_/) print }'
+}
+
+is_on() {
+  [[ -n $(monitor_links) ]]
+}
+
+shared_input_id() {
+  LC_ALL=C pactl list sink-inputs 2>/dev/null | awk -v name="$SHARED_STREAM" '
+    /^Sink Input #/ { id = substr($3, 2) }
+    /node\.name = / { if (index($0, "\"" name "\"")) print id }'
+}
+
+set_shared_mute() {
+  local id
+  id=$(shared_input_id)
+  [[ -n $id ]] && pactl set-sink-input-mute "$id" "$1" 2>/dev/null
+}
+
+unlink_all() {
+  local port
+  while read -r port; do
+    [[ -n $port ]] && pw-link -d "$SOURCE_PORT" "$port" 2>/dev/null
+  done < <(monitor_links)
+}
+
+turn_on() {
+  available || { echo "unavailable" >&2; exit 1; }
+  local sink ports
+  sink=$(pactl get-default-sink 2>/dev/null)
+  [[ -n $sink ]] || { echo "no default output" >&2; exit 1; }
+  mapfile -t ports < <(pw-link -i 2>/dev/null | grep -F "$sink:playback_" | head -2)
+  ((${#ports[@]})) || { echo "output $sink has no playback ports" >&2; exit 1; }
+
+  unlink_all
+  for port in "${ports[@]}"; do pw-link "$SOURCE_PORT" "$port" 2>/dev/null; done
+  set_shared_mute 1
+  pw-metadata -n settings 0 clock.force-quantum "$QUANTUM" >/dev/null 2>&1
+}
+
+turn_off() {
+  unlink_all
+  set_shared_mute 0
+  # Only undo our own quantum, never one something else forced.
+  if pw-metadata -n settings 0 clock.force-quantum 2>/dev/null | grep -q "value:'$QUANTUM'"; then
+    pw-metadata -n settings 0 clock.force-quantum 0 >/dev/null 2>&1
+  fi
+}
+
+case ${1:-status} in
+  status)
+    if ! available; then echo unavailable
+    elif is_on; then echo on
+    else echo off
+    fi
+    ;;
+  on) turn_on ;;
+  off) turn_off ;;
+  toggle) if is_on; then turn_off; else turn_on; fi ;;
+  *)
+    echo "Usage: wh01s17-audio-mix-monitor status | on | off | toggle" >&2
+    exit 1
+    ;;
+esac

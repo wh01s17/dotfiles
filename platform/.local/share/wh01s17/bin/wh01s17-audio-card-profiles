@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# wh01s17:summary=List or switch audio card profiles for the shell
+# wh01s17:group=audio
+# wh01s17:args=list | set <card-name> <profile-name>
+# wh01s17:examples=wh01s17 audio card profiles set alsa_card.usb-Audient_EVO8-00 pro-audio
+
+# Quickshell's Pipewire service exposes nodes but not devices, so the audio
+# panel reads card profiles through here. `list` prints one JSON array:
+#   [{name, description, active, profiles: [{name, description, sinks, sources}]}]
+# Only profiles that are available and not "off" are listed, highest priority
+# first, and cards with nothing to switch between (a phone's audio gateway) are
+# dropped, so every card the panel shows has a real choice.
+
+case ${1:-list} in
+  list)
+    LC_ALL=C timeout 2 pactl -f json list cards 2>/dev/null | jq -c '
+      [ .[]
+        | {
+            name,
+            description: (.properties["device.description"] // .name),
+            active: (.active_profile // ""),
+            profiles: (
+              .profiles | to_entries
+              | map(select(.key != "off" and (.value.available != false)))
+              | sort_by(-(.value.priority // 0))
+              | map({
+                  name: .key,
+                  description: (.value.description // .key),
+                  sinks: (.value.sinks // 0),
+                  sources: (.value.sources // 0)
+                })
+            )
+          }
+        | select((.profiles | length) > 1)
+      ]' 2>/dev/null || echo "[]"
+    ;;
+  set)
+    card=${2:-}
+    profile=${3:-}
+    if [[ -z $card || -z $profile ]]; then
+      echo "Usage: wh01s17-audio-card-profiles set <card-name> <profile-name>" >&2
+      exit 1
+    fi
+    timeout 3 pactl set-card-profile "$card" "$profile"
+    ;;
+  *)
+    echo "Usage: wh01s17-audio-card-profiles list | set <card-name> <profile-name>" >&2
+    exit 1
+    ;;
+esac
