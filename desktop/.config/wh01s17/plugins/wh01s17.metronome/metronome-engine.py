@@ -55,12 +55,21 @@ VOICE_SUB = (2080.0, 0.30, 0.008, 0.030)
 
 SILENCE = array.array("h", [0] * CHUNK).tobytes()
 
+# Preferred output sink. "Compartido" is a virtual sink
+# (~/.config/pipewire/pipewire.conf.d/20-mezcla.conf) that plays on the selected
+# output *and* feeds the Mezcla virtual microphone, so the click is heard locally
+# and sent wherever that microphone goes. When no sink by that name exists,
+# WirePlumber falls back to the default output, so the metronome is never left
+# silent. An empty value disables the preference.
+TARGET_SINK = os.environ.get("WH01S17_METRONOME_SINK", "Compartido")
+
 
 def player_command():
     if shutil.which("pw-cat"):
+        target = ["--target", TARGET_SINK] if TARGET_SINK else []
         return ["pw-cat", "-p", "--format", "s16", "--rate", str(RATE),
                 "--channels", "1", "--raw", "--latency", "30ms",
-                "--media-role", "Production",
+                "--media-role", "Production", *target,
                 "-P", "media.name=Metronome", "-"]
     if shutil.which("aplay"):
         return ["aplay", "-q", "-t", "raw", "-f", "S16_LE",
