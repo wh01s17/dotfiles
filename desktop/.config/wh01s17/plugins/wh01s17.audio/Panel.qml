@@ -541,6 +541,30 @@ Panel {
     }
   }
 
+  // Node ids of the app streams currently playing on Compartido, as reported by
+  // wh01s17-audio-stream-share; polled while the panel is open.
+  property var sharedStreamIds: []
+
+  function streamShared(node) {
+    return !!node && sharedStreamIds.indexOf(String(node.id)) >= 0
+  }
+
+  function refreshSharedStreams() {
+    if (!sharedStreamsProc.running) sharedStreamsProc.running = true
+  }
+
+  function toggleStreamShared(node) {
+    if (!node || node.id === undefined || streamShareProc.running) return
+    var id = String(node.id)
+    var next = sharedStreamIds.slice()
+    var at = next.indexOf(id)
+    if (at >= 0) next.splice(at, 1)
+    else next.push(id)
+    sharedStreamIds = next
+    streamShareProc.command = ["wh01s17-audio-stream-share", at >= 0 ? "off" : "on", id]
+    streamShareProc.running = true
+  }
+
   function refreshMonitor() {
     if (!monitorStatusProc.running) monitorStatusProc.running = true
   }
@@ -722,6 +746,35 @@ Panel {
   }
 
   Process {
+    id: sharedStreamsProc
+    command: ["wh01s17-audio-stream-share", "list"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var ids = String(text).split("\n")
+        var next = []
+        for (var i = 0; i < ids.length; i++) if (ids[i].trim()) next.push(ids[i].trim())
+        root.sharedStreamIds = next
+      }
+    }
+  }
+
+  // Reads the real routing back afterwards, so a refused move does not stay
+  // shown from the optimistic update.
+  Process {
+    id: streamShareProc
+    onExited: root.refreshSharedStreams()
+  }
+
+  Timer {
+    interval: 3000
+    running: root.opened
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.refreshSharedStreams()
+  }
+
+  Process {
     id: monitorStatusProc
     command: ["wh01s17-audio-mix-monitor", "status"]
     stdout: StdioCollector {
@@ -846,6 +899,12 @@ Panel {
           } else {
             root.toggleOutputMute()
           }
+        }
+        // 's' sends the focused app to Compartido, or back.
+        if (t === "s" || t === "S") {
+          if (!root.cursorActive || root.focusSection !== "streams") return
+          if (root.selectedIndex < 0 || root.selectedIndex >= root.displayAudioStreams.length) return
+          root.toggleStreamShared(root.nodeFor(root.displayAudioStreams[root.selectedIndex]))
         }
       }
 
@@ -1543,6 +1602,7 @@ Panel {
 
     readonly property real streamVolume: node && node.audio ? node.audio.volume : 0
     readonly property bool streamMuted: node && node.audio ? node.audio.muted : false
+    readonly property bool shared: root.streamShared(node)
     readonly property bool isActive: root.streamRepresentsPlayer(node, root.activeMediaPlayer)
 
     hasCursor: root.cursorActive && root.focusSection === "streams" && root.selectedIndex === rowIndex
@@ -1596,8 +1656,37 @@ Panel {
           font.pixelSize: Style.font.body
           font.bold: streamRow.isActive
           elide: Text.ElideRight
-          width: parent.width - streamMuteIcon.width - streamPct.width - Style.space(16)
+          width: parent.width - streamMuteIcon.width - streamShare.width - streamPct.width - Style.space(24)
           anchors.verticalCenter: parent.verticalCenter
+        }
+
+        // Sends this app to Compartido: heard on the output and added to the
+        // Mezcla mic. Lit while it is there.
+        Text {
+          id: streamShare
+          textFormat: Text.PlainText
+          text: "󰒗"
+          color: streamRow.shared ? root.bar.foreground : Qt.darker(root.bar.foreground, 1.6)
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.body
+          font.bold: streamRow.shared
+          width: Style.space(20)
+          horizontalAlignment: Text.AlignHCenter
+          anchors.verticalCenter: parent.verticalCenter
+
+          MouseArea {
+            id: streamShareMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.toggleStreamShared(streamRow.node)
+          }
+
+          PanelToolTip {
+            visible: streamShareMouse.containsMouse
+            text: streamRow.shared ? "En Compartido (entra a la Mezcla)" : "Enviar a Compartido"
+            fontFamily: root.bar.fontFamily
+          }
         }
 
         Text {
