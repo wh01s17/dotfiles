@@ -463,6 +463,17 @@ prepare_real_dirs() {
     [[ $(basename "$entry") == fcitx5 ]] && continue
     dirs+=("$HOME/.config/$(basename "$entry")")
   done
+  # systemd ignores a unit drop-in directory that is itself a symlink, so a
+  # folded *.d would silently drop every override in it. Linking the files
+  # into a real directory keeps them loaded; restows leave it unfolded. An
+  # install that already folded one has a link here, which mkdir would keep.
+  local dropin
+  for entry in "$DOTFILES_DIR"/*/.config/systemd/user/*.d/; do
+    [[ -d $entry ]] || continue
+    dropin="$HOME/.config/systemd/user/$(basename "$entry")"
+    [[ -L $dropin ]] && run rm "$dropin"
+    dirs+=("$dropin")
+  done
   run mkdir -p "${dirs[@]}"
 }
 
