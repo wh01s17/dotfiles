@@ -69,23 +69,6 @@ Panel {
   property var sinkAvailability: ({})
   property bool sinkAvailabilityLoaded: false
 
-  // Card profiles (Pro Audio, stereo duplex, ...) are device state the Pipewire
-  // service does not expose, so wh01s17-audio-card-profiles reads them while the
-  // panel is open. One card at a time can be expanded to list its profiles; the
-  // rows are primitives, so they are safe to hand to a Repeater as they are.
-  property var cardProfiles: []
-  property string expandedCard: ""
-  readonly property var displayProfileRows: opened ? Model.profileRows(cardProfiles, expandedCard) : []
-  onDisplayProfileRowsChanged: clampCursor()
-
-  // Monitor: hear the Mezcla virtual microphone on the selected output.
-  // wh01s17-audio-mix-monitor owns the links; this only
-  // mirrors its state: "on", "off", or "unavailable" when there is no mix.
-  property string monitorState: ""
-  readonly property bool monitorAvailable: monitorState === "on" || monitorState === "off"
-  readonly property bool monitorOn: monitorState === "on"
-  onMonitorAvailableChanged: clampCursor()
-
   // Identify true playback streams without reading node.properties here:
   // PwNode.properties is invalid until the node is bound, and reading it while
   // capture streams are appearing (for example, when Voxtype starts recording)
@@ -219,18 +202,16 @@ Panel {
   function sectionCount(section) {
     if (section === "output") return displayAudioSinks.length
     if (section === "input") return displayAudioSources.length
-    if (section === "monitor") return monitorAvailable ? 1 : 0
-    if (section === "profiles") return displayProfileRows.length
     if (section === "streams") return displayAudioStreams.length
+    if (section === "mixer") return 1
     return 0
   }
 
   function sectionVisible(section) {
     if (section === "output") return true
     if (section === "input") return displayAudioSources.length > 0 || !!source
-    if (section === "monitor") return monitorAvailable
-    if (section === "profiles") return displayProfileRows.length > 0
     if (section === "streams") return displayAudioStreams.length > 0
+    if (section === "mixer") return mixerAvailable
     return false
   }
 
@@ -246,9 +227,8 @@ Panel {
     var list = []
     if (sectionVisible("output")) list.push("output")
     if (sectionVisible("input")) list.push("input")
-    if (sectionVisible("monitor")) list.push("monitor")
-    if (sectionVisible("profiles")) list.push("profiles")
     if (sectionVisible("streams")) list.push("streams")
+    if (sectionVisible("mixer")) list.push("mixer")
     return list
   }
 
@@ -340,11 +320,7 @@ Panel {
       if (src) setDefaultSource(src)
       return
     }
-    if (focusSection === "monitor") { toggleMonitor(); return }
-    if (focusSection === "profiles") {
-      activateProfileRow(displayProfileRows[selectedIndex])
-      return
-    }
+    if (focusSection === "mixer") { openMixer(); return }
     if (focusSection === "streams" && selectedIndex >= 0) {
       var st = nodeFor(displayAudioStreams[selectedIndex])
       if (st && st.audio) st.audio.muted = !st.audio.muted
@@ -360,7 +336,6 @@ Panel {
       Qt.callLater(resetScroll)
     } else {
       clearDisplayAudioModels()
-      expandedCard = ""
     }
   }
 
@@ -541,63 +516,44 @@ Panel {
     }
   }
 
-  // Node ids of the app streams currently playing on Compartido, as reported by
-  // wh01s17-audio-stream-share; polled while the panel is open.
-  property var sharedStreamIds: []
+  // The mixer window and the Mezcla routing come from evo8-linux
+  // (~/workspace/evo8-linux): `evo8-mixer` is the window, `evoctl` the CLI.
+  // The row only shows when the window is installed.
+  property bool mixerAvailable: false
 
-  function streamShared(node) {
-    return !!node && sharedStreamIds.indexOf(String(node.id)) >= 0
+  Process {
+    running: true
+    command: ["sh", "-c", "command -v evo8-mixer"]
+    onExited: function(code) { root.mixerAvailable = code === 0 }
   }
 
-  function refreshSharedStreams() {
-    if (!sharedStreamsProc.running) sharedStreamsProc.running = true
+  // evo8-mixer keeps one window: launching it again only makes the running one
+  // exit at once, so bring that window to the front afterwards.
+  function openMixer() {
+    Quickshell.execDetached(["sh", "-c",
+      "evo8-mixer & sleep 0.5; hyprctl dispatch 'hl.dsp.focus({ window = \"class:^evo8-mixer$\" })' >/dev/null 2>&1"])
+    close()
   }
 
-  function toggleStreamShared(node) {
-    if (!node || node.id === undefined || streamShareProc.running) return
-    var id = String(node.id)
-    var next = sharedStreamIds.slice()
-    var at = next.indexOf(id)
-    if (at >= 0) next.splice(at, 1)
-    else next.push(id)
-    sharedStreamIds = next
-    streamShareProc.command = ["wh01s17-audio-stream-share", at >= 0 ? "off" : "on", id]
-    streamShareProc.running = true
+  // PipeWire resets the Mezcla gains to the config's values whenever it
+  // (re)creates mezcla.suma, and drops every monitor link, so put the saved
+  // settings back (gains, sync, listening level, preamps) and the monitored
+  // inputs on again each time a new one shows up. Runs whether or not the
+  // mixer window was ever opened.
+  readonly property int mixSumNodeId: {
+    for (var i = 0; i < nodes.length; i++)
+      if (nodes[i] && String(nodes[i].name || "") === "mezcla.suma") return nodes[i].id
+    return -1
   }
+  onMixSumNodeIdChanged: if (mixSumNodeId >= 0) mixGainApplyTimer.restart()
 
-  function refreshMonitor() {
-    if (!monitorStatusProc.running) monitorStatusProc.running = true
-  }
-
-  function toggleMonitor() {
-    if (!monitorAvailable || monitorToggleProc.running) return
-    monitorState = monitorOn ? "off" : "on"
-    monitorToggleProc.command = ["wh01s17-audio-mix-monitor", monitorState]
-    monitorToggleProc.running = true
-  }
-
-  function refreshCardProfiles() {
-    if (!cardProfilesProc.running) cardProfilesProc.running = true
-  }
-
-  // A card row expands or collapses its profile list; a profile row switches
-  // the card to it. Switching rebuilds that card's nodes, so the device lists
-  // above refresh on their own once PipeWire publishes the new graph.
-  function activateProfileRow(row) {
-    if (!row) return
-    if (row.kind === "card") {
-      expandedCard = expandedCard === row.card ? "" : row.card
-      return
+  Timer {
+    id: mixGainApplyTimer
+    interval: 600
+    repeat: false
+    onTriggered: {
+      Quickshell.execDetached(["sh", "-c", "evoctl apply; evoctl monitor follow"])
     }
-    if (row.active) return
-    setCardProfile(row.card, row.profile)
-  }
-
-  function setCardProfile(card, profile) {
-    if (!card || !profile) return
-    cardProfiles = Model.withActiveProfile(cardProfiles, card, profile)
-    Quickshell.execDetached(["wh01s17-audio-card-profiles", "set", card, profile])
-    cardProfilesSettleTimer.restart()
   }
 
   function sinkAvailable(node) {
@@ -728,94 +684,15 @@ Panel {
     onTriggered: if (!sinkAvailabilityProc.running) sinkAvailabilityProc.running = true
   }
 
-  Process {
-    id: cardProfilesProc
-    command: ["wh01s17-audio-card-profiles", "list"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: root.cardProfiles = Model.parseCardProfiles(text)
-    }
-  }
-
-  Timer {
-    interval: 5000
-    running: root.opened
-    repeat: true
-    triggeredOnStart: true
-    onTriggered: root.refreshCardProfiles()
-  }
-
-  Process {
-    id: sharedStreamsProc
-    command: ["wh01s17-audio-stream-share", "list"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var ids = String(text).split("\n")
-        var next = []
-        for (var i = 0; i < ids.length; i++) if (ids[i].trim()) next.push(ids[i].trim())
-        root.sharedStreamIds = next
-      }
-    }
-  }
-
-  // Reads the real routing back afterwards, so a refused move does not stay
-  // shown from the optimistic update.
-  Process {
-    id: streamShareProc
-    onExited: root.refreshSharedStreams()
-  }
-
-  Timer {
-    interval: 3000
-    running: root.opened
-    repeat: true
-    triggeredOnStart: true
-    onTriggered: root.refreshSharedStreams()
-  }
-
-  Process {
-    id: monitorStatusProc
-    command: ["wh01s17-audio-mix-monitor", "status"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: root.monitorState = String(text).trim()
-    }
-  }
-
-  // Reads the real state back afterwards, so a refused switch does not stay
-  // shown as on from the optimistic flip.
-  Process {
-    id: monitorToggleProc
-    onExited: root.refreshMonitor()
-  }
-
-  Timer {
-    interval: 3000
-    running: root.opened
-    repeat: true
-    triggeredOnStart: true
-    onTriggered: root.refreshMonitor()
-  }
-
-  // The monitor plays on the selected output, so when the output changes a
-  // live monitor is re-linked onto the new one. Runs whether or not the panel
-  // is open; the delay lets the new default settle in PipeWire first.
+  // Monitoring (the full Mezcla or single inputs, set from the mixer window)
+  // plays on the selected output, so when the output changes the live links
+  // are moved onto the new one. Runs whether or not the panel is open; the
+  // delay lets the new default settle in PipeWire first.
   Timer {
     id: monitorFollowTimer
     interval: 400
     repeat: false
-    onTriggered: Quickshell.execDetached(["sh", "-c",
-      "[ \"$(wh01s17-audio-mix-monitor status)\" = on ] && wh01s17-audio-mix-monitor on"])
-  }
-
-  // Read back the real profile once pactl has applied the switch, so a refused
-  // profile does not stay ticked from the optimistic update.
-  Timer {
-    id: cardProfilesSettleTimer
-    interval: 700
-    repeat: false
-    onTriggered: root.refreshCardProfiles()
+    onTriggered: Quickshell.execDetached(["evoctl", "monitor", "follow"])
   }
 
   // Runs whether or not the panel is open: the bar shows and scrolls the output
@@ -872,7 +749,7 @@ Panel {
     open: root.opened
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight, Style.space(760))
+    contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight, Style.space(560))
 
     PanelKeyCatcher {
       id: keyCatcher
@@ -899,12 +776,6 @@ Panel {
           } else {
             root.toggleOutputMute()
           }
-        }
-        // 's' sends the focused app to Compartido, or back.
-        if (t === "s" || t === "S") {
-          if (!root.cursorActive || root.focusSection !== "streams") return
-          if (root.selectedIndex < 0 || root.selectedIndex >= root.displayAudioStreams.length) return
-          root.toggleStreamShared(root.nodeFor(root.displayAudioStreams[root.selectedIndex]))
         }
       }
 
@@ -1204,139 +1075,6 @@ Panel {
             }
           }
 
-          // ---- Monitor ----
-          PanelSeparator {
-            visible: root.monitorAvailable
-            foreground: root.bar.foreground
-          }
-
-          CursorSurface {
-            id: monitorRow
-            visible: root.monitorAvailable
-            width: parent.width
-            implicitHeight: monitorInner.implicitHeight + Style.spacing.xl
-            hasCursor: root.cursorActive && root.focusSection === "monitor"
-            onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(monitorRow)
-            current: root.monitorOn
-            foreground: root.bar.foreground
-            fill: root.hoverFill
-            currentFill: root.selectedFill
-
-            MouseArea {
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onContainsMouseChanged: if (containsMouse) {
-                root.cursorActive = true
-                root.focusSection = "monitor"
-                root.selectedIndex = 0
-              }
-              onClicked: root.toggleMonitor()
-            }
-
-            Item {
-              id: monitorInner
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-              anchors.leftMargin: Style.space(6)
-              anchors.rightMargin: Style.space(6)
-              implicitHeight: Math.max(monitorLabels.implicitHeight, monitorSwitch.implicitHeight)
-
-              Text {
-                id: monitorGlyph
-                textFormat: Text.PlainText
-                text: "󰋋"
-                color: root.bar.foreground
-                font.family: root.bar.fontFamily
-                font.pixelSize: Style.font.title
-                width: Style.space(22)
-                horizontalAlignment: Text.AlignHCenter
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                opacity: root.monitorOn ? 1.0 : 0.6
-              }
-
-              Column {
-                id: monitorLabels
-                anchors.left: monitorGlyph.right
-                anchors.leftMargin: Style.space(8)
-                anchors.right: monitorSwitch.left
-                anchors.rightMargin: Style.space(8)
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: Style.space(1)
-
-                Text {
-                  textFormat: Text.PlainText
-                  text: "Monitor"
-                  color: root.bar.foreground
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.body
-                  font.bold: root.monitorOn
-                  elide: Text.ElideRight
-                  width: parent.width
-                }
-
-                Text {
-                  textFormat: Text.PlainText
-                  text: root.monitorOn ? "Escuchando la mezcla" : "Escucha la mezcla"
-                  color: Qt.darker(root.bar.foreground, 1.4)
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.caption
-                  elide: Text.ElideRight
-                  width: parent.width
-                }
-              }
-
-              ToggleSwitch {
-                id: monitorSwitch
-                checked: root.monitorOn
-                busy: monitorToggleProc.running
-                hasCursor: false
-                foreground: root.bar.foreground
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                onHovered: function(on) {
-                  if (!on) return
-                  root.cursorActive = true
-                  root.focusSection = "monitor"
-                  root.selectedIndex = 0
-                }
-                onToggled: root.toggleMonitor()
-              }
-            }
-          }
-
-          // ---- Card profiles ----
-          PanelSeparator {
-            visible: root.displayProfileRows.length > 0
-            foreground: root.bar.foreground
-          }
-
-          Column {
-            width: parent.width
-            spacing: Style.space(6)
-            visible: root.displayProfileRows.length > 0
-
-            PanelSectionHeader {
-              text: "PROFILES"
-              foreground: root.bar.foreground
-              fontFamily: root.bar.fontFamily
-            }
-
-            Repeater {
-              model: root.displayProfileRows
-
-              ProfileRow {
-                required property var modelData
-                required property int index
-                width: panelColumn.width
-                row: modelData
-                rowIndex: index
-              }
-            }
-          }
-
           // ---- Per-app streams ----
           PanelSeparator {
             visible: root.displayAudioStreams.length > 0
@@ -1364,6 +1102,66 @@ Panel {
                 node: root.nodeFor(modelData)
                 rowIndex: index
               }
+            }
+          }
+
+          // ---- Mixer window ----
+          PanelSeparator {
+            visible: root.mixerAvailable
+            foreground: root.bar.foreground
+          }
+
+          CursorSurface {
+            id: mixerRow
+            visible: root.mixerAvailable
+            width: parent.width
+            implicitHeight: mixerInner.implicitHeight + Style.spacing.xl
+            hasCursor: root.cursorActive && root.focusSection === "mixer"
+            onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(mixerRow)
+            foreground: root.bar.foreground
+            fill: root.hoverFill
+            currentFill: root.selectedFill
+
+            Row {
+              id: mixerInner
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              anchors.leftMargin: Style.space(6)
+              anchors.rightMargin: Style.space(6)
+              spacing: Style.space(8)
+
+              Text {
+                textFormat: Text.PlainText
+                text: "󰘮"
+                color: root.bar.foreground
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.title
+                width: Style.space(22)
+                horizontalAlignment: Text.AlignHCenter
+                anchors.verticalCenter: parent.verticalCenter
+              }
+
+              Text {
+                textFormat: Text.PlainText
+                text: "Abrir mezclador"
+                color: root.bar.foreground
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.body
+                anchors.verticalCenter: parent.verticalCenter
+              }
+            }
+
+            MouseArea {
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onContainsMouseChanged: if (containsMouse) {
+                root.cursorActive = true
+                root.focusSection = "mixer"
+                root.selectedIndex = 0
+              }
+              onClicked: root.openMixer()
             }
           }
         }
@@ -1497,100 +1295,6 @@ Panel {
     }
   }
 
-  // Card / profile row — cursor target inside the "profiles" section. A card
-  // row shows its active profile and a chevron; the profile rows under an
-  // expanded card are indented, with a check on the active one.
-  component ProfileRow: CursorSurface {
-    id: profileRow
-    required property var row
-    required property int rowIndex
-
-    readonly property bool isCard: row && row.kind === "card"
-    hasCursor: root.cursorActive && root.focusSection === "profiles" && root.selectedIndex === rowIndex
-    onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(profileRow)
-    current: !isCard && !!row && row.active
-    foreground: root.bar.foreground
-    fill: root.hoverFill
-    currentFill: root.selectedFill
-    implicitHeight: profileInner.implicitHeight + Style.spacing.xl
-
-    Row {
-      id: profileInner
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.verticalCenter: parent.verticalCenter
-      anchors.leftMargin: profileRow.isCard ? Style.space(6) : Style.space(28)
-      anchors.rightMargin: Style.space(6)
-      spacing: Style.space(8)
-
-      Text {
-        id: profileGlyph
-        textFormat: Text.PlainText
-        text: profileRow.isCard
-          ? (profileRow.row.warning ? "󰀦" : "󰓃")
-          : (profileRow.row && profileRow.row.active ? "󰄬" : "")
-        color: profileRow.isCard && profileRow.row.warning ? Colors.urgent : root.bar.foreground
-        font.family: root.bar.fontFamily
-        font.pixelSize: profileRow.isCard ? Style.font.title : Style.font.body
-        width: Style.space(22)
-        horizontalAlignment: Text.AlignHCenter
-        anchors.verticalCenter: parent.verticalCenter
-      }
-
-      Column {
-        width: parent.width - profileGlyph.width - profileChevron.width - Style.space(16)
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: Style.space(1)
-
-        Text {
-          textFormat: Text.PlainText
-          text: profileRow.row ? profileRow.row.label : ""
-          color: root.bar.foreground
-          font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.body
-          font.bold: profileRow.isCard ? profileRow.row.expanded : (!!profileRow.row && profileRow.row.active)
-          elide: Text.ElideRight
-          width: parent.width
-        }
-
-        Text {
-          visible: profileRow.isCard
-          textFormat: Text.PlainText
-          text: profileRow.row ? profileRow.row.detail : ""
-          color: profileRow.row && profileRow.row.warning ? Colors.urgent : Qt.darker(root.bar.foreground, 1.4)
-          font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.caption
-          elide: Text.ElideRight
-          width: parent.width
-        }
-      }
-
-      Text {
-        id: profileChevron
-        textFormat: Text.PlainText
-        text: profileRow.isCard ? (profileRow.row.expanded ? "󰅀" : "󰅂") : ""
-        color: Qt.darker(root.bar.foreground, 1.4)
-        font.family: root.bar.fontFamily
-        font.pixelSize: Style.font.body
-        width: Style.space(16)
-        horizontalAlignment: Text.AlignHCenter
-        anchors.verticalCenter: parent.verticalCenter
-      }
-    }
-
-    MouseArea {
-      anchors.fill: parent
-      hoverEnabled: true
-      cursorShape: Qt.PointingHandCursor
-      onContainsMouseChanged: if (containsMouse) {
-        root.cursorActive = true
-        root.focusSection = "profiles"
-        root.selectedIndex = profileRow.rowIndex
-      }
-      onClicked: root.activateProfileRow(profileRow.row)
-    }
-  }
-
   // Per-app stream row — cursor target inside the "streams" section.
   // The stream has its own slider inline, so h/l from the keyboard
   // adjusts THIS stream's volume (not the global output) when the cursor
@@ -1602,7 +1306,6 @@ Panel {
 
     readonly property real streamVolume: node && node.audio ? node.audio.volume : 0
     readonly property bool streamMuted: node && node.audio ? node.audio.muted : false
-    readonly property bool shared: root.streamShared(node)
     readonly property bool isActive: root.streamRepresentsPlayer(node, root.activeMediaPlayer)
 
     hasCursor: root.cursorActive && root.focusSection === "streams" && root.selectedIndex === rowIndex
@@ -1656,37 +1359,8 @@ Panel {
           font.pixelSize: Style.font.body
           font.bold: streamRow.isActive
           elide: Text.ElideRight
-          width: parent.width - streamMuteIcon.width - streamShare.width - streamPct.width - Style.space(24)
+          width: parent.width - streamMuteIcon.width - streamPct.width - Style.space(16)
           anchors.verticalCenter: parent.verticalCenter
-        }
-
-        // Sends this app to Compartido: heard on the output and added to the
-        // Mezcla mic. Lit while it is there.
-        Text {
-          id: streamShare
-          textFormat: Text.PlainText
-          text: "󰒗"
-          color: streamRow.shared ? root.bar.foreground : Qt.darker(root.bar.foreground, 1.6)
-          font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.body
-          font.bold: streamRow.shared
-          width: Style.space(20)
-          horizontalAlignment: Text.AlignHCenter
-          anchors.verticalCenter: parent.verticalCenter
-
-          MouseArea {
-            id: streamShareMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.toggleStreamShared(streamRow.node)
-          }
-
-          PanelToolTip {
-            visible: streamShareMouse.containsMouse
-            text: streamRow.shared ? "En Compartido (entra a la Mezcla)" : "Enviar a Compartido"
-            fontFamily: root.bar.fontFamily
-          }
         }
 
         Text {
