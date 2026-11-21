@@ -28,6 +28,6 @@ require("default.hypr.toggles")
 -- Add any other personal Hyprland configuration below.
 -- o.window("qemu", { workspace = "5" })
 
--- Mixer window (evo8-mixer, from ~/workspace/evo8-linux): a console of
+-- Mixer window (evo8-mixer, from evo8-linux on PyPI): a console of
 -- vertical strips, floating and centered.
 o.window({ class = "^evo8-mixer$" }, { float = true, center = true, size = { 1640, 640 } })

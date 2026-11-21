@@ -517,8 +517,9 @@ Panel {
   }
 
   // The mixer window and the Mezcla routing come from evo8-linux
-  // (~/workspace/evo8-linux): `evo8-mixer` is the window, `evoctl` the CLI.
-  // The row only shows when the window is installed.
+  // (pipx install "evo8-linux[gui,usb]" && evoctl setup;
+  // https://github.com/wh01s17/evo8-linux): `evo8-mixer` is the window,
+  // `evoctl` the CLI. The row only shows when the window is installed.
   property bool mixerAvailable: false
 
   Process {
@@ -527,8 +528,8 @@ Panel {
     onExited: function(code) { root.mixerAvailable = code === 0 }
   }
 
-  // evo8-mixer keeps one window: launching it again only makes the running one
-  // exit at once, so bring that window to the front afterwards.
+  // evo8-mixer keeps one window: launching it again raises the running one.
+  // Focusing it afterwards also switches to the workspace it is on.
   function openMixer() {
     Quickshell.execDetached(["sh", "-c",
       "evo8-mixer & sleep 0.5; hyprctl dispatch 'hl.dsp.focus({ window = \"class:^evo8-mixer$\" })' >/dev/null 2>&1"])
