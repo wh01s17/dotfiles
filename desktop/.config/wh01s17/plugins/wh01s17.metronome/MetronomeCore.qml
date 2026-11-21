@@ -9,9 +9,10 @@ import "Model.js" as Model
 // this — the bar puts one instance of the widget on each monitor, and all of
 // them have to agree about the tempo and beat where they can all be seen.
 //
-// Timing is not kept here either. metronome-engine.py synthesises the click
-// sample by sample and reports each pulse as it becomes audible; QML would
-// drift by whole milliseconds under load, which a musician hears at once.
+// Timing is not kept here either. metronome-engine.c renders the click inside
+// PipeWire's realtime callback, placed by the device's own sample clock, and
+// reports each pulse as it becomes audible; QML would drift by whole
+// milliseconds under load, which a musician hears at once.
 Item {
   id: core
 
@@ -38,7 +39,7 @@ Item {
   // first claims it; they are interchangeable.
   property var host: null
 
-  readonly property string enginePath: String(Qt.resolvedUrl("metronome-engine.py")).replace("file://", "")
+  readonly property string enginePath: String(Qt.resolvedUrl("metronome-engine.sh")).replace("file://", "")
   readonly property string signature: bpm + " BPM · " + beats + "/4 · " + Model.subdivisionLabel(subdivision)
 
   // ------------------------------------------------------------- settings
@@ -173,7 +174,7 @@ Item {
 
   Process {
     id: engine
-    command: ["python3", core.enginePath]
+    command: ["bash", core.enginePath]
     stdinEnabled: true
     stdout: SplitParser { onRead: function(line) { core.handleEvent(line) } }
     stderr: SplitParser { onRead: function(line) { console.warn("wh01s17.metronome:", line) } }
@@ -208,5 +209,14 @@ Item {
     }
   }
 
+  // The engine is compiled on first use. Do it as the shell comes up, so the
+  // first click is not held back by the compiler.
+  Process {
+    id: warmup
+    command: ["bash", core.enginePath, "--build"]
+    stderr: SplitParser { onRead: function(line) { console.warn("wh01s17.metronome:", line) } }
+  }
+
+  Component.onCompleted: warmup.running = true
   Component.onDestruction: engine.running = false
 }

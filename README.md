@@ -345,10 +345,16 @@ desktop/.config/wh01s17/plugins/wh01s17.bar/Bar.qml`.
 ### Metrónomo
 
 [`wh01s17.metronome`](desktop/.config/wh01s17/plugins/wh01s17.metronome/) usa
-un proceso Python único para sintetizar el click en PCM y sincroniza el pulso
-visual cuando el sonido llega a la salida. Así evita que los temporizadores de
-QML acumulen deriva bajo carga. Su entrada en `shell.json` persiste BPM,
-compás, subdivisión, volumen y acento entre sesiones.
+un motor en C sobre PipeWire (`metronome-engine.c`) que sintetiza el click
+dentro del callback de tiempo real del stream. Cada pulso se coloca con
+precisión sub-muestra sobre el reloj del propio dispositivo, sin pipe ni reloj
+de pared que puedan derivar, y el hilo de audio corre con prioridad RT vía
+RTKit, así que la carga del sistema no lo retrasa. El pulso visual se emite
+cuando el sonido llega a la salida, latencia del dispositivo incluida.
+`metronome-engine.sh` lo compila en `~/.cache/wh01s17/` la primera vez (y cada
+vez que cambia el fuente), así que requiere `base-devel` y las cabeceras de
+`libpipewire`. Su entrada en `shell.json` persiste BPM, compás, subdivisión,
+volumen y acento entre sesiones.
 
 En el icono de la barra: clic izquierdo abre el panel; clic derecho inicia o
 detiene; clic central mide el tempo por golpes; la rueda ajusta ±1 BPM. En el

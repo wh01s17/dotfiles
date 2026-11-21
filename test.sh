@@ -145,6 +145,12 @@ if local_only qmllint; then
     desktop/.config/wh01s17/plugins/wh01s17.lock/LockView.qml \
     desktop/.config/wh01s17/plugins/wh01s17.metronome/MetronomeCore.qml
 fi
+if local_only cc && pkg-config --exists libpipewire-0.3 2>/dev/null; then
+  # shellcheck disable=SC2046 # pkg-config prints one flag per word
+  run "Motor del metrónomo (C)" cc -std=gnu11 -Wall -Wextra -Werror -fsyntax-only \
+    $(pkg-config --cflags libpipewire-0.3) \
+    desktop/.config/wh01s17/plugins/wh01s17.metronome/metronome-engine.c
+fi
 if local_only systemd-analyze; then
   units=()
   for file in "${files[@]}"; do
