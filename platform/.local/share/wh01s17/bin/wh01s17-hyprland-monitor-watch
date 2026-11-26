@@ -60,6 +60,20 @@ recover_modeless() {
   ) 9>"$MODELESS_LOCK" &
 }
 
+# Monitor rules size external outputs from the EDID of whatever display is on
+# each connector, and Hyprland only evaluates them on reload; a display that
+# arrives later would keep positions computed without it and overlap its
+# neighbours. Reload once per burst (added and addedv2 both fire per output).
+RELAYOUT_LOCK="${XDG_RUNTIME_DIR:-/tmp}/wh01s17-monitor-relayout.lock"
+relayout_after_monitor_change() {
+  (
+    flock -n 9 || exit 0
+    sleep 1
+    wh01s17-hyprland-reload-guard paused && exit 0
+    hyprctl reload >/dev/null 2>&1 || true
+  ) 9>"$RELAYOUT_LOCK" &
+}
+
 poll_clamshell_state() {
   while true; do
     sleep 2
@@ -95,11 +109,13 @@ recover_modeless
 while read -r event; do
   case "$event" in
     monitoradded\>\>*|monitoraddedv2\>\>*)
+      relayout_after_monitor_change
       sync_clamshell_after_monitor_change
       sync_poll_state
       recover_modeless
       ;;
     monitorremoved\>\>*|monitorremovedv2\>\>*)
+      relayout_after_monitor_change
       sync_clamshell_after_monitor_change
       sync_poll_state
       recover_modeless
