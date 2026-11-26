@@ -42,6 +42,11 @@ Panel {
     var entry = monitorModes ? monitorModes[focusedMonitor] : null
     return entry && entry.current ? String(entry.current) : ""
   }
+  // name -> { width, height }: preferred mode the kernel read from each
+  // connected display's EDID, to catch Hyprland holding a previous monitor's.
+  property var kernelModes: ({})
+  readonly property string focusedStaleNative:
+    Model.staleNativeMode(focusedModeOptions, kernelModes ? kernelModes[focusedMonitor] : null)
   readonly property string effectiveModeValue: pendingMode !== "" ? pendingMode : focusedModeValue
   readonly property string focusedModeLabel: {
     var value = effectiveModeValue
@@ -303,6 +308,7 @@ Panel {
   function refresh() {
     if (!stateProc.running) stateProc.running = true
     if (!modesProc.running) modesProc.running = true
+    if (!kernelModesProc.running) kernelModesProc.running = true
     if (!layoutProc.running) layoutProc.running = true
   }
 
@@ -606,6 +612,20 @@ Panel {
         // optimistic label even if the mode didn't take.
         root.pendingMode = ""
       }
+    }
+  }
+
+  // First line of a connector's sysfs `modes` is the display's preferred mode.
+  Process {
+    id: kernelModesProc
+    command: ["bash", "-c",
+      'for d in /sys/class/drm/card*-*; do ' +
+      '[ "$(cat "$d/status" 2>/dev/null)" = connected ] || continue; ' +
+      'm=$(head -n1 "$d/modes" 2>/dev/null); [ -n "$m" ] || continue; ' +
+      'n=${d##*/}; printf "%s %s\\n" "${n#card*-}" "$m"; done']
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.kernelModes = Model.parseKernelModes(text)
     }
   }
 
@@ -936,6 +956,20 @@ Panel {
               target: modeDropdown
               property: "value"
               value: root.effectiveModeValue
+            }
+
+            // Hyprland still lists the previous display's modes on this port;
+            // only a real disconnect makes it re-read the EDID.
+            Text {
+              width: parent.width
+              visible: root.focusedStaleNative !== ""
+              text: "Display supports " + root.focusedStaleNative
+                + " but Hyprland still has the previous monitor's modes. "
+                + "Unplug the cable for a few seconds and plug it back in."
+              wrapMode: Text.WordWrap
+              color: Qt.darker(root.bar.foreground, 1.4)
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.caption
             }
           }
 

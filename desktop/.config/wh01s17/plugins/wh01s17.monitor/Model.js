@@ -174,6 +174,33 @@ function parseMonitorModes(raw) {
   return byName
 }
 
+// name -> { width, height } of the preferred mode the kernel parsed from the
+// EDID of each connected display. Input is "NAME WIDTHxHEIGHT" lines.
+function parseKernelModes(raw) {
+  var byName = {}
+  var lines = String(raw || "").split("\n")
+  for (var i = 0; i < lines.length; i++) {
+    var match = lines[i].trim().match(/^([A-Za-z0-9._-]+)\s+(\d+)x(\d+)/)
+    if (!match) continue
+    byName[match[1]] = { width: parseInt(match[2], 10), height: parseInt(match[3], 10) }
+  }
+  return byName
+}
+
+// Hyprland only reads a display's EDID when its connector goes from
+// disconnected to connected. Swap monitors without the port noticing the gap
+// and it keeps offering the previous display's modes. Spot that by the native
+// resolution the kernel reports missing from Hyprland's list, and return it
+// as a label ("3840×2160"), or "" when the two agree.
+function staleNativeMode(options, kernelMode) {
+  if (!kernelMode || !(kernelMode.width > 0) || !(kernelMode.height > 0)) return ""
+  if (!Array.isArray(options) || options.length === 0) return ""
+  for (var i = 0; i < options.length; i++) {
+    if (options[i].width === kernelMode.width && options[i].height === kernelMode.height) return ""
+  }
+  return kernelMode.width + "×" + kernelMode.height
+}
+
 function brightnessName(percent) {
   var p = Math.round(percent)
   if (p >= 95) return "Sun blast"
@@ -412,6 +439,8 @@ if (typeof module !== "undefined") {
     modeOptions: modeOptions,
     currentModeValue: currentModeValue,
     parseMonitorModes: parseMonitorModes,
+    parseKernelModes: parseKernelModes,
+    staleNativeMode: staleNativeMode,
     brightnessName: brightnessName,
     parseDisplays: parseDisplays,
     externalDisplays: externalDisplays,
