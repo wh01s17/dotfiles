@@ -1,6 +1,6 @@
 -- Volume, brightness, keyboard backlight, and touchpad controls.
-o.bind("XF86AudioRaiseVolume", "Volume up", "wh01s17-audio-output-volume raise", { locked = true, repeating = true })
-o.bind("XF86AudioLowerVolume", "Volume down", "wh01s17-audio-output-volume lower", { locked = true, repeating = true })
+o.bind("XF86AudioRaiseVolume", "Volume up", "wh01s17-audio-output-volume +1", { locked = true, repeating = true })
+o.bind("XF86AudioLowerVolume", "Volume down", "wh01s17-audio-output-volume -1", { locked = true, repeating = true })
 o.bind("XF86AudioMute", "Mute", "wh01s17-audio-output-volume mute-toggle", { locked = true })
 o.bind("XF86AudioMicMute", "Mute microphone", "wh01s17-audio-input-mute", { locked = true })
 o.bind("XF86MonBrightnessUp", "Brightness up", "wh01s17-brightness-display +5%", { locked = true, repeating = true })
