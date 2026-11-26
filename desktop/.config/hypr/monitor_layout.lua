@@ -90,7 +90,7 @@ end
 local function geometry(output, rule, mode_for, scale_for)
 	local mode = rule and rule.mode or mode_for(output, "preferred")
 	local scale = tonumber(rule and rule.scale) or scale_for(output, 1)
-	local width, height = monitor_modes.size(mode, 1920, 1080)
+	local width, height = monitor_modes.size(mode, 1920, 1080, output)
 	return math.floor(width / scale + 0.5), math.floor(height / scale + 0.5), mode, scale
 end
 

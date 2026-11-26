@@ -9,7 +9,7 @@ return function(scale_for, mode_for)
 	})
 	hl.monitor({
 		output = "HDMI-A-1",
-		mode = mode_for("HDMI-A-1", "1920x1080@60"),
+		mode = mode_for("HDMI-A-1", "preferred"),
 		position = "auto-right",
 		scale = scale_for("HDMI-A-1", 1),
 	})
