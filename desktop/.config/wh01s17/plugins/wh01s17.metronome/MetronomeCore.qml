@@ -18,7 +18,7 @@ Item {
 
   // ------------------------------------------------------------- settings
 
-  property int bpm: 100
+  property int bpm: 60
   property int beats: 4
   property string subdivision: "1/4"
   property real volume: 0.7
@@ -53,7 +53,7 @@ Item {
       var value = settings[key]
       return value === undefined || value === null ? fallback : value
     }
-    bpm = Model.clampBpm(read("bpm", 100))
+    bpm = Model.clampBpm(read("bpm", 60))
     beats = Math.max(1, Math.min(16, Math.round(Number(read("beats", 4)))))
     var sub = read("subdivision", "1/4")
     subdivision = Model.isSubdivision(sub) ? sub : "1/4"

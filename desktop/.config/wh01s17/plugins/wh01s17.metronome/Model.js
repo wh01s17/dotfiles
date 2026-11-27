@@ -41,7 +41,7 @@ function tempoName(bpm) {
 
 function clampBpm(bpm) {
   var n = Math.round(Number(bpm))
-  if (!isFinite(n)) return 100
+  if (!isFinite(n)) return 60
   return Math.max(MIN_BPM, Math.min(MAX_BPM, n))
 }
 

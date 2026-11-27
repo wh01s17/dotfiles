@@ -18,7 +18,7 @@
     "allowMultiple": false,
     "defaultSection": "center",
     "defaults": {
-      "bpm": 100,
+      "bpm": 60,
       "beats": 4,
       "subdivision": "1/4",
       "volume": 0.7,
