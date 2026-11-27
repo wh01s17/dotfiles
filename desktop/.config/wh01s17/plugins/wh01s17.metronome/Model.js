@@ -20,6 +20,9 @@ var TEMPO_MARKS = [
   { upTo: 999, name: "Prestissimo" }
 ]
 
+// One-press tempos in the panel; keys 1–4 pick them in order.
+var PRESETS = [60, 80, 100, 120]
+
 // value is what the engine understands; pulses drives the beat readout.
 var SUBDIVISIONS = [
   { value: "1/4",   label: "1/4",   pattern: "·",      pulses: 1 },

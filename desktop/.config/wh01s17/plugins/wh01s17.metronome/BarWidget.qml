@@ -120,6 +120,10 @@ Panel {
         else if (text === "a") root.core.toggleAccent()
         else if (text === "[") root.core.setBeats(root.core.beats - 1)
         else if (text === "]") root.core.setBeats(root.core.beats + 1)
+        else {
+          var preset = Model.PRESETS[parseInt(text, 10) - 1]
+          if (preset !== undefined) root.core.setBpm(preset)
+        }
       }
 
       Column {
@@ -360,6 +364,35 @@ Panel {
         }
 
         PanelSeparator { foreground: root.foreground }
+
+        // -------------------------------------------------------- presets
+        //
+        // One press to a common practice tempo. Same cut as the subdivision
+        // grid below, so the two read as one block of quick picks.
+        Row {
+          id: presetRow
+          width: parent.width
+          spacing: Style.space(7)
+
+          Repeater {
+            model: Model.PRESETS
+
+            delegate: Button {
+              required property var modelData
+              text: modelData + " BPM"
+              bordered: true
+              selected: root.core.bpm === modelData
+              foreground: root.foreground
+              background: root.backgroundColor
+              accent: root.accentColor
+              fontFamily: root.fontFamily
+              fontSize: Style.font.bodySmall
+              implicitWidth: (presetRow.width - presetRow.spacing * (Model.PRESETS.length - 1))
+                / Model.PRESETS.length
+              onClicked: root.core.setBpm(modelData)
+            }
+          }
+        }
 
         // --------------------------------------------------- subdivisions
         Grid {

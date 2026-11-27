@@ -359,8 +359,9 @@ volumen y acento entre sesiones.
 En el icono de la barra: clic izquierdo abre el panel; clic derecho inicia o
 detiene; clic central mide el tempo por golpes; la rueda ajusta ±1 BPM. En el
 panel se puede arrastrar o usar la rueda sobre el dial, aplicar incrementos de
-1/5/10 BPM, escoger de 1 a 16 pulsos por compás, activar el acento, elegir
-negras, corcheas, tresillos, swing o semicorcheas y ajustar el nivel. También
+1/5/10 BPM, saltar a 60, 80, 100 o 120 BPM con un clic (o las teclas `1`–`4`),
+escoger de 1 a 16 pulsos por compás, activar el acento, elegir negras,
+corcheas, tresillos, swing o semicorcheas y ajustar el nivel. También
 acepta IPC bajo `wh01s17.metronome`: `play`, `pause`, `togglePlay`, `tap` y
 `setBpm <valor>`.
 
